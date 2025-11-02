@@ -60,9 +60,9 @@ void UScriptComponent::TickComponent(float DeltaTime)
 	}
 	PendingCoroutines.clear();
 
-	int CoroutineCount = Coroutines.size();
+	int32 CoroutineCount = static_cast<int32>(Coroutines.size());
 
-	for (int i = Coroutines.size() - 1; i >= 0; --i)
+	for (int32 i = static_cast<int32>(Coroutines.size()) - 1; i >= 0; --i)
 	{
 		CoroutineData& Data = Coroutines[i];
 		bool bEnd = false;
@@ -505,7 +505,7 @@ void UScriptComponent::MakeCoroutine(const FString& FuncName)
 void UScriptComponent::StopCoroutine(const FString& FuncName)
 {
 	FName Name = FName(FuncName);
-	for (int i = Coroutines.size() - 1; i >= 0; --i)
+	for (int32 i = static_cast<int32>(Coroutines.size()) - 1; i >= 0; --i)
 	{
 		if (Coroutines[i].FuncName == Name)
 		{

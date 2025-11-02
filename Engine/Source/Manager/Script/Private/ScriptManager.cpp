@@ -686,7 +686,8 @@ void UScriptManager::RegisterCoreTypes()
 		FViewportClient* ViewportClient = Clients[ViewportManager.GetActiveIndex()];
 		FViewport* Viewport = ViewportClient->GetOwningViewport();
 		FRect Rect = Viewport->GetRect();
-		return FVector4(Rect.Left, Rect.Top, Rect.Width, Rect.Height);
+		return FVector4(static_cast<float>(Rect.Left), static_cast<float>(Rect.Top),
+		                static_cast<float>(Rect.Width), static_cast<float>(Rect.Height));
 	};
 
 
