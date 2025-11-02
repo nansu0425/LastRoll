@@ -124,8 +124,8 @@ function HandleAttack(dt)
         obj.AttackTimer = obj.AttackTimer - dt
     end
 
-    -- 마우스 왼쪽 버튼 눌렀을 때만 발사 (IsKeyPressed 사용)
-    if IsKeyPressed(EKeyInput.MouseLeft) and obj.AttackTimer <= 0 then
+    -- 쿨타임이 끝나면 자동으로 마우스 방향으로 발사
+    if obj.AttackTimer <= 0 then
         ShootProjectile()
         obj.AttackTimer = AttackCooldown
     end
