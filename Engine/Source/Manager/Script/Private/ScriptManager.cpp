@@ -664,6 +664,16 @@ void UScriptManager::RegisterCoreTypes()
 		FVector2 ScreenPos = FVector2(Rect.Left + Rect.Width * ScreenUV.X, Rect.Top + Rect.Height * ScreenUV.Y);
 		return ScreenPos;
 	};
+	LuaState["GetViewportRect"] = []()->FVector4
+	{
+		auto& ViewportManager = UViewportManager::GetInstance();
+		const auto& Viewports = ViewportManager.GetViewports();
+		const auto& Clients = ViewportManager.GetClients();
+		FViewportClient* ViewportClient = Clients[ViewportManager.GetActiveIndex()];
+		FViewport* Viewport = ViewportClient->GetOwningViewport();
+		FRect Rect = Viewport->GetRect();
+		return FVector4(Rect.Left, Rect.Top, Rect.Width, Rect.Height);
+	};
 
 
 
@@ -774,9 +784,9 @@ void UScriptManager::RegisterGlobalFunctions()
 		return UTimeManager::GetInstance().GetGameTime();
 		};
 
-	lua["DrawText"] = [](const std::string& Text, const FVector2& ScreenPos, const float Size, const FVector4& Color)
+	lua["DrawText"] = [](const std::string& Text, const FVector2& ScreenPos, const FVector2& RectSize, const float Size, const FVector4& Color)
 	{
-		UGameUI::GetInstance().TextUI(Text, ScreenPos, Size, Color);
+		UGameUI::GetInstance().TextUI(Text, ScreenPos, RectSize, Size, Color);
 	};
 	lua["DrawHPBar"] = [](const FVector2& ScreenPos, const FVector2& Size, float HPPer)
 	{

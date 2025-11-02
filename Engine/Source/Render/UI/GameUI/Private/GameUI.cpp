@@ -26,14 +26,14 @@ wstring ToWString(const FString& InStr)
     return WideStr;
 }
 
-void UGameUI::TextUI(const FString& Text, const FVector2& ScreenPos, float Size, const FVector4& InColor)
+void UGameUI::TextUI(const FString& Text, const FVector2& ScreenPos, const FVector2& RectSize, float Size, const FVector4& InColor)
 {
     wstring WideText = ToWString(Text);
     D2D1_RECT_F Rect;
-    Rect.top = ScreenPos.Y + 50;
-    Rect.bottom = ScreenPos.Y - 50;
-    Rect.left = ScreenPos.X - 250;
-    Rect.right = ScreenPos.X + 250;
+    Rect.top = ScreenPos.Y + RectSize.Y * 0.5f;
+    Rect.bottom = ScreenPos.Y - RectSize.Y * 0.5f;
+    Rect.left = ScreenPos.X - RectSize.X * 0.5f;
+    Rect.right = ScreenPos.X + RectSize.X * 0.5f;
 
     D2D1_COLOR_F Color;
     Color.r = InColor.X;

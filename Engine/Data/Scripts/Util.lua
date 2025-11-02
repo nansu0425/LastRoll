@@ -1,6 +1,15 @@
 
--- Util을 핫리로드 하는 기능은 없으니 주의
+
+
+
 local Util = {}
+
+EGameState = {
+	Lobby = 1,
+    Loading = 2,
+	Playing = 3,
+	End = 4
+}
 
 function Util.Clamp(value, min, max)
     if value < min then return min end

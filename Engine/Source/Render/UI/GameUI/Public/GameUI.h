@@ -13,7 +13,7 @@ class UGameUI : public UObject
 	DECLARE_SINGLETON_CLASS(UGameUI, UObject)
 
 public:
-	void TextUI(const FString& Text, const FVector2& ScreenPos, float Size, const FVector4& InColor = FVector4(1, 1, 1, 1));
+	void TextUI(const FString& Text, const FVector2& ScreenPos, const FVector2& RectSize, float Size, const FVector4& InColor = FVector4(1, 1, 1, 1));
 	void HPBar(const FVector2& ScreenPos, const FVector2& Size, float HPPer);
 
 
