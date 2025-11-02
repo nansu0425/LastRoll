@@ -17,6 +17,9 @@ end
 
 
 function Tick(dt)
+    if _G.GameData.GameState ~= EGameState.Playing then
+        return
+    end
     obj.CurAttackDelay = obj.CurAttackDelay - dt
 
     Dir = _G.PlayerData.PlayerPos - obj.Location

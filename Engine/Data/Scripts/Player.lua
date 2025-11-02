@@ -23,10 +23,13 @@ end
 -- Called every frame
 -- @param dt: Delta time in seconds
 function Tick(dt)
+    if _G.GameData.GameState ~= EGameState.Playing then
+        return
+    end
     Move(dt)  
     HPPer = obj.HP / obj.MaxHP
     Util.RenderHPBar(obj.Location, Vector2(70, 20), HPPer)
-
+    --Util.MakeDamageText(100, obj.Location)
 end
 
 -- Called once when the Actor ends play

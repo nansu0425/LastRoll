@@ -156,7 +156,6 @@ private:
 	void MakeCoroutine(const FString& FuncName);
 	void StopCoroutine(const FString& FuncName);
 	bool ResumeCoroutine(CoroutineData& Coroutine);
-	void Update(const float DeltaTime);
 };
 
 // 템플릿 구현
