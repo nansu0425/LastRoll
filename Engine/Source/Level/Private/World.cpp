@@ -7,7 +7,6 @@
 #include "Utility/Public/JsonSerializer.h"
 #include "Manager/Config/Public/ConfigManager.h"
 #include "Manager/Path/Public/PathManager.h"
-#include "Manager/Script/Public/CoroutineManager.h"
 
 IMPLEMENT_CLASS(UWorld, UObject)
 
@@ -80,7 +79,6 @@ void UWorld::Tick(float DeltaTimes)
 
 	if (WorldType == EWorldType::Editor )
 	{
-		UCoroutineManager::GetInstance().Update(DeltaTimes);
 		for (AActor* Actor : Level->GetLevelActors())
 		{
 			if(Actor->CanTickInEditor() && Actor->CanTick())
@@ -97,7 +95,6 @@ void UWorld::Tick(float DeltaTimes)
 
 	if (WorldType == EWorldType::Game || WorldType == EWorldType::PIE)
 	{
-		UCoroutineManager::GetInstance().Update(DeltaTimes);
 		for (AActor* Actor : Level->GetLevelActors())
 		{
 			if(Actor->CanTick())

@@ -3,7 +3,6 @@
 #include "Component/Public/PrimitiveComponent.h"
 #include "Manager/Script/Public/ScriptManager.h"
 #include "Manager/Path/Public/PathManager.h"
-#include "Manager/Script/Public/CoroutineManager.h"
 #include "Actor/Public/Actor.h"
 #include "json.hpp"
 
@@ -18,7 +17,7 @@ UScriptComponent::UScriptComponent()
 
 UScriptComponent::~UScriptComponent()
 {
-	UCoroutineManager::GetInstance().StopAllCoroutine(this);
+	StopAllCoroutine();
 	// CleanupLuaResources();
 }
 
@@ -45,6 +44,49 @@ void UScriptComponent::TickComponent(float DeltaTime)
 	Super::TickComponent(DeltaTime);
 
 	CallLuaFunction("Tick", DeltaTime);
+
+	//등록 대기중인 코루틴 등록
+	for (auto& pendingData : PendingCoroutines)
+	{
+		MakeCoroutine(pendingData.FuncName.ToString());
+	}
+	PendingCoroutines.clear();
+
+	int CoroutineCount = Coroutines.size();
+
+	for (int i = Coroutines.size() - 1; i >= 0; --i)
+	{
+		CoroutineData& Data = Coroutines[i];
+		bool bEnd = false;
+		if (Data.WaitCondition.WaitType == EWaitType::Time)
+		{
+			Data.WaitCondition.WaitTime -= DeltaTime;
+			if (Data.WaitCondition.WaitTime <= 0)
+			{
+				Data.WaitCondition.WaitType = EWaitType::None;
+				bEnd = ResumeCoroutine(Data);
+			}
+		}
+		else if (Data.WaitCondition.WaitType == EWaitType::Lambda) {
+			if (Data.WaitCondition.Lambda && Data.WaitCondition.Lambda()) {
+				Data.WaitCondition.WaitType = EWaitType::None;
+				bEnd = ResumeCoroutine(Data);
+			}
+		}
+		else if (Data.WaitCondition.WaitType == EWaitType::None)
+		{
+			bEnd = ResumeCoroutine(Data);
+		}
+
+
+		if (bEnd)
+		{
+			//swap remove 방식으로 변경필요
+			Coroutines.erase(Coroutines.begin() + i);
+		}
+	}
+
+
 }
 
 void UScriptComponent::EndPlay()
@@ -240,7 +282,17 @@ void UScriptComponent::SetInstanceTable(const sol::table GlobalTable)
 			return nullptr;
 		};
 
-		UCoroutineManager::GetInstance().RegisterEnvFunc(this, InstanceEnv);
+		//StartCoroutine
+		InstanceEnv["StartCoroutine"] = [this](const FString& FuncName)
+			{
+				RegisterPendingCoroutine(FuncName);
+			};
+
+		//StopCoroutine
+		InstanceEnv["StopCoroutine"] = [this](const FString& FuncName)
+			{
+				StopCoroutine(FuncName);
+			};
 	}
 
 	// 3. 스크립트 함수들을 캐싱하고 environment 설정
@@ -277,4 +329,196 @@ void UScriptComponent::OnScriptReloaded(const sol::table& NewGlobalTable)
 	//CallLuaFunction("BeginPlay");
 
 	UE_LOG_SUCCESS("ScriptComponent: Hot reload complete for '%s'", ScriptPath.c_str());
+}
+/*-----------------------------------------------------------------------------
+	Overlap Delegate Binding
+-----------------------------------------------------------------------------*/
+
+void UScriptComponent::BindOverlapDelegates()
+{
+	AActor* Owner = GetOwner();
+	/*if (!Owner || !bScriptLoaded)
+		return;*/
+	if (!Owner)
+		return;
+
+	// Owner Actor의 모든 Component 순회
+	const TArray<UActorComponent*>& Components = Owner->GetOwnedComponents();
+
+	for (UActorComponent* Component : Components)
+	{
+		// PrimitiveComponent만 처리
+		UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(Component);
+		if (!PrimComp)
+			continue;
+
+		// *** CRITICAL: Overlap 이벤트 생성 활성화 ***
+		// bGenerateOverlapEvents가 false면 UpdateOverlaps()가 바로 리턴하므로
+		// 델리게이트 바인딩만으로는 충분하지 않음 - 반드시 활성화 필요
+		PrimComp->SetGenerateOverlapEvents(true);
+
+		// BeginOverlap 델리게이트 바인딩
+		FDelegateHandle BeginHandle = PrimComp->OnComponentBeginOverlap.AddWeakLambda(
+			this,  // UObject for weak reference
+			[this](const FOverlapInfo& OverlapInfo)
+			{
+				OnBeginOverlapCallback(OverlapInfo);
+			}
+		);
+
+		// 핸들 저장 (나중에 해제용)
+		BeginOverlapHandles.push_back(TPair<UPrimitiveComponent*, FDelegateHandle>(PrimComp, BeginHandle));
+
+		// EndOverlap 델리게이트 바인딩
+		FDelegateHandle EndHandle = PrimComp->OnComponentEndOverlap.AddWeakLambda(
+			this,  // UObject for weak reference
+			[this](const FOverlapInfo& OverlapInfo)
+			{
+				OnEndOverlapCallback(OverlapInfo);
+			}
+		);
+
+		// 핸들 저장
+		EndOverlapHandles.push_back(TPair<UPrimitiveComponent*, FDelegateHandle>(PrimComp, EndHandle));
+	}
+
+	UE_LOG_DEBUG("ScriptComponent: Overlap 델리게이트 바인딩 완료 (%d PrimitiveComponents, GenerateOverlapEvents=true)",
+	             static_cast<int32>(BeginOverlapHandles.size()));
+}
+
+void UScriptComponent::UnbindOverlapDelegates()
+{
+	// BeginOverlap 핸들 제거
+	for (const auto& Pair : BeginOverlapHandles)
+	{
+		UPrimitiveComponent* Comp = Pair.first;
+		FDelegateHandle Handle = Pair.second;
+
+		if (Comp && Handle.IsValid())
+		{
+			Comp->OnComponentBeginOverlap.Remove(Handle);
+		}
+	}
+	BeginOverlapHandles.clear();
+
+	// EndOverlap 핸들 제거
+	for (const auto& Pair : EndOverlapHandles)
+	{
+		UPrimitiveComponent* Comp = Pair.first;
+		FDelegateHandle Handle = Pair.second;
+
+		if (Comp && Handle.IsValid())
+		{
+			Comp->OnComponentEndOverlap.Remove(Handle);
+		}
+	}
+	EndOverlapHandles.clear();
+}
+
+void UScriptComponent::OnBeginOverlapCallback(const FOverlapInfo& OverlapInfo)
+{
+	/*if (!bScriptLoaded)
+		return;*/
+
+	// 상대 Actor 가져오기
+	AActor* OtherActor = OverlapInfo.OverlappingComponent ?
+	                     OverlapInfo.OverlappingComponent->GetOwner() : nullptr;
+
+	if (!OtherActor)
+		return;
+
+	// Lua 함수 호출: OnBeginOverlap(OtherActor)
+	CallLuaFunction("OnBeginOverlap", OtherActor);
+}
+
+void UScriptComponent::OnEndOverlapCallback(const FOverlapInfo& OverlapInfo)
+{
+	/*if (!bScriptLoaded)
+		return;*/
+
+	// 상대 Actor 가져오기
+	AActor* OtherActor = OverlapInfo.OverlappingComponent ?
+	                     OverlapInfo.OverlappingComponent->GetOwner() : nullptr;
+
+	if (!OtherActor)
+		return;
+
+	// Lua 함수 호출: OnEndOverlap(OtherActor)
+	CallLuaFunction("OnEndOverlap", OtherActor);
+}
+
+void UScriptComponent::RegisterPendingCoroutine(const FString& FuncName)
+{
+	PendingCoroutines.push_back(PendingCoroutineData{ FuncName});
+}
+
+void UScriptComponent::MakeCoroutine(const FString& FuncName)
+{
+	sol::state& LuaState = UScriptManager::GetInstance().GetLuaState();
+
+	CoroutineData Data;
+	Data.Thread = sol::thread::create(LuaState);
+	sol::function Func = InstanceEnv[FuncName];
+	if (!Func.valid()) {
+		UE_LOG("Function not found %s", FuncName.c_str());
+		return;
+	}
+	Data.Coroutine = sol::coroutine(Data.Thread.state(), Func);
+	Data.GCRef = sol::make_reference(LuaState, Data.Thread);
+	Data.FuncName = FName(FuncName);
+
+	Coroutines.push_back(Data);
+}
+
+void UScriptComponent::StopCoroutine(const FString& FuncName)
+{
+	FName Name = FName(FuncName);
+	for (int i = Coroutines.size() - 1; i >= 0; --i)
+	{
+		if (Coroutines[i].FuncName == Name)
+		{
+			Coroutines.erase(Coroutines.begin() + i);
+		}
+	}
+}
+
+
+
+//끝났는지 여부 리턴 true = 끝남
+bool UScriptComponent::ResumeCoroutine(CoroutineData& InData)
+{
+	FString name = InData.FuncName.ToString();
+	auto YieldResult = InData.Coroutine();
+
+	sol::thread_status status = InData.Thread.status();
+
+	sol::call_status Status = InData.Coroutine.status();
+	if (Status == sol::call_status::yielded)
+	{
+		if (YieldResult.return_count() > 0)
+		{
+			InData.WaitCondition = YieldResult[0];
+			UE_LOG("Coroutine Resume : %s", InData.FuncName.ToString().c_str());
+		}
+	}
+	else if (Status == sol::call_status::ok)
+	{
+		UE_LOG("Coroutine End : %s", InData.FuncName.ToString().c_str());
+
+		return true;
+	}
+	else
+	{
+		sol::error err = YieldResult;
+		UE_LOG("Coroutine Error : %s \n Reason : %s", InData.FuncName.ToString().c_str(), err.what());
+		return true;
+	}
+	return false;
+}
+
+
+void UScriptComponent::StopAllCoroutine()
+{
+	Coroutines.clear();
+	PendingCoroutines.clear();
 }
