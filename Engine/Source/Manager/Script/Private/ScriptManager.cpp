@@ -389,6 +389,35 @@ void UScriptManager::RegisterCoreTypes()
 		"GetOwner", &UPrimitiveComponent::GetOwner
 	);
 
+
+	//Coroutine WaitCondition
+	lua.new_usertype<FWaitCondition>("FWaitCondition",
+		sol::no_constructor,
+
+		"WaitTime", & FWaitCondition::WaitTime,
+		"WaitType", & FWaitCondition::WaitType
+	);
+	sol::state& LuaState = UScriptManager::GetInstance().GetLuaState();
+	LuaState.set_function("WaitForSeconds", sol::overload(
+		[](float InWaitTime) { return FWaitCondition(InWaitTime); }
+	));
+
+	LuaState.set_function("WaitUntil",
+		[](sol::function luaFunc) {
+			return FWaitCondition([luaFunc]() -> bool {
+				auto result = luaFunc();
+				return result.valid() && result.get<bool>();
+				});
+		}
+	);
+	LuaState.set_function("WaitTick",
+		[]() {
+			return FWaitCondition();
+		}
+	);
+
+
+
 	UE_LOG_INFO("Lua core types registered (Vector, Quaternion, Actor, OverlapInfo, PrimitiveComponent)");
 }
 
@@ -483,6 +512,10 @@ void UScriptManager::RegisterGlobalFunctions()
 	lua["GetTime"] = []() -> float {
 		return UTimeManager::GetInstance().GetGameTime();
 		};
+
+
+
+
 
 	UE_LOG_INFO("Lua global functions registered");
 }

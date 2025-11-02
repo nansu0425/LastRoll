@@ -593,9 +593,6 @@
     <ClCompile Include="Source\Optimization\Private\ViewVolumeCuller.cpp">
       <Filter>Source\Optimization\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Manager\Script\Private\CoroutineManager.cpp">
-      <Filter>Source\Manager\Script\Private</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Global\BVH.h">
@@ -1196,9 +1193,7 @@
     <ClInclude Include="Source\Optimization\Public\ViewVolumeCuller.h">
       <Filter>Source\Optimization\Public</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Manager\Script\Public\CoroutineManager.h">
-      <Filter>Source\Manager\Script\Public</Filter>
-    </ClInclude>
+    <ClInclude Include="Source\Actor\Public\ActorPool.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Asset\Shader\ClusteredRenderingCS.hlsli">

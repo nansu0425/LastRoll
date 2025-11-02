@@ -34,6 +34,20 @@ using JSON = json::JSON;
  * end
  * ```
  */
+
+struct CoroutineData
+{
+	sol::thread Thread;
+	sol::coroutine Coroutine;
+	FWaitCondition WaitCondition;
+	sol::reference GCRef;
+	FName FuncName;
+};
+struct PendingCoroutineData
+{
+	FName FuncName;
+};
+
 UCLASS()
 class UScriptComponent : public UActorComponent
 {
@@ -54,6 +68,8 @@ private:
 	TArray<TPair<UPrimitiveComponent*, FDelegateHandle>> BeginOverlapHandles;
 	TArray<TPair<UPrimitiveComponent*, FDelegateHandle>> EndOverlapHandles;
 
+	TArray<PendingCoroutineData> PendingCoroutines;
+	TArray<CoroutineData> Coroutines;
 public:
 	UScriptComponent();
 	virtual ~UScriptComponent() override;
@@ -133,6 +149,13 @@ private:
 	 * EndOverlap 델리게이트 콜백 (Lua 함수 호출)
 	 */
 	void OnEndOverlapCallback(const FOverlapInfo& OverlapInfo);
+
+	void RegisterPendingCoroutine(const FString& FuncName);
+	void MakeCoroutine(const FString& FuncName);
+	void StopCoroutine(const FString& FuncName);
+	bool ResumeCoroutine(CoroutineData& Coroutine);
+	void Update(const float DeltaTime);
+	void StopAllCoroutine();
 };
 
 // 템플릿 구현

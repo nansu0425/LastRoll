@@ -60,13 +60,13 @@ end
 
 function ChainCoroutine1()
 print("Chain1")
-coroutine.yield(WaitForSeconds(5.0))
+coroutine.yield(WaitForSeconds(2.0))
 StartCoroutine("ChainCoroutine2")
 end
 
 function ChainCoroutine2()
 print("Chain2")
-coroutine.yield(WaitForSeconds(5.0))
+coroutine.yield(WaitForSeconds(2.0))
 StartCoroutine("ChainCoroutine1")
 end
 -- Called once when the Actor begins play

@@ -9,6 +9,34 @@
 // 전방 선언
 class UScriptComponent;
 
+enum class EWaitType
+{
+	None,
+	Time,
+	Lambda,
+};
+
+struct FWaitCondition
+{
+	float WaitTime = 0.0f;
+	EWaitType WaitType = EWaitType::None;
+	std::function<bool()> Lambda;
+	//람다
+	FWaitCondition() = default;
+	FWaitCondition(float InWaitTime)
+	{
+		WaitTime = InWaitTime;
+		WaitType = EWaitType::Time;
+	}
+
+	FWaitCondition(std::function<bool()> InLambda)
+	{
+		Lambda = InLambda;
+		WaitType = EWaitType::Lambda;
+	}
+};
+
+
 struct FLuaScript
 {
 	FString Path;

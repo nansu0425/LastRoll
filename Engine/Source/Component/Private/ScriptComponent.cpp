@@ -3,7 +3,6 @@
 #include "Component/Public/PrimitiveComponent.h"
 #include "Manager/Script/Public/ScriptManager.h"
 #include "Manager/Path/Public/PathManager.h"
-#include "Manager/Script/Public/CoroutineManager.h"
 #include "Actor/Public/Actor.h"
 #include "json.hpp"
 
@@ -18,7 +17,7 @@ UScriptComponent::UScriptComponent()
 
 UScriptComponent::~UScriptComponent()
 {
-	UCoroutineManager::GetInstance().StopAllCoroutine(this);
+	StopAllCoroutine();
 	// CleanupLuaResources();
 }
 
@@ -48,6 +47,49 @@ void UScriptComponent::TickComponent(float DeltaTime)
 	Super::TickComponent(DeltaTime);
 
 	CallLuaFunction("Tick", DeltaTime);
+
+
+	//등록 대기중인 코루틴 등록
+	for (auto& pendingData : PendingCoroutines)
+	{
+		MakeCoroutine(pendingData.FuncName.ToString());
+	}
+	PendingCoroutines.clear();
+
+	int CoroutineCount = Coroutines.size();
+
+	for (int i = Coroutines.size() - 1; i >= 0; --i)
+	{
+		CoroutineData& Data = Coroutines[i];
+		bool bEnd = false;
+		if (Data.WaitCondition.WaitType == EWaitType::Time)
+		{
+			Data.WaitCondition.WaitTime -= DeltaTime;
+			if (Data.WaitCondition.WaitTime <= 0)
+			{
+				Data.WaitCondition.WaitType = EWaitType::None;
+				bEnd = ResumeCoroutine(Data);
+			}
+		}
+		else if (Data.WaitCondition.WaitType == EWaitType::Lambda) {
+			if (Data.WaitCondition.Lambda && Data.WaitCondition.Lambda()) {
+				Data.WaitCondition.WaitType = EWaitType::None;
+				bEnd = ResumeCoroutine(Data);
+			}
+		}
+		else if (Data.WaitCondition.WaitType == EWaitType::None)
+		{
+			bEnd = ResumeCoroutine(Data);
+		}
+
+
+		if (bEnd)
+		{
+			//swap remove 방식으로 변경필요
+			Coroutines.erase(Coroutines.begin() + i);
+		}
+	}
+
 
 }
 
@@ -218,8 +260,18 @@ void UScriptComponent::SetInstanceTable(const sol::table GlobalTable)
 			}
 		};
 
-		UCoroutineManager::GetInstance().RegisterEnvFunc(this, InstanceEnv);
 
+		//StartCoroutine
+		InstanceEnv["StartCoroutine"] = [this](const FString& FuncName)
+			{
+				RegisterPendingCoroutine(FuncName);
+			};
+
+		//StopCoroutine
+		InstanceEnv["StopCoroutine"] = [this](const FString& FuncName)
+			{
+				StopCoroutine(FuncName);
+			};
 	}
 
 	// 3. 스크립트 함수들을 캐싱하고 environment 설정
@@ -372,4 +424,80 @@ void UScriptComponent::OnEndOverlapCallback(const FOverlapInfo& OverlapInfo)
 
 	// Lua 함수 호출: OnEndOverlap(OtherActor)
 	CallLuaFunction("OnEndOverlap", OtherActor);
+}
+
+void UScriptComponent::RegisterPendingCoroutine(const FString& FuncName)
+{
+	PendingCoroutines.push_back(PendingCoroutineData{ FuncName});
+}
+
+void UScriptComponent::MakeCoroutine(const FString& FuncName)
+{
+	sol::state& LuaState = UScriptManager::GetInstance().GetLuaState();
+
+	CoroutineData Data;
+	Data.Thread = sol::thread::create(LuaState);
+	sol::function Func = InstanceEnv[FuncName];
+	if (!Func.valid()) {
+		UE_LOG("Function not found %s", FuncName.c_str());
+		return;
+	}
+	Data.Coroutine = sol::coroutine(Data.Thread.state(), Func);
+	Data.GCRef = sol::make_reference(LuaState, Data.Thread);
+	Data.FuncName = FName(FuncName);
+
+	Coroutines.push_back(Data);
+}
+
+void UScriptComponent::StopCoroutine(const FString& FuncName)
+{
+	FName Name = FName(FuncName);
+	for (int i = Coroutines.size() - 1; i >= 0; --i)
+	{
+		if (Coroutines[i].FuncName == Name)
+		{
+			Coroutines.erase(Coroutines.begin() + i);
+		}
+	}
+}
+
+
+
+//끝났는지 여부 리턴 true = 끝남
+bool UScriptComponent::ResumeCoroutine(CoroutineData& InData)
+{
+	FString name = InData.FuncName.ToString();
+	auto YieldResult = InData.Coroutine();
+
+	sol::thread_status status = InData.Thread.status();
+
+	sol::call_status Status = InData.Coroutine.status();
+	if (Status == sol::call_status::yielded)
+	{
+		if (YieldResult.return_count() > 0)
+		{
+			InData.WaitCondition = YieldResult[0];
+			UE_LOG("Coroutine Resume : %s", InData.FuncName.ToString().c_str());
+		}
+	}
+	else if (Status == sol::call_status::ok)
+	{
+		UE_LOG("Coroutine End : %s", InData.FuncName.ToString().c_str());
+
+		return true;
+	}
+	else
+	{
+		sol::error err = YieldResult;
+		UE_LOG("Coroutine Error : %s \n Reason : %s", InData.FuncName.ToString().c_str(), err.what());
+		return true;
+	}
+	return false;
+}
+
+
+void UScriptComponent::StopAllCoroutine()
+{
+	Coroutines.clear();
+	PendingCoroutines.clear();
 }
