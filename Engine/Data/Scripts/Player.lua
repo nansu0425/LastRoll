@@ -137,16 +137,21 @@ end
 function ShootProjectile()
     -- 마우스 위치 가져오기
     local MouseScreenPos = GetMousePosition()
-    -- 화면 중앙 기준으로 방향 계산 (탑다운 2D 매핑)
-    local MouseWorldDir2D = ScreenToWorldDirection(MouseScreenPos)
+    -- 3D 레이캐스팅으로 마우스 커서의 월드 위치 계산
+    local MouseWorldPos2D = ScreenToWorldPosition(MouseScreenPos, obj.Location.z)
 
     print("========== Shooting Projectile ==========")
     print(string.format("  Mouse Screen Pos: (%.2f, %.2f)", MouseScreenPos.x, MouseScreenPos.y))
-    print(string.format("  Mouse World Dir (2D): (%.4f, %.4f)", MouseWorldDir2D.x, MouseWorldDir2D.y))
+    print(string.format("  Mouse World Pos (2D): (%.4f, %.4f)", MouseWorldPos2D.x, MouseWorldPos2D.y))
     print(string.format("  Player Location: (%.2f, %.2f, %.2f)", obj.Location.x, obj.Location.y, obj.Location.z))
 
-    -- 2D 방향을 3D Vector로 변환 (Z=0)
-    local ShootDirection = Vector(MouseWorldDir2D.x, MouseWorldDir2D.y, 0)
+    -- 플레이어 위치에서 마우스 월드 위치로의 방향 계산
+    local ShootDirection = Vector(
+        MouseWorldPos2D.x - obj.Location.x,
+        MouseWorldPos2D.y - obj.Location.y,
+        0
+    )
+    ShootDirection:Normalize()
     print(string.format("  Shoot Direction (3D): (%.4f, %.4f, %.4f)", ShootDirection.x, ShootDirection.y, ShootDirection.z))
 
     -- ActorPool에서 투사체 가져오기 (AProjectileActor 사용)

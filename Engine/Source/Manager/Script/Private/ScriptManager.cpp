@@ -699,18 +699,71 @@ void UScriptManager::RegisterCoreTypes()
 		return FVector2(mousePos.X, mousePos.Y);
 	};
 
+	// 스크린 좌표 -> 월드 위치 변환 (3D 레이캐스팅 기반)
+	// 스크린 좌표에서 레이를 쏴서 Z=PlayerZ 평면과의 교차점을 계산
+	LuaState["ScreenToWorldPosition"] = [](FVector2 ScreenPos, float PlayerZ) -> FVector2
+	{
+		auto& ViewportManager = UViewportManager::GetInstance();
+		FViewportClient* ViewportClient = ViewportManager.GetClients()[ViewportManager.GetActiveIndex()];
+		FViewport* Viewport = ViewportClient->GetOwningViewport();
+		const FCameraConstants& CamConstant = ViewportClient->GetCamera()->GetFViewProjConstants();
+		FRect Rect = Viewport->GetRect();
+
+		// 1. Screen → Normalized Screen (0~1 범위)
+		float NormalizedX = (ScreenPos.X - static_cast<float>(Rect.Left)) / static_cast<float>(Rect.Width);
+		float NormalizedY = (ScreenPos.Y - static_cast<float>(Rect.Top)) / static_cast<float>(Rect.Height);
+
+		// 2. Normalized Screen → NDC (-1~1 범위)
+		// Y는 반전 (screen Y down = NDC Y up)
+		float NDCX = NormalizedX * 2.0f - 1.0f;
+		float NDCY = (1.0f - NormalizedY) * 2.0f - 1.0f;
+
+		// 3. ViewProjection의 역행렬 계산 (한 번에)
+		// Row-vector system: Clip = World * View * Proj
+		// 역변환: World = Clip * (View * Proj)^-1
+		FMatrix ViewProj = CamConstant.View * CamConstant.Projection;
+		FMatrix InvViewProj = ViewProj.InverseGeneral();  // Use general 4x4 inverse for projection matrices
+
+		// 4. Near plane (Z=0)과 Far plane (Z=1)에서 레이 포인트 생성
+		FVector4 ClipNear = FVector4(NDCX, NDCY, 0.0f, 1.0f);
+		FVector4 ClipFar = FVector4(NDCX, NDCY, 1.0f, 1.0f);
+
+		// 5. Clip → World 변환
+		FVector4 WorldNear = ClipNear * InvViewProj;
+		FVector4 WorldFar = ClipFar * InvViewProj;
+
+		// 6. Perspective divide
+		FVector RayStart = FVector(WorldNear.X / WorldNear.W, WorldNear.Y / WorldNear.W, WorldNear.Z / WorldNear.W);
+		FVector RayEnd = FVector(WorldFar.X / WorldFar.W, WorldFar.Y / WorldFar.W, WorldFar.Z / WorldFar.W);
+
+		// 7. 레이 방향 계산
+		FVector RayDir = RayEnd - RayStart;
+		RayDir.Normalize();
+
+		// 8. 레이와 Z = PlayerZ 평면의 교차점 계산
+		// Ray: P = RayStart + t * RayDir
+		// Plane: Z = PlayerZ
+		// RayStart.Z + t * RayDir.Z = PlayerZ
+		// t = (PlayerZ - RayStart.Z) / RayDir.Z
+		float t = (PlayerZ - RayStart.Z) / RayDir.Z;
+		FVector IntersectionPoint = RayStart + RayDir * t;
+
+		return FVector2(IntersectionPoint.X, IntersectionPoint.Y);
+	};
+
 	// 스크린 좌표 -> 마우스 방향 변환 (탑다운 게임용 - 간단한 2D 매핑)
 	// 화면 중앙을 기준으로 마우스 오프셋을 월드 XY 방향으로 변환
+	// [DEPRECATED] ScreenToWorldPosition을 사용하세요
 	LuaState["ScreenToWorldDirection"] = [](FVector2 ScreenPos) -> FVector2
 	{
 		auto& ViewportManager = UViewportManager::GetInstance();
 		FViewportClient* ViewportClient = ViewportManager.GetClients()[ViewportManager.GetActiveIndex()];
 		FViewport* Viewport = ViewportClient->GetOwningViewport();
 
-		// 화면 크기
+		// 화면 크기 및 중앙 좌표 계산 (Rect.Left, Rect.Top 오프셋 포함)
 		FRect Rect = Viewport->GetRect();
-		float CenterX = static_cast<float>(Rect.Width) * 0.5f;
-		float CenterY = static_cast<float>(Rect.Height) * 0.5f;
+		float CenterX = static_cast<float>(Rect.Left) + static_cast<float>(Rect.Width) * 0.5f;
+		float CenterY = static_cast<float>(Rect.Top) + static_cast<float>(Rect.Height) * 0.5f;
 
 		// 화면 중앙으로부터의 오프셋
 		float OffsetX = ScreenPos.X - CenterX;
