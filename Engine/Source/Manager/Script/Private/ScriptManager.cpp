@@ -154,13 +154,16 @@ bool UScriptManager::LoadLuaScript(const FString& ScriptPath)
 	path BuildScriptPath = PathMgr.GetDataPath() / "Scripts" / ScriptPath.c_str();
 
 	path FullPath;
+	bool bFromEngine = false;
 	if (std::filesystem::exists(EngineScriptPath))
 	{
 		FullPath = EngineScriptPath;
+		bFromEngine = true;
 	}
 	else if (std::filesystem::exists(BuildScriptPath))
 	{
 		FullPath = BuildScriptPath;
+		bFromEngine = false;
 	}
 	else
 	{
@@ -172,7 +175,9 @@ bool UScriptManager::LoadLuaScript(const FString& ScriptPath)
 	auto LastWriteTime = std::filesystem::last_write_time(FullPath, ErrorCode);
 	if (!ErrorCode)
 	{
-		UE_LOG_INFO("루아 스크립트 로드 시작 - %s", ScriptPath.c_str());
+		UE_LOG_INFO("루아 스크립트 로드 시작 - %s (경로: %s)",
+			ScriptPath.c_str(),
+			bFromEngine ? "Engine/Data/Scripts" : "Build/Data/Scripts");
 
 		try
 		{
