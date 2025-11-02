@@ -36,14 +36,13 @@ void USceneHierarchyWidget::Update()
 
 void USceneHierarchyWidget::RenderWidget()
 {
-	// 에디터 UI는 항상 Editor World를 참조해야 함
-	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
-	if (!EditorWorld)
+	// 현재 활성화된 World(PIE 모드면 PIE World, Editor 모드면 Editor World)를 표시
+	if (!GWorld)
 	{
 		return;
 	}
 
-	ULevel* CurrentLevel = EditorWorld->GetLevel();
+	ULevel* CurrentLevel = GWorld->GetLevel();
 
 	if (!CurrentLevel)
 	{

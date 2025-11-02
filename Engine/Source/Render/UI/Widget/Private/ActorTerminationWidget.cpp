@@ -53,6 +53,13 @@ void UActorTerminationWidget::DeleteSelectedActor(AActor* InSelectedActor)
 		return;
 	}
 
+	// 현재 활성화된 World(PIE 모드면 PIE World, Editor 모드면 Editor World)에서 액터 삭제
+	if (!GWorld)
+	{
+		UE_LOG_ERROR("ActorTerminationWidget: GWorld가 유효하지 않습니다");
+		return;
+	}
+
 	ULevel* CurrentLevel = GWorld->GetLevel();
 
 	if (!CurrentLevel)
