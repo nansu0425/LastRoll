@@ -46,10 +46,16 @@ void UObject::Serialize(const bool bInIsLoading, JSON& InOutHandle)
  */
 UObject* UObject::Duplicate()
 {
-	UObject* Object = NewObject(GetClass());
-	// PIE 모드에서 원본 객체의 이름을 유지
-	Object->SetName(this->GetName());
-	DuplicateSubObjects(Object);
+	// NewObject() 대신 CreateDefaultObject()를 사용하여 불필요한 unique name 생성 방지
+	UClass* Class = GetClass();
+	UObject* Object = Class->CreateDefaultObject();
+
+	if (Object)
+	{
+		// PIE 모드에서 원본 객체의 이름을 유지 (unique name 생성 없이 직접 설정)
+		Object->SetName(this->GetName());
+		DuplicateSubObjects(Object);
+	}
 	return Object;
 }
 

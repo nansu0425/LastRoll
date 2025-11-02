@@ -130,6 +130,12 @@ void UEditorEngine::StartPIE()
         WorldContexts.push_back(PIEContext);
 
         GWorld = PIEWorld;
+
+        // PIE 시작 시 Editor World의 Selection 초기화
+        // (Editor World의 Actor/Component가 선택된 상태로 남아있으면 PIE에서 잘못 삭제될 수 있음)
+        GEditor->GetEditorModule()->SelectActor(nullptr);
+        GEditor->GetEditorModule()->SelectComponent(nullptr);
+
         PIEWorld->BeginPlay();
     }
 }
@@ -160,6 +166,11 @@ void UEditorEngine::EndPIE()
 
     // GWorld를 다시 Editor World로 복원
     GWorld = GetEditorWorldContext().World();
+
+    // PIE 종료 시 PIE World의 Selection 초기화
+    // (PIE World가 삭제되었으므로 dangling pointer 방지)
+    GEditor->GetEditorModule()->SelectActor(nullptr);
+    GEditor->GetEditorModule()->SelectComponent(nullptr);
 }
 
 /**

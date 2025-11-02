@@ -51,30 +51,50 @@ public:
 	{
 		static_assert(is_base_of_v<UObject, T>, "생성할 클래스는 UObject를 반드시 상속 받아야 합니다");
 
-		// 2. NewObject를 호출할 때도 템플릿 타입 T를 사용하여 정확한 타입의 컴포넌트를 생성합니다.
-		T* NewComponent = NewObject<T>(this);
-		if (!InName.IsNone()) { NewComponent->SetName(InName); }
+		// NewObject 대신 직접 생성하여 불필요한 unique name 생성 방지
+		T* NewComponent = new T();
 
-		// 3. 컴포넌트 생성이 성공했는지 확인하고 기본 설정을 합니다.
+		// 이름 설정 (InName이 None이면 클래스 이름 사용)
+		if (!InName.IsNone())
+		{
+			NewComponent->SetName(InName);
+		}
+		else
+		{
+			// InName이 없으면 클래스 이름을 기본값으로 사용
+			NewComponent->SetName(FName(T::StaticClass()->GetName().ToString().c_str()));
+		}
+
+		// Outer 설정
+		NewComponent->SetOuter(this);
+
+		// 컴포넌트 등록
 		if (NewComponent)
 		{
 			NewComponent->SetOwner(this);
 			OwnedComponents.push_back(NewComponent);
 		}
 
-		// 4. 정확한 타입(T*)으로 캐스팅 없이 바로 반환합니다.
 		return NewComponent;
 	}
 	
 	UActorComponent* CreateDefaultSubobject(UClass* Class)
 	{
-		UActorComponent* NewComponent = Cast<UActorComponent>(::NewObject(Class, this));
+		// NewObject 대신 CreateDefaultObject를 사용하여 불필요한 unique name 생성 방지
+		UObject* NewObject = Class->CreateDefaultObject();
+		UActorComponent* NewComponent = Cast<UActorComponent>(NewObject);
+
 		if (NewComponent)
 		{
+			// 클래스 이름을 컴포넌트 이름으로 설정
+			NewComponent->SetName(FName(Class->GetName().ToString().c_str()));
+			// Outer 설정
+			NewComponent->SetOuter(this);
+			// 컴포넌트 등록
 			NewComponent->SetOwner(this);
 			OwnedComponents.push_back(NewComponent);
 		}
-		
+
 		return NewComponent;
 	}
 

@@ -402,6 +402,11 @@ void AActor::DuplicateSubObjects(UObject* DuplicatedObject)
 
 	// 생성자에서 생성된 컴포넌트 제거 (중복 방지)
 	// NewObject()가 생성자를 호출하여 CreateDefaultSubobject()로 컴포넌트가 이미 생성되어 있음
+	// ⚠️ 메모리 누수 방지: clear() 전에 반드시 delete 해야 함!
+	for (UActorComponent* Component : DuplicatedActor->OwnedComponents)
+	{
+		SafeDelete(Component);
+	}
 	DuplicatedActor->OwnedComponents.clear();
 	DuplicatedActor->SetRootComponent(nullptr);
 
@@ -415,6 +420,8 @@ void AActor::DuplicateSubObjects(UObject* DuplicatedObject)
 		{
 			UActorComponent* NewComponent = Cast<UActorComponent>(OldComponent->Duplicate());
 			NewComponent->SetOwner(DuplicatedActor);
+			// PIE World의 Component에 Outer 설정 (메모리 추적을 위해)
+			NewComponent->SetOuter(DuplicatedActor);
 			DuplicatedActor->OwnedComponents.push_back(NewComponent);
 			OldToNewComponentMap[OldComponent] = NewComponent;
 		}
@@ -461,6 +468,15 @@ void AActor::DuplicateSubObjectsForEditor(UObject* DuplicatedObject)
 {
 	Super::DuplicateSubObjects(DuplicatedObject);
 	AActor* DuplicatedActor = Cast<AActor>(DuplicatedObject);
+
+	// 생성자에서 생성된 컴포넌트 제거 (중복 방지)
+	// ⚠️ 메모리 누수 방지: clear() 전에 반드시 delete 해야 함!
+	for (UActorComponent* Component : DuplicatedActor->OwnedComponents)
+	{
+		SafeDelete(Component);
+	}
+	DuplicatedActor->OwnedComponents.clear();
+	DuplicatedActor->SetRootComponent(nullptr);
 
 	// { 복제 전 Component, 복제 후 Component }
 	TMap<UActorComponent*, UActorComponent*> OldToNewComponentMap;
