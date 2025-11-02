@@ -168,29 +168,43 @@ bool UScriptManager::LoadLuaScript(const FString& ScriptPath)
 	{
 		UE_LOG_INFO("루아 스크립트 로드 시작 - %s (경로: Build/Data/Scripts)", ScriptPath.c_str());
 
+		bool bCompileSuccess = false;
+		sol::environment env(*LuaState, sol::create, LuaState->globals());
+
 		try
 		{
 			// lua globals를 fallback으로 하는 environment 생성
 			// 스크립트의 함수 정의들은 env에 저장되고, 찾지 못한 것은 globals에서 찾음
-			sol::environment env(*LuaState, sol::create, LuaState->globals());
 
 			// environment 내에서 스크립트 실행
 			LuaState->script_file(BuildScriptPath.string(), env);
 
-			// env 자체가 sol::table을 상속하므로 바로 저장 가능
-			// env에는 스크립트에서 정의한 모든 함수가 들어있음 (Tick, BeginPlay 등)
-			LuaScriptMap[ScriptPath].Path = ScriptPath;
-			LuaScriptMap[ScriptPath].LastCompileTime = LastWriteTime;
-			LuaScriptMap[ScriptPath].GlobalTable = env;
+			bCompileSuccess = true;
 		}
 		catch (const sol::error& e)
 		{
 			UE_LOG_ERROR("Lua compile/load error: %s", e.what());
-			return false;
+			// ✅ 에러가 발생해도 Hot Reload 등록은 계속 진행 (빈 GlobalTable로)
+			// 나중에 수정하면 Hot Reload로 재시도 가능
+			bCompileSuccess = false;
 		}
 
-		UE_LOG_INFO("ScriptManager: Hot Reload 등록 완료 - %s", ScriptPath.c_str());
-		return true;
+		// ✅ CRITICAL: 컴파일 성공 여부와 관계없이 LuaScriptMap에 등록
+		// 컴파일 에러가 발생해도 등록해두면, 나중에 수정했을 때 Hot Reload로 다시 로드 시도
+		LuaScriptMap[ScriptPath].Path = ScriptPath;
+		LuaScriptMap[ScriptPath].LastCompileTime = LastWriteTime;
+		LuaScriptMap[ScriptPath].GlobalTable = bCompileSuccess ? env : LuaState->create_table();
+
+		if (bCompileSuccess)
+		{
+			UE_LOG_SUCCESS("ScriptManager: Hot Reload 등록 완료 - %s", ScriptPath.c_str());
+		}
+		else
+		{
+			UE_LOG_WARNING("ScriptManager: 컴파일 에러 발생했지만 Hot Reload는 등록됨 - %s (수정 후 자동 재로드됨)", ScriptPath.c_str());
+		}
+
+		return bCompileSuccess;
 	}
 	else
 	{
