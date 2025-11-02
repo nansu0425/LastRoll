@@ -738,6 +738,11 @@ void UScriptManager::RegisterGlobalFunctions()
 		UGameUI::GetInstance().TextUI(Text, ScreenPos, Size, Color);
 	};
 
+	lua["DrawHPBar"] = [](const FVector2& ScreenPos, const FVector2& Size, float HPPer)
+	{
+		UGameUI::GetInstance().HPBar(ScreenPos, Size, HPPer);
+	};
+
 
 
 
