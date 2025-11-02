@@ -47,6 +47,8 @@ void UObject::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 UObject* UObject::Duplicate()
 {
 	UObject* Object = NewObject(GetClass());
+	// PIE 모드에서 원본 객체의 이름을 유지
+	Object->SetName(this->GetName());
 	DuplicateSubObjects(Object);
 	return Object;
 }
