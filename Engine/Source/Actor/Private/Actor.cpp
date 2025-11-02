@@ -6,6 +6,7 @@
 #include "Component/Public/LightComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Component/Public/SceneComponent.h"
+#include "Component/Public/ScriptComponent.h"
 #include "Component/Public/UUIDTextComponent.h"
 #include "Editor/Public/Editor.h"
 #include "Level/Public/Level.h"
@@ -605,6 +606,17 @@ void AActor::SetActorEnableCollision(bool bInActorEnableCollision)
 				PrimitiveComponent->SetGenerateOverlapEvents(bInActorEnableCollision);
 				PrimitiveComponent->SetBlockComponent(bInActorEnableCollision);	
 			}
+		}
+	}
+}
+
+void AActor::StopAllCoroutine() const
+{
+	for (UActorComponent* Component : OwnedComponents)
+	{
+		if (UScriptComponent* ScriptComponent = Cast<UScriptComponent>(Component))
+		{
+			ScriptComponent->StopAllCoroutine();
 		}
 	}
 }

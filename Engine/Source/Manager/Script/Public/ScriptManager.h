@@ -146,4 +146,11 @@ private:
 	 * print, ULog 등을 바인딩합니다.
 	 */
 	void RegisterGlobalFunctions();
+
+	/**
+	 * Engine/Data/Scripts에서 Build/[Config]/Data/Scripts로 스크립트 파일 복사
+	 * @param ScriptPath - 복사할 스크립트 상대 경로 (예: "MyScript.lua")
+	 * @return 복사 성공 여부
+	 */
+	bool CopyScriptFromEngineToBuild(const FString& ScriptPath);
 };

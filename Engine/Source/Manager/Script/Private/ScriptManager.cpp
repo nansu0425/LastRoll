@@ -3,9 +3,12 @@
 
 
 // 엔진 인클루드
+#include <random>
+
 #include "Global/Vector.h"
 #include "Global/Quaternion.h"
 #include "Actor/Public/Actor.h"
+#include "Actor/Public/StaticMeshActor.h"
 #include "Component/Public/SceneComponent.h"
 #include "Component/Public/ScriptComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
@@ -101,24 +104,19 @@ sol::table UScriptManager::GetTable(const FString& ScriptPath)
 		LoadLuaScript(ScriptPath);
 	}
 
-	// 스크립트 파일 경로 찾기
+	// ✅ 새 정책: Build/[Config]/Data/Scripts만 사용
 	UPathManager& PathMgr = UPathManager::GetInstance();
-	path EngineScriptPath = PathMgr.GetEngineDataPath() / "Scripts" / ScriptPath.c_str();
 	path BuildScriptPath = PathMgr.GetDataPath() / "Scripts" / ScriptPath.c_str();
 
-	path FullPath;
-	if (std::filesystem::exists(EngineScriptPath))
+	// Build 경로에 없으면 Engine에서 자동 복사 시도
+	if (!std::filesystem::exists(BuildScriptPath))
 	{
-		FullPath = EngineScriptPath;
-	}
-	else if (std::filesystem::exists(BuildScriptPath))
-	{
-		FullPath = BuildScriptPath;
-	}
-	else
-	{
-		UE_LOG_WARNING("ScriptManager: 스크립트 파일을 찾을 수 없음: %s", ScriptPath.c_str());
-		return LuaState->create_table();
+		UE_LOG_INFO("GetTable: Build 경로에 스크립트 없음. Engine에서 복사 시도: %s", ScriptPath.c_str());
+		if (!CopyScriptFromEngineToBuild(ScriptPath))
+		{
+			UE_LOG_WARNING("ScriptManager: 스크립트 파일을 찾을 수 없음: %s", ScriptPath.c_str());
+			return LuaState->create_table();
+		}
 	}
 
 	try
@@ -126,8 +124,8 @@ sol::table UScriptManager::GetTable(const FString& ScriptPath)
 		// 매번 새로운 environment 생성
 		sol::environment new_env(*LuaState, sol::create, LuaState->globals());
 
-		// 스크립트를 이 environment에서 실행
-		LuaState->script_file(FullPath.string(), new_env);
+		// 스크립트를 Build 경로에서 실행
+		LuaState->script_file(BuildScriptPath.string(), new_env);
 
 		return new_env;
 	}
@@ -149,36 +147,26 @@ bool UScriptManager::IsLoadedScript(const FString& ScriptPath)
 
 bool UScriptManager::LoadLuaScript(const FString& ScriptPath)
 {
-	// 파일 수정 시간 기록 (Engine 경로 우선)
+	// ✅ 새 정책: Build/[Config]/Data/Scripts만 사용
 	UPathManager& PathMgr = UPathManager::GetInstance();
-	path EngineScriptPath = PathMgr.GetEngineDataPath() / "Scripts" / ScriptPath.c_str();
 	path BuildScriptPath = PathMgr.GetDataPath() / "Scripts" / ScriptPath.c_str();
 
-	path FullPath;
-	bool bFromEngine = false;
-	if (std::filesystem::exists(EngineScriptPath))
+	// Build 경로에 없으면 Engine에서 자동 복사 시도
+	if (!std::filesystem::exists(BuildScriptPath))
 	{
-		FullPath = EngineScriptPath;
-		bFromEngine = true;
-	}
-	else if (std::filesystem::exists(BuildScriptPath))
-	{
-		FullPath = BuildScriptPath;
-		bFromEngine = false;
-	}
-	else
-	{
-		UE_LOG_WARNING("ScriptManager: 스크립트 파일을 찾을 수 없어 Hot Reload 등록 실패: %s", ScriptPath.c_str());
-		return false;
+		UE_LOG_INFO("LoadLuaScript: Build 경로에 스크립트 없음. Engine에서 복사 시도: %s", ScriptPath.c_str());
+		if (!CopyScriptFromEngineToBuild(ScriptPath))
+		{
+			UE_LOG_WARNING("ScriptManager: 스크립트 파일을 찾을 수 없어 Hot Reload 등록 실패: %s", ScriptPath.c_str());
+			return false;
+		}
 	}
 
 	std::error_code ErrorCode;
-	auto LastWriteTime = std::filesystem::last_write_time(FullPath, ErrorCode);
+	auto LastWriteTime = std::filesystem::last_write_time(BuildScriptPath, ErrorCode);
 	if (!ErrorCode)
 	{
-		UE_LOG_INFO("루아 스크립트 로드 시작 - %s (경로: %s)",
-			ScriptPath.c_str(),
-			bFromEngine ? "Engine/Data/Scripts" : "Build/Data/Scripts");
+		UE_LOG_INFO("루아 스크립트 로드 시작 - %s (경로: Build/Data/Scripts)", ScriptPath.c_str());
 
 		try
 		{
@@ -187,7 +175,7 @@ bool UScriptManager::LoadLuaScript(const FString& ScriptPath)
 			sol::environment env(*LuaState, sol::create, LuaState->globals());
 
 			// environment 내에서 스크립트 실행
-			LuaState->script_file(FullPath.string(), env);
+			LuaState->script_file(BuildScriptPath.string(), env);
 
 			// env 자체가 sol::table을 상속하므로 바로 저장 가능
 			// env에는 스크립트에서 정의한 모든 함수가 들어있음 (Tick, BeginPlay 등)
@@ -404,22 +392,10 @@ void UScriptManager::RegisterCoreTypes()
 			UE_LOG("Actor %s Location: (%.2f, %.2f, %.2f)",
 				self->GetName().ToString().c_str(), loc.X, loc.Y, loc.Z);
 		},
-		"GetComponent", [](AActor* self, const FString& ClassName) -> UActorComponent*
-		{
-			UClass* TargetClass = UClass::FindClass(ClassName);
-			if (!TargetClass)
-			{
-				UE_LOG_WARNING("Actor:GetComponent: UClass '%s'를 찾을 수 없습니다.", ClassName.c_str());
-				return nullptr;
-			}
-
-			return self->GetComponentByClass(TargetClass);
-		},
-		"GetPrimitiveComponent", [](AActor* self) -> UPrimitiveComponent*
-		{
-			UClass* TargetClass = UClass::FindClass("UPrimitiveComponent");
-			return Cast<UPrimitiveComponent>(self->GetComponentByClass(TargetClass));
-		}
+		"SetCanTick", &AActor::SetCanTick,
+		"SetActorHiddenInGame", &AActor::SetActorHiddenInGame,
+		"SetActorEnableCollision", &AActor::SetActorEnableCollision,
+		"StopAllCoroutine", &AActor::StopAllCoroutine
 	);
 
 	// ====================================================================
@@ -557,8 +533,10 @@ void UScriptManager::RegisterCoreTypes()
 		}
 	);
 
+	// ====================================================================
+	// Coroutine 
+	// ====================================================================
 
-	//Coroutine WaitCondition
 	lua.new_usertype<FWaitCondition>("WaitCondition",
 		sol::no_constructor,
 
@@ -583,26 +561,77 @@ void UScriptManager::RegisterCoreTypes()
 			return FWaitCondition();
 		}
 	);
+	
+	// ====================================================================
+	// World
+	// ====================================================================
 
+	LuaState["SpawnActor"] = []() -> AActor*
+	{
+		return GWorld->SpawnActor(AActor::StaticClass());
+	};
+
+	LuaState["SpawnActorByName"] = [](const FString& ActorName) -> AActor*
+	{
+		UClass* ActorClass = UClass::FindClass(ActorName);
+		if (ActorClass == nullptr)
+		{
+			UE_LOG_ERROR("SpawnActorByName: 액터 '%s'를 찾을 수 없습니다.", ActorName.c_str());
+			return nullptr;
+		}
+		return GWorld->SpawnActor(ActorClass);
+	};
+
+	LuaState["SpawnActorFromScript"] = [](const FString& ScriptName) -> AActor*
+	{
+		AActor* Actor = GWorld->SpawnActor(AStaticMeshActor::StaticClass());
+		UScriptComponent* ScriptComponent = static_cast<UScriptComponent*>(Actor->AddComponent(UScriptComponent::StaticClass()));
+		ScriptComponent->SetScriptPath(ScriptName);
+		ScriptComponent->BeginPlay();
+		return Actor;
+	};
+
+	LuaState["SpawnActorByNameFromScript"] = [](const FString& ActorName, const FString& ScriptName) -> AActor*
+	{
+		UClass* ActorClass = UClass::FindClass(ActorName);
+		if (ActorClass == nullptr)
+		{
+			UE_LOG_ERROR("SpawnActorByName: 액터 '%s'를 찾을 수 없습니다.", ActorName.c_str());
+			return nullptr;
+		}
+		AActor* Actor = GWorld->SpawnActor(ActorClass);
+		UScriptComponent* ScriptComponent = static_cast<UScriptComponent*>(Actor->AddComponent(UScriptComponent::StaticClass()));
+		ScriptComponent->SetScriptPath(ScriptName);
+		ScriptComponent->BeginPlay();
+		return Actor;
+	};
+
+	// ====================================================================
+	// Player 
+	// ====================================================================
+	
 	LuaState.new_enum("EKeyInput",
 		"W", EKeyInput::W,
 		"A", EKeyInput::A,
 		"S", EKeyInput::S,
 		"D", EKeyInput::D);
 
-	LuaState["IsKeyDown"] = [](EKeyInput InputKey)->bool {
+	LuaState["IsKeyDown"] = [](EKeyInput InputKey) -> bool
+	{
 		return UInputManager::GetInstance().IsKeyDown(InputKey);
-		};
-	LuaState["IsKeyPressed"] = [](EKeyInput InputKey)->bool {
+	};
+	LuaState["IsKeyPressed"] = [](EKeyInput InputKey) -> bool
+	{
 		return UInputManager::GetInstance().IsKeyPressed(InputKey);
-		};
-	LuaState["IsKeyReleased"] = [](EKeyInput InputKey)->bool {
+	};
+	LuaState["IsKeyReleased"] = [](EKeyInput InputKey) -> bool
+	{
 		return UInputManager::GetInstance().IsKeyReleased(InputKey);
-		};
-	LuaState["GetMouseDelta"] = []()->FVector 
+	};
+	LuaState["GetMouseDelta"] = []() -> FVector 
 		{
 		return UInputManager::GetInstance().GetMouseDelta();
-		};
+	};
 	lua.new_usertype<UCamera>("Camera",
 		"Location", sol::property(&UCamera::GetLocation, &UCamera::SetLocation),
 		"Rotation", sol::property(&UCamera::GetRotation, &UCamera::SetRotation),
@@ -611,34 +640,46 @@ void UScriptManager::RegisterCoreTypes()
 		"Up", sol::property(&UCamera::GetUp)
 	);
 	LuaState["GetCamera"] = []()->UCamera*
-		{
-			auto& ViewportManager = UViewportManager::GetInstance();
-			const auto& Viewports = ViewportManager.GetViewports();
-			const auto& Clients = ViewportManager.GetClients();
-			return Clients[ViewportManager.GetActiveIndex()]->GetCamera();
-		};
+	{
+		auto& ViewportManager = UViewportManager::GetInstance();
+		const auto& Viewports = ViewportManager.GetViewports();
+		const auto& Clients = ViewportManager.GetClients();
+		return Clients[ViewportManager.GetActiveIndex()]->GetCamera();
+	};
 	LuaState["WorldToScreenPos"] = [](FVector WorldPos)->FVector2
-		{
-			auto& ViewportManager = UViewportManager::GetInstance();
-			const auto& Viewports = ViewportManager.GetViewports();
-			const auto& Clients = ViewportManager.GetClients();
-			FViewportClient* ViewportClient = Clients[ViewportManager.GetActiveIndex()];
-			FViewport* Viewport = ViewportClient->GetOwningViewport();
-			const FCameraConstants& CamConstant = ViewportClient->GetCamera()->GetFViewProjConstants();
+	{
+		auto& ViewportManager = UViewportManager::GetInstance();
+		const auto& Viewports = ViewportManager.GetViewports();
+		const auto& Clients = ViewportManager.GetClients();
+		FViewportClient* ViewportClient = Clients[ViewportManager.GetActiveIndex()];
+		FViewport* Viewport = ViewportClient->GetOwningViewport();
+		const FCameraConstants& CamConstant = ViewportClient->GetCamera()->GetFViewProjConstants();
 
-			FVector4 ViewPos = FVector4(WorldPos, 1) * CamConstant.View;
-			FVector4 ClipPos = ViewPos * CamConstant.Projection;
-			FVector2 NDC = FVector2(ClipPos.X / ClipPos.W, ClipPos.Y / ClipPos.W);
-			FVector2 ScreenUV = NDC * 0.5f + FVector2(0.5f, 0.5f);
-			ScreenUV.Y = 1 - ScreenUV.Y;
-			FRect Rect = Viewport->GetRect();
-			FVector2 ScreenPos = FVector2(Rect.Left + Rect.Width * ScreenUV.X, Rect.Top + Rect.Height * ScreenUV.Y);
-			return ScreenPos;
-		};
+		FVector4 ViewPos = FVector4(WorldPos, 1) * CamConstant.View;
+		FVector4 ClipPos = ViewPos * CamConstant.Projection;
+		FVector2 NDC = FVector2(ClipPos.X / ClipPos.W, ClipPos.Y / ClipPos.W);
+		FVector2 ScreenUV = NDC * 0.5f + FVector2(0.5f, 0.5f);
+		ScreenUV.Y = 1 - ScreenUV.Y;
+		FRect Rect = Viewport->GetRect();
+		FVector2 ScreenPos = FVector2(Rect.Left + Rect.Width * ScreenUV.X, Rect.Top + Rect.Height * ScreenUV.Y);
+		return ScreenPos;
+	};
 
 
 
 	UE_LOG_INFO("Lua core types registered (Vector, Quaternion, Actor, OverlapInfo, PrimitiveComponent)");
+
+	// ====================================================================
+	// Helper Functions
+	// ====================================================================
+	
+	LuaState["Random"] = [](float MinValue, float MaxValue) -> float
+	{
+		std::random_device RandomDevice;
+		std::mt19937 RandomGenerator(RandomDevice());
+		std::uniform_real_distribution<float> Distribution(MinValue, MaxValue);
+		return Distribution(RandomGenerator);
+	};
 }
 
 void UScriptManager::RegisterGlobalFunctions()
@@ -737,17 +778,54 @@ void UScriptManager::RegisterGlobalFunctions()
 	{
 		UGameUI::GetInstance().TextUI(Text, ScreenPos, Size, Color);
 	};
-
 	lua["DrawHPBar"] = [](const FVector2& ScreenPos, const FVector2& Size, float HPPer)
 	{
 		UGameUI::GetInstance().HPBar(ScreenPos, Size, HPPer);
 	};
 
 
-
-
-
 	UE_LOG_INFO("Lua global functions registered");
+}
+
+bool UScriptManager::CopyScriptFromEngineToBuild(const FString& ScriptPath)
+{
+	UPathManager& PathMgr = UPathManager::GetInstance();
+
+	// 소스 경로: Engine/Data/Scripts
+	path SourcePath = PathMgr.GetEngineDataPath() / "Scripts" / ScriptPath.c_str();
+
+	// 대상 경로: Build/[Config]/Data/Scripts
+	path DestPath = PathMgr.GetDataPath() / "Scripts" / ScriptPath.c_str();
+
+	// 소스 파일이 존재하는지 확인
+	if (!std::filesystem::exists(SourcePath))
+	{
+		UE_LOG_WARNING("CopyScript: 소스 스크립트를 찾을 수 없음: %s", SourcePath.string().c_str());
+		return false;
+	}
+	try
+	{
+		// 대상 디렉토리 생성 (없는 경우)
+		path DestDir = DestPath.parent_path();
+		if (!std::filesystem::exists(DestDir))
+		{
+			std::filesystem::create_directories(DestDir);
+			UE_LOG_INFO("CopyScript: 대상 디렉토리 생성: %s", DestDir.string().c_str());
+		}
+
+		// 파일 복사 (덮어쓰기)
+		std::filesystem::copy_file(SourcePath, DestPath, std::filesystem::copy_options::overwrite_existing);
+
+		UE_LOG_SUCCESS("CopyScript: 스크립트 복사 완료 - %s → Build/Data/Scripts/%s",
+			ScriptPath.c_str(), ScriptPath.c_str());
+
+		return true;
+	}
+	catch (const std::exception& e)
+	{
+		UE_LOG_ERROR("CopyScript: 스크립트 복사 중 오류 발생: %s", e.what());
+		return false;
+	}
 }
 
 /*-----------------------------------------------------------------------------
@@ -765,37 +843,51 @@ TSet<FString> UScriptManager::GatherHotReloadTargets()
 		const FString& ScriptPath = Pair.first;
 		const auto& CachedLastWriteTime = Pair.second.LastCompileTime;
 
-		// Engine 경로 우선 확인
+		// ✅ 새 정책: Engine 스크립트 변경 감지 → Build로 자동 복사
 		path EngineScriptPath = PathMgr.GetEngineDataPath() / "Scripts" / ScriptPath.c_str();
 		path BuildScriptPath = PathMgr.GetDataPath() / "Scripts" / ScriptPath.c_str();
 
-		path FullPath;
+		bool bNeedsCopy = false;
+
+		// Engine 경로에 스크립트가 존재하는 경우
 		if (std::filesystem::exists(EngineScriptPath))
 		{
-			FullPath = EngineScriptPath;
+			std::error_code ErrorCode;
+			auto EngineLastWriteTime = std::filesystem::last_write_time(EngineScriptPath, ErrorCode);
+
+			if (!ErrorCode)
+			{
+				// Engine 스크립트가 변경되었는지 확인
+				if (EngineLastWriteTime != CachedLastWriteTime)
+				{
+					// Engine에서 Build로 복사
+					if (CopyScriptFromEngineToBuild(ScriptPath))
+					{
+						bNeedsCopy = true;
+						UE_LOG_INFO("GatherHotReloadTargets: Engine 스크립트 변경 감지 및 복사 완료 - %s", ScriptPath.c_str());
+					}
+				}
+			}
 		}
-		else if (std::filesystem::exists(BuildScriptPath))
-		{
-			FullPath = BuildScriptPath;
-		}
-		else
+
+		// Build 경로 확인 (복사 후 또는 독립적으로 존재)
+		if (!std::filesystem::exists(BuildScriptPath))
 		{
 			continue;
 		}
 
-		// 현재 수정 시간 조회
+		// 현재 Build 스크립트 수정 시간 조회
 		std::error_code ErrorCode;
-		auto CurrentLastWriteTime = std::filesystem::last_write_time(FullPath, ErrorCode);
+		auto BuildLastWriteTime = std::filesystem::last_write_time(BuildScriptPath, ErrorCode);
 		if (ErrorCode)
 		{
 			continue;
 		}
 
-		// 시간 비교
-		if (CurrentLastWriteTime != CachedLastWriteTime)
+		// Build 스크립트가 변경되었으면 Hot Reload 대상 추가
+		if (BuildLastWriteTime != CachedLastWriteTime || bNeedsCopy)
 		{
 			HotReloadTargets.insert(ScriptPath);
-			// 수정 시간 업데이트
 		}
 	}
 

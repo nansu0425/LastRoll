@@ -95,20 +95,20 @@ void UWorld::Tick(float DeltaTimes)
 
 	if (WorldType == EWorldType::Game || WorldType == EWorldType::PIE)
 	{
-		for (AActor* Actor : Level->GetLevelActors())
+		auto& LevelActors = Level->GetLevelActors();
+		for (int32 i = 0; i < LevelActors.size(); ++i)
 		{
-			if(Actor->CanTick())
+			if(LevelActors[i]->CanTick())
 			{
-				Actor->Tick(DeltaTimes);
+				LevelActors[i]->Tick(DeltaTimes);
 			}
 
-			if (Actor->IsPendingDestroy())
+			if (LevelActors[i]->IsPendingDestroy())
 			{
-				DestroyActor(Actor);
+				DestroyActor(LevelActors[i]);
 			}
 		}
 	}
-
 	// 충돌 감지 업데이트
 	UpdateCollisions();
 }
