@@ -9,6 +9,7 @@
 #include "Global/Quaternion.h"
 #include "Actor/Public/Actor.h"
 #include "Actor/Public/StaticMeshActor.h"
+#include "Component/Public/ActorComponent.h"
 #include "Component/Public/SceneComponent.h"
 #include "Component/Public/ScriptComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
@@ -409,7 +410,24 @@ void UScriptManager::RegisterCoreTypes()
 		"SetCanTick", &AActor::SetCanTick,
 		"SetActorHiddenInGame", &AActor::SetActorHiddenInGame,
 		"SetActorEnableCollision", &AActor::SetActorEnableCollision,
-		"StopAllCoroutine", &AActor::StopAllCoroutine
+		"StopAllCoroutine", &AActor::StopAllCoroutine,
+
+		// Component access
+		"GetComponent", [](AActor* self, const std::string& ClassName) -> UActorComponent* {
+			UClass* ComponentClass = UClass::FindClass(FName(ClassName.c_str()));
+			if (!ComponentClass)
+			{
+				UE_LOG_WARNING("GetComponent: Class '%s' not found", ClassName.c_str());
+				return nullptr;
+			}
+			return self->GetComponentByClass(ComponentClass);
+		},
+
+		// ScriptComponent 전용 접근 메서드 (타입 안전)
+		"GetScriptComponent", [](AActor* self) -> UScriptComponent* {
+			UActorComponent* Component = self->GetComponentByClass(UScriptComponent::StaticClass());
+			return Cast<UScriptComponent>(Component);
+		}
 	);
 
 	// ====================================================================
@@ -548,7 +566,32 @@ void UScriptManager::RegisterCoreTypes()
 	);
 
 	// ====================================================================
-	// Coroutine 
+	// UActorComponent - 컴포넌트 기본 클래스
+	// ====================================================================
+	lua.new_usertype<UActorComponent>("ActorComponent",
+		sol::no_constructor,
+
+		// Methods
+		"GetOwner", &UActorComponent::GetOwner
+	);
+
+	// ====================================================================
+	// UScriptComponent - Lua 스크립팅 컴포넌트
+	// ====================================================================
+	lua.new_usertype<UScriptComponent>("ScriptComponent",
+		sol::no_constructor,
+
+		// 상속 관계 명시 (UActorComponent 상속)
+		sol::base_classes, sol::bases<UActorComponent>(),
+
+		// Methods
+		"GetEnv", &UScriptComponent::GetEnv,
+		"SetScriptPath", &UScriptComponent::SetScriptPath,
+		"BeginPlay", &UScriptComponent::BeginPlay
+	);
+
+	// ====================================================================
+	// Coroutine
 	// ====================================================================
 
 	lua.new_usertype<FWaitCondition>("WaitCondition",
@@ -628,7 +671,9 @@ void UScriptManager::RegisterCoreTypes()
 		"W", EKeyInput::W,
 		"A", EKeyInput::A,
 		"S", EKeyInput::S,
-		"D", EKeyInput::D);
+		"D", EKeyInput::D,
+		"MouseLeft", EKeyInput::MouseLeft,
+		"MouseRight", EKeyInput::MouseRight);
 
 	LuaState["IsKeyDown"] = [](EKeyInput InputKey) -> bool
 	{
@@ -642,10 +687,55 @@ void UScriptManager::RegisterCoreTypes()
 	{
 		return UInputManager::GetInstance().IsKeyReleased(InputKey);
 	};
-	LuaState["GetMouseDelta"] = []() -> FVector 
+	LuaState["GetMouseDelta"] = []() -> FVector
 		{
 		return UInputManager::GetInstance().GetMouseDelta();
 	};
+
+	// 마우스 스크린 위치 가져오기
+	LuaState["GetMousePosition"] = []() -> FVector2
+	{
+		FVector mousePos = UInputManager::GetInstance().GetMousePosition();
+		return FVector2(mousePos.X, mousePos.Y);
+	};
+
+	// 스크린 좌표 -> 마우스 방향 변환 (탑다운 게임용 - 간단한 2D 매핑)
+	// 화면 중앙을 기준으로 마우스 오프셋을 월드 XY 방향으로 변환
+	LuaState["ScreenToWorldDirection"] = [](FVector2 ScreenPos) -> FVector2
+	{
+		auto& ViewportManager = UViewportManager::GetInstance();
+		FViewportClient* ViewportClient = ViewportManager.GetClients()[ViewportManager.GetActiveIndex()];
+		FViewport* Viewport = ViewportClient->GetOwningViewport();
+
+		// 화면 크기
+		FRect Rect = Viewport->GetRect();
+		float CenterX = static_cast<float>(Rect.Width) * 0.5f;
+		float CenterY = static_cast<float>(Rect.Height) * 0.5f;
+
+		// 화면 중앙으로부터의 오프셋
+		float OffsetX = ScreenPos.X - CenterX;
+		float OffsetY = ScreenPos.Y - CenterY;
+
+		// 탑다운 뷰 매핑:
+		// Screen X+ (오른쪽) → World Y+ (오른쪽)
+		// Screen Y+ (아래) → World X- (뒤)
+		// Screen Y- (위) → World X+ (앞)
+		FVector2 WorldDir = FVector2(
+			-OffsetY,  // Screen Y 반전 → World X
+			OffsetX    // Screen X → World Y
+		);
+
+		// 정규화
+		float Length = sqrtf(WorldDir.X * WorldDir.X + WorldDir.Y * WorldDir.Y);
+		if (Length > 0.0f)
+		{
+			WorldDir.X /= Length;
+			WorldDir.Y /= Length;
+		}
+
+		return WorldDir;
+	};
+
 	lua.new_usertype<UCamera>("Camera",
 		"Location", sol::property(&UCamera::GetLocation, &UCamera::SetLocation),
 		"Rotation", sol::property(&UCamera::GetRotation, &UCamera::SetRotation),

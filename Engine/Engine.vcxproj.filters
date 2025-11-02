@@ -512,6 +512,9 @@
     <ClCompile Include="Source\Actor\Private\PointLight.cpp">
       <Filter>Source\Actor\Private</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Actor\Private\ProjectileActor.cpp">
+      <Filter>Source\Actor\Private</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Actor\Private\SphereActor.cpp">
       <Filter>Source\Actor\Private</Filter>
     </ClCompile>
@@ -1082,6 +1085,9 @@
     <ClInclude Include="Source\Actor\Public\PointLight.h">
       <Filter>Source\Actor\Public</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Actor\Public\ProjectileActor.h">
+      <Filter>Source\Actor\Public</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Actor\Public\SphereActor.h">
       <Filter>Source\Actor\Public</Filter>
     </ClInclude>
@@ -1193,7 +1199,9 @@
     <ClInclude Include="Source\Optimization\Public\ViewVolumeCuller.h">
       <Filter>Source\Optimization\Public</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Actor\Public\ActorPool.h" />
+    <ClInclude Include="Source\Actor\Public\ActorPool.h">
+      <Filter>Source\Actor\Public</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Asset\Shader\ClusteredRenderingCS.hlsli">

@@ -232,9 +232,9 @@
       <AdditionalDependencies>$(SolutionDir)External\Library\Lua\lua54.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /Y
-xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /Y
-xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /Y</Command>
+      <Command>xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /D /Y
+xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /D /Y
+xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewerDebug|x64'">
@@ -257,9 +257,9 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /Y</Command>
       <AdditionalDependencies>$(SolutionDir)External\Library\Lua\lua54.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /Y
-xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /Y
-xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /Y</Command>
+      <Command>xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /D /Y
+xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /D /Y
+xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -284,9 +284,9 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /Y</Command>
       <AdditionalDependencies>$(SolutionDir)External\Library\Lua\lua54.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /Y
-xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /Y
-xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /Y</Command>
+      <Command>xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /D /Y
+xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /D /Y
+xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">
@@ -311,9 +311,9 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /Y</Command>
       <AdditionalDependencies>$(SolutionDir)External\Library\Lua\lua54.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /Y
-xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /Y
-xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /Y</Command>
+      <Command>xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /D /Y
+xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /D /Y
+xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -330,6 +330,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /Y</Command>
     <ClInclude Include="Source\Actor\Public\Light.h" />
     <ClInclude Include="Source\Actor\Public\MovingCubeActor.h" />
     <ClInclude Include="Source\Actor\Public\PointLight.h" />
+    <ClInclude Include="Source\Actor\Public\ProjectileActor.h" />
     <ClInclude Include="Source\Actor\Public\SphereActor.h" />
     <ClInclude Include="Source\Actor\Public\SpotLight.h" />
     <ClInclude Include="Source\Actor\Public\StaticMeshActor.h">
@@ -637,6 +638,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /Y</Command>
     <ClCompile Include="Source\Actor\Private\MovingCubeActor.cpp">
     </ClCompile>
     <ClCompile Include="Source\Actor\Private\PointLight.cpp" />
+    <ClCompile Include="Source\Actor\Private\ProjectileActor.cpp" />
     <ClCompile Include="Source\Actor\Private\SphereActor.cpp" />
     <ClCompile Include="Source\Actor\Private\SpotLight.cpp" />
     <ClCompile Include="Source\Actor\Private\StaticMeshActor.cpp">

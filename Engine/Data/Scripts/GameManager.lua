@@ -68,7 +68,10 @@ end
 
 -- Called once when the Actor ends play
 function EndPlay()
-
+    -- PIE 종료 시 ActorPool 정리 (중요!)
+    local ActorPool = require("Data/Scripts/ActorPool")
+    ActorPool:Clear()
+    print("GameManager: ActorPool cleared on EndPlay")
 end
 
 -- ==============================================================================
