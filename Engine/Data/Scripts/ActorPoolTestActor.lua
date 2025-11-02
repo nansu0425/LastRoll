@@ -1,35 +1,31 @@
-local Util = require("Data\\Scripts\\Util")
+-- ==============================================================================
+-- ActorPoolTestActor.lua
+-- ==============================================================================
+-- 액터풀 테스트용 예제 코드 
+-- ==============================================================================
 
-if _G.PlayerData == nil then
-_G.PlayerData = {}
-end
+local LifeSpan = 1.0
 
-_G.PlayerData.PlayerPos = Vector(0,0,0)
-
-
-
+-- Called once when the Actor begins play
 function BeginPlay()
     -- Initialize custom properties
-    --obj.Velocity = Vector(10, 0, 0)
-    --obj.Speed = 100.0
+    obj.Velocity = Vector(10, 0, 0)
+    obj.Speed = 100.0
     obj.OverlapCount = 0
-    obj.Speed = 9
-    obj.MaxHP = 100.0
-    obj.HP = 100.0
-    obj.Dmg = 10
+
     print("Actor started: " .. obj.UUID)
 end
 
 -- Called every frame
 -- @param dt: Delta time in seconds
 function Tick(dt)
-    if _G.GameData.GameState ~= EGameState.Playing then
-        return
+    LifeSpan = LifeSpan - dt
+    if LifeSpan <= 0 then 
+        print("End!")
+        LifeSpan = 1.0
+        local TestPool = require("Data/Scripts/ActorPool")
+        TestPool:Return(Owner)
     end
-    Move(dt)  
-    HPPer = obj.HP / obj.MaxHP
-    Util.RenderHPBar(obj.Location, Vector2(70, 20), HPPer)
-    --Util.MakeDamageText(100, obj.Location)
 end
 
 -- Called once when the Actor ends play
@@ -69,37 +65,4 @@ function OnEndOverlap(OtherActor)
 
     -- Example: Resume movement after overlap
     -- obj.Velocity = Vector(10, 0, 0)
-end
-
-
-
-
-
-
-function TopCamera()
-TargetPos = obj.Location
-GetCamera().Location = TargetPos + Vector(-2,0,10)
-GetCamera().Rotation = Vector(0,-70,0)
-end
-
-function Move(dt)
-
-MoveDir = Vector(0,0,0)
-if IsKeyDown(EKeyInput.W) then
-MoveDir.x = MoveDir.x + 1
-end
-if IsKeyDown(EKeyInput.A) then
-MoveDir.y = MoveDir.y - 1
-end
-if IsKeyDown(EKeyInput.S) then
-MoveDir.x = MoveDir.x - 1
-end
-if IsKeyDown(EKeyInput.D) then
-MoveDir.y = MoveDir.y + 1
-end
-
-MoveDir:Normalize()
-obj.Location = obj.Location + MoveDir * obj.Speed * dt
- _G.PlayerData.PlayerPos = obj.Location
-TopCamera()
 end
