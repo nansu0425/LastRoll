@@ -36,14 +36,13 @@ void USceneHierarchyWidget::Update()
 
 void USceneHierarchyWidget::RenderWidget()
 {
-	// 에디터 UI는 항상 Editor World를 참조해야 함
-	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
-	if (!EditorWorld)
+	// 현재 활성화된 World(PIE 모드면 PIE World, Editor 모드면 Editor World)를 표시
+	if (!GWorld)
 	{
 		return;
 	}
 
-	ULevel* CurrentLevel = EditorWorld->GetLevel();
+	ULevel* CurrentLevel = GWorld->GetLevel();
 
 	if (!CurrentLevel)
 	{
@@ -150,8 +149,8 @@ void USceneHierarchyWidget::RenderActorInfo(AActor* InActor, int32 InIndex)
 
 	ImGui::PushID(InIndex);
 
-	// 현재 선택된 Actor인지 확인
-	bool bIsSelected = (GEditor->GetEditorModule()->GetSelectedActor() == InActor);
+	// 현재 선택된 Actor인지 확인 (현재 World 기준)
+	bool bIsSelected = (GEditor->GetEditorModule()->GetSelectedActorForCurrentWorld() == InActor);
 
 	// 선택된 Actor는 하이라이트
 	if (bIsSelected)
@@ -343,11 +342,23 @@ void USceneHierarchyWidget::RenderActorInfo(AActor* InActor, int32 InIndex)
 void USceneHierarchyWidget::SelectActor(AActor* InActor, bool bInFocusCamera)
 {
 	UEditor* Editor = GEditor->GetEditorModule();
-	Editor->SelectActor(InActor);
-	UE_LOG("SceneHierarchy: %s를 선택했습니다", InActor->GetName().ToString().data());
 
-	// 카메라 포커싱은 더블 클릭에서만 수행
-	if (InActor && bInFocusCamera)
+	// PIE 모드인지 확인하여 적절한 선택 함수 호출
+	if (GEditor->IsPIESessionActive())
+	{
+		Editor->SelectPIEActor(InActor);
+		UE_LOG("SceneHierarchy: PIE World에서 %s를 선택했습니다",
+			InActor ? InActor->GetName().ToString().data() : "nullptr");
+	}
+	else
+	{
+		Editor->SelectActor(InActor);
+		UE_LOG("SceneHierarchy: Editor World에서 %s를 선택했습니다",
+			InActor ? InActor->GetName().ToString().data() : "nullptr");
+	}
+
+	// 카메라 포커싱은 더블 클릭에서만 수행 (Editor 모드에서만)
+	if (InActor && bInFocusCamera && !GEditor->IsPIESessionActive())
 	{
 		GEditor->GetEditorModule()->FocusOnSelectedActor();
 		UE_LOG_SUCCESS("SceneHierarchy: %s에 카메라 포커싱 완료", InActor->GetName().ToString().data());

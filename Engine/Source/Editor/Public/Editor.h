@@ -47,6 +47,30 @@ public:
 	UBatchLines* GetBatchLines() { return &BatchLines; }
 	UGizmo* GetGizmo() { return &Gizmo; }
 
+	/**
+	 * @brief 현재 활성화된 World(GWorld)에 해당하는 선택된 Actor 반환
+	 * PIE 모드면 PIESelectedActor, Editor 모드면 SelectedActor 반환
+	 */
+	AActor* GetSelectedActorForCurrentWorld() const;
+
+	/**
+	 * @brief 현재 활성화된 World(GWorld)에 해당하는 선택된 Component 반환
+	 * PIE 모드면 PIESelectedComponent, Editor 모드면 SelectedComponent 반환
+	 */
+	UActorComponent* GetSelectedComponentForCurrentWorld() const;
+
+	/**
+	 * @brief PIE World의 Actor 선택 (아웃라이너에서 PIE World Actor 선택 시 사용)
+	 */
+	void SelectPIEActor(AActor* InActor);
+	void SelectPIEActorAndComponent(AActor* InActor, UActorComponent* InComponent);
+	void SelectPIEComponent(UActorComponent* InComponent);
+
+	/**
+	 * @brief PIE 선택 상태 초기화 (PIE 시작/종료 시 호출)
+	 */
+	void ClearPIESelection();
+
 	void SetViewMode(EViewModeIndex InNewViewMode) { CurrentViewMode = InNewViewMode; }
 
 	// Pilot Mode Public Interface
@@ -54,11 +78,18 @@ public:
 
 private:
 	UObjectPicker ObjectPicker;
-	AActor* SelectedActor = nullptr; // 선택된 액터
-	UActorComponent* SelectedComponent = nullptr; // 선택된 컴포넌트
+
+	// Editor World 선택 상태
+	AActor* SelectedActor = nullptr; // 선택된 액터 (Editor World)
+	UActorComponent* SelectedComponent = nullptr; // 선택된 컴포넌트 (Editor World)
+
+	// PIE World 선택 상태
+	AActor* PIESelectedActor = nullptr; // 선택된 액터 (PIE World)
+	UActorComponent* PIESelectedComponent = nullptr; // 선택된 컴포넌트 (PIE World)
 
 	// 선택 타입 (Actor vs Component)
 	bool bIsActorSelected = true; // true: Actor 선택 (Root Component), false: Component 선택
+	bool bIsPIEActorSelected = true; // PIE World용 선택 타입
 
 	// Alt + 드래그 복사 모드
 	bool bIsInCopyMode = false; // Alt 키 누른 상태로 드래그 시작 시 true
