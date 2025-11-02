@@ -18,6 +18,14 @@ UScriptComponent::UScriptComponent()
 UScriptComponent::~UScriptComponent()
 {
 	StopAllCoroutine();
+
+	// CRITICAL: ScriptManager에서 등록 해제 (댕글링 포인터 방지)
+	// EndPlay()가 호출되지 않는 경우를 대비 (Editor에서 컴포넌트 삭제 시)
+	if (!ScriptPath.empty())
+	{
+		UScriptManager::GetInstance().UnregisterScriptComponent(ScriptPath, this);
+	}
+
 	// CleanupLuaResources();
 }
 
