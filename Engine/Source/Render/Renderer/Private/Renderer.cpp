@@ -925,7 +925,8 @@ void URenderer::Update()
 
         bool bIsPIEViewport = GEditor->IsPIESessionActive() &&
                                ViewportIndex == UViewportManager::GetInstance().GetPIEActiveViewportIndex();
-        if (!bIsPIEViewport)
+        //if (!bIsPIEViewport) // pie에서 ui를 띄우기 위해 임시로 주석
+        if (true)
         {
             FRect SingleWindowRect = Viewport->GetRect();
             const int32 ViewportToolBarHeight = 32;

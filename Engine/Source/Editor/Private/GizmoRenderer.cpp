@@ -7,6 +7,8 @@
 #include "Manager/Asset/Public/AssetManager.h"
 #include "Manager/UI/Public/ViewportManager.h"
 #include "Render/Renderer/Public/Renderer.h"
+#include "Level/Public/World.h"
+#include "Level/Public/Level.h"
 
 void FGizmoBatchRenderer::AddMesh(const TArray<FNormalVertex>& InVertices, const TArray<uint32>& InIndices,
                                    const FVector4& InColor, const FVector& InLocation,
@@ -88,7 +90,42 @@ void FGizmoBatchRenderer::Clear()
 
 void UGizmo::RenderGizmo(UCamera* InCamera, const D3D11_VIEWPORT& InViewport)
 {
-	TargetComponent = Cast<USceneComponent>(GEditor->GetEditorModule()->GetSelectedComponent());
+	// CRITICAL: Gizmo는 항상 Editor World만 렌더링
+	// PIE 모드에서는 PIESelectedComponent가 아닌 Editor World의 SelectedComponent를 사용
+	UActorComponent* SelectedComp = GEditor->GetEditorModule()->GetSelectedComponent();
+
+	// CRITICAL: SelectedComponent가 Editor World에 실제로 속하는지 안전하게 검증
+	// dangling pointer 접근을 방지하기 위해 EditorWorld의 Actor 목록에서 Component를 찾음
+	bool bIsValidComponent = false;
+	if (SelectedComp)
+	{
+		UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+		if (EditorWorld && EditorWorld->GetLevel())
+		{
+			const auto& LevelActors = EditorWorld->GetLevel()->GetLevelActors();
+			for (AActor* Actor : LevelActors)
+			{
+				if (Actor && !Actor->IsPendingDestroy())
+				{
+					const auto& Components = Actor->GetOwnedComponents();
+					auto it = std::find(Components.begin(), Components.end(), SelectedComp);
+					if (it != Components.end())
+					{
+						bIsValidComponent = true;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	if (!bIsValidComponent)
+	{
+		TargetComponent = nullptr;
+		return;
+	}
+
+	TargetComponent = Cast<USceneComponent>(SelectedComp);
 	if (!TargetComponent || !InCamera)
 	{
 		return;

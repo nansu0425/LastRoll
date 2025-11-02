@@ -27,11 +27,19 @@ ULevel::ULevel()
 ULevel::~ULevel()
 {
 	// LevelActors 배열에 남아있는 모든 액터의 메모리를 해제합니다.
-	for (const auto& Actor : LevelActors)
+	// 소멸자에서는 DestroyActor()를 호출하지 않고 직접 정리 (iterator invalidation 방지)
+	for (AActor* Actor : LevelActors)
 	{
-		DestroyActor(Actor);
+		if (Actor)
+		{
+			// Actor의 EndPlay 호출
+			Actor->EndPlay();
+			// Actor 삭제 (내부 컴포넌트들도 소멸자에서 정리됨)
+			SafeDelete(Actor);
+		}
 	}
 	LevelActors.clear();
+	LightComponents.clear();
 
 	// 모든 액터 객체가 삭제되었으므로, 포인터를 담고 있던 컨테이너들을 비웁니다.
 	SafeDelete(StaticOctree);
@@ -313,6 +321,8 @@ void ULevel::DuplicateSubObjects(UObject* DuplicatedObject)
 	for (AActor* Actor : LevelActors)
 	{
 		AActor* DuplicatedActor = Cast<AActor>(Actor->Duplicate());
+		// PIE World의 Actor에 Outer 설정 (메모리 추적을 위해)
+		DuplicatedActor->SetOuter(DuplicatedLevel);
 		DuplicatedLevel->LevelActors.push_back(DuplicatedActor);
 		DuplicatedLevel->AddLevelComponent(DuplicatedActor);
 	}

@@ -345,6 +345,11 @@ void UWorld::DuplicateSubObjects(UObject* DuplicatedObject)
 	Super::DuplicateSubObjects(DuplicatedObject);
 	UWorld* World = Cast<UWorld>(DuplicatedObject);
 	World->Level = Cast<ULevel>(Level->Duplicate());
+	// PIE World의 Level에 Outer 설정 (메모리 추적을 위해)
+	if (World->Level)
+	{
+		World->Level->SetOuter(World);
+	}
 }
 
 void UWorld::CreateNewLevel(const FName& InLevelName)
