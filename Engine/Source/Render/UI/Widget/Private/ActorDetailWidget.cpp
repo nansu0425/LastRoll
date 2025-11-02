@@ -46,7 +46,8 @@ void UActorDetailWidget::RenderWidget()
 		return;
 	}
 
-	AActor* SelectedActor = GEditor->GetEditorModule()->GetSelectedActor();
+	// 현재 World에 맞는 선택된 Actor 사용 (PIE 모드면 PIE World Actor, Editor 모드면 Editor World Actor)
+	AActor* SelectedActor = GEditor->GetEditorModule()->GetSelectedActorForCurrentWorld();
 	if (!SelectedActor)
 	{
 		ImGui::TextUnformatted("No Object Selected");
@@ -355,7 +356,17 @@ void UActorDetailWidget::RenderSceneComponents(USceneComponent* InSceneComponent
 	if (ImGui::IsItemClicked())
 	{
 		SelectedComponent = InSceneComponent;
-		GEditor->GetEditorModule()->SelectComponent(SelectedComponent);
+
+		// CRITICAL: PIE 모드인지 확인하여 적절한 선택 함수 호출
+		// PIE 모드에서는 PIE World Component를 Editor World SelectedComponent에 저장하면 안됨!
+		if (GEditor->IsPIESessionActive())
+		{
+			GEditor->GetEditorModule()->SelectPIEComponent(SelectedComponent);
+		}
+		else
+		{
+			GEditor->GetEditorModule()->SelectComponent(SelectedComponent);
+		}
 	}
 
 	// -----------------------------
@@ -395,7 +406,17 @@ void UActorDetailWidget::RenderActorComponent(UActorComponent* InActorComponent)
 	if (ImGui::IsItemClicked())
 	{
 		SelectedComponent = InActorComponent;
-		GEditor->GetEditorModule()->SelectComponent(SelectedComponent);
+
+		// CRITICAL: PIE 모드인지 확인하여 적절한 선택 함수 호출
+		// PIE 모드에서는 PIE World Component를 Editor World SelectedComponent에 저장하면 안됨!
+		if (GEditor->IsPIESessionActive())
+		{
+			GEditor->GetEditorModule()->SelectPIEComponent(SelectedComponent);
+		}
+		else
+		{
+			GEditor->GetEditorModule()->SelectComponent(SelectedComponent);
+		}
 	}
 
 	if (bNodeOpen)
