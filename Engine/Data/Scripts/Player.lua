@@ -1,10 +1,12 @@
-
+local Util = require("Data\\Scripts\\Util")
 
 if _G.PlayerData == nil then
 _G.PlayerData = {}
 end
 
 _G.PlayerData.PlayerPos = Vector(0,0,0)
+
+
 
 function BeginPlay()
     -- Initialize custom properties

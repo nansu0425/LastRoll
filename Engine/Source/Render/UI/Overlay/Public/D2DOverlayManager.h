@@ -45,6 +45,8 @@ public:
 	 */
 	void FlushAndRender();
 
+	void PIEFlushAndRender();
+
 private:
 	FD2DOverlayManager() = default;
 	~FD2DOverlayManager() = default;

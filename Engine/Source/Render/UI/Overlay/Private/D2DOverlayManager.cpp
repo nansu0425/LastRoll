@@ -7,10 +7,10 @@ void FD2DOverlayManager::BeginCollect(UCamera* InCamera, const D3D11_VIEWPORT& I
 	CurrentCamera = InCamera;
 	CurrentViewport = InViewport;
 
-	LineCommands.clear();
-	EllipseCommands.clear();
-	RectangleCommands.clear();
-	TextCommands.clear();
+	//LineCommands.clear();
+	//EllipseCommands.clear();
+	//RectangleCommands.clear();
+	//TextCommands.clear();
 }
 
 void FD2DOverlayManager::AddLine(const D2D1_POINT_2F& Start, const D2D1_POINT_2F& End, const D2D1_COLOR_F& Color, float Thickness)

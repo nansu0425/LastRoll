@@ -221,7 +221,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <AdditionalIncludeDirectories>$(ProjectDir)Source;$(SolutionDir)External\Include;$(SolutionDir)External\Include\Lua</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -246,7 +246,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /Y</Command>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <AdditionalIncludeDirectories>$(ProjectDir)Source;$(SolutionDir)External\Include;$(SolutionDir)External\Include\Lua</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -273,7 +273,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /Y</Command>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <AdditionalIncludeDirectories>$(ProjectDir)Source;$(SolutionDir)External\Include;$(SolutionDir)External\Include\Lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -300,7 +300,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /Y</Command>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <AdditionalIncludeDirectories>$(ProjectDir)Source;$(SolutionDir)External\Include;$(SolutionDir)External\Include\Lua</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -470,6 +470,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /Y</Command>
     <ClInclude Include="Source\Render\RenderPass\Public\TextPass.h" />
     <ClInclude Include="Source\Render\Shadow\Public\PSMBounding.h" />
     <ClInclude Include="Source\Render\Shadow\Public\PSMCalculator.h" />
+    <ClInclude Include="Source\Render\UI\GameUI\Public\GameUI.h" />
     <ClInclude Include="Source\Render\UI\Overlay\Public\D2DOverlayManager.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\ShadowMapFilterPass.h" />
     <ClInclude Include="Source\Texture\Public\ShadowMapResources.h" />
@@ -761,6 +762,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /Y</Command>
     <ClCompile Include="Source\Render\RenderPass\Private\ShadowMapFilterPass.cpp" />
     <ClCompile Include="Source\Render\Shadow\Private\PSMBounding.cpp" />
     <ClCompile Include="Source\Render\Shadow\Private\PSMCalculator.cpp" />
+    <ClCompile Include="Source\Render\UI\GameUI\Private\GameUI.cpp" />
     <ClCompile Include="Source\Render\UI\Overlay\Private\D2DOverlayManager.cpp" />
     <ClCompile Include="Source\Render\UI\Overlay\Private\StatOverlay.cpp" />
     <ClCompile Include="Source\Texture\Private\ShadowMapResources.cpp" />
