@@ -14,7 +14,8 @@ function BeginPlay()
     --obj.Speed = 100.0
     obj.OverlapCount = 0
     obj.Speed = 9
-    obj.HP = 100
+    obj.MaxHP = 100.0
+    obj.HP = 100.0
     obj.Dmg = 10
     print("Actor started: " .. obj.UUID)
 end
@@ -23,6 +24,9 @@ end
 -- @param dt: Delta time in seconds
 function Tick(dt)
     Move(dt)  
+    HPPer = obj.HP / obj.MaxHP
+    Util.RenderHPBar(obj.Location, Vector2(70, 20), HPPer)
+
 end
 
 -- Called once when the Actor ends play

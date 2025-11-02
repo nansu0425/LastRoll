@@ -778,6 +778,11 @@ void UScriptManager::RegisterGlobalFunctions()
 	{
 		UGameUI::GetInstance().TextUI(Text, ScreenPos, Size, Color);
 	};
+	lua["DrawHPBar"] = [](const FVector2& ScreenPos, const FVector2& Size, float HPPer)
+	{
+		UGameUI::GetInstance().HPBar(ScreenPos, Size, HPPer);
+	};
+
 
 	UE_LOG_INFO("Lua global functions registered");
 }
@@ -798,7 +803,6 @@ bool UScriptManager::CopyScriptFromEngineToBuild(const FString& ScriptPath)
 		UE_LOG_WARNING("CopyScript: 소스 스크립트를 찾을 수 없음: %s", SourcePath.string().c_str());
 		return false;
 	}
-
 	try
 	{
 		// 대상 디렉토리 생성 (없는 경우)
