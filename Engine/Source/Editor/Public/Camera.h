@@ -49,7 +49,6 @@ public:
 	void SetForward(const FVector& InForward) { Forward = InForward; }
 	void SetUp(const FVector& InUp) { Up = InUp; }
 	void SetRight(const FVector& InRight) { Right = InRight; }
-
 	/**
 	 * @brief Getter
 	 */

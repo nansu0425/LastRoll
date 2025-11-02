@@ -13,6 +13,11 @@
 #include "Manager/Time/Public/TimeManager.h"
 #include "Manager/Path/Public/PathManager.h"
 #include "Render/UI/Window/Public/ConsoleWindow.h"
+#include "Manager/Input/Public/InputManager.h"
+#include "Manager/UI/Public/ViewportManager.h"
+#include "Render/UI/Viewport/Public/Viewport.h"
+#include "Render/UI/Viewport/Public/ViewportClient.h"
+#include "Source/Editor/Public/Camera.h"
 
 IMPLEMENT_SINGLETON_CLASS(UScriptManager, UObject)
 
@@ -391,7 +396,7 @@ void UScriptManager::RegisterCoreTypes()
 
 
 	//Coroutine WaitCondition
-	lua.new_usertype<FWaitCondition>("FWaitCondition",
+	lua.new_usertype<FWaitCondition>("WaitCondition",
 		sol::no_constructor,
 
 		"WaitTime", & FWaitCondition::WaitTime,
@@ -415,6 +420,40 @@ void UScriptManager::RegisterCoreTypes()
 			return FWaitCondition();
 		}
 	);
+
+	LuaState.new_enum("EKeyInput",
+		"W", EKeyInput::W,
+		"A", EKeyInput::A,
+		"S", EKeyInput::S,
+		"D", EKeyInput::D);
+
+	LuaState["IsKeyDown"] = [](EKeyInput InputKey)->bool {
+		return UInputManager::GetInstance().IsKeyDown(InputKey);
+		};
+	LuaState["IsKeyPressed"] = [](EKeyInput InputKey)->bool {
+		return UInputManager::GetInstance().IsKeyPressed(InputKey);
+		};
+	LuaState["IsKeyReleased"] = [](EKeyInput InputKey)->bool {
+		return UInputManager::GetInstance().IsKeyReleased(InputKey);
+		};
+	LuaState["GetMouseDelta"] = []()->FVector 
+		{
+		return UInputManager::GetInstance().GetMouseDelta();
+		};
+	lua.new_usertype<UCamera>("Camera",
+		"Location", sol::property(&UCamera::GetLocation, &UCamera::SetLocation),
+		"Rotation", sol::property(&UCamera::GetRotation, &UCamera::SetRotation),
+		"Forward", sol::property(&UCamera::GetForward),
+		"Right", sol::property(&UCamera::GetRight),
+		"Up", sol::property(&UCamera::GetUp)
+	);
+	LuaState["GetCamera"] = []()->UCamera*
+		{
+			auto& ViewportManager = UViewportManager::GetInstance();
+			const auto& Viewports = ViewportManager.GetViewports();
+			const auto& Clients = ViewportManager.GetClients();
+			return Clients[ViewportManager.GetActiveIndex()]->GetCamera();
+		};
 
 
 
