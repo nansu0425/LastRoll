@@ -13,6 +13,11 @@
 #include "Manager/Time/Public/TimeManager.h"
 #include "Manager/Path/Public/PathManager.h"
 #include "Render/UI/Window/Public/ConsoleWindow.h"
+#include "Manager/Input/Public/InputManager.h"
+#include "Manager/UI/Public/ViewportManager.h"
+#include "Render/UI/Viewport/Public/Viewport.h"
+#include "Render/UI/Viewport/Public/ViewportClient.h"
+#include "Source/Editor/Public/Camera.h"
 
 IMPLEMENT_SINGLETON_CLASS(UScriptManager, UObject)
 
@@ -337,6 +342,22 @@ void UScriptManager::RegisterCoreTypes()
 			FVector loc = self->GetActorLocation();
 			UE_LOG("Actor %s Location: (%.2f, %.2f, %.2f)",
 				self->GetName().ToString().c_str(), loc.X, loc.Y, loc.Z);
+		},
+		"GetComponent", [](AActor* self, const FString& ClassName) -> UActorComponent*
+		{
+			UClass* TargetClass = UClass::FindClass(ClassName);
+			if (!TargetClass)
+			{
+				UE_LOG_WARNING("Actor:GetComponent: UClass '%s'를 찾을 수 없습니다.", ClassName.c_str());
+				return nullptr;
+			}
+
+			return self->GetComponentByClass(TargetClass);
+		},
+		"GetPrimitiveComponent", [](AActor* self) -> UPrimitiveComponent*
+		{
+			UClass* TargetClass = UClass::FindClass("UPrimitiveComponent");
+			return Cast<UPrimitiveComponent>(self->GetComponentByClass(TargetClass));
 		}
 	);
 
@@ -386,12 +407,98 @@ void UScriptManager::RegisterCoreTypes()
 		"IsOverlappingComponent", &UPrimitiveComponent::IsOverlappingComponent,
 
 		// Inherited from UActorComponent
-		"GetOwner", &UPrimitiveComponent::GetOwner
+		"GetOwner", &UPrimitiveComponent::GetOwner,
+
+		"BindBeginOverlap",
+		[] (UPrimitiveComponent* PrimitiveComponent, UScriptComponent* ScriptComponent, sol::function LuaFunc) 
+		{
+			if (!PrimitiveComponent || !ScriptComponent)
+			{
+				UE_LOG_ERROR("BindBeginOverlap: 유효하지 않은 컴포넌트가 전달되었습니다.");
+				return;
+			}
+
+			if (!LuaFunc.valid())
+			{
+				UE_LOG_ERROR("BindBeginOverlap: 유효하지 않은 Lua 함수가 전달되었습니다.");
+				return;
+			}
+
+			auto WrapperLambda = [LuaFuncCaptured = std::move(LuaFunc)] (const FOverlapInfo& Info)
+			{
+				if (!LuaFuncCaptured.valid())
+				{
+					return;
+				}
+
+				AActor* OtherActor = Info.OverlappingComponent ?
+									 Info.OverlappingComponent->GetOwner() : nullptr;
+
+				sol::protected_function_result  Result = LuaFuncCaptured(OtherActor);
+				if (!Result.valid())
+				{
+					sol::error Error = Result;
+					UE_LOG_ERROR("Lua [BindBeginOverlap] Error: %s", Error.what());
+				}
+			};
+
+			PrimitiveComponent->OnComponentBeginOverlap.AddWeakLambda(
+				ScriptComponent,
+				std::move(WrapperLambda)
+			);
+
+			PrimitiveComponent->OnComponentBeginOverlap.AddLambda(
+				[](const FOverlapInfo& Info) { UE_LOG("Hello World!"); }
+			);
+
+			UE_LOG_DEBUG("BindBeginOverlap: Lua 함수가 C++ 델리게이트에 바인딩되었습니다.");
+		},
+
+		"BindEndOverlap",
+		[] (UPrimitiveComponent* PrimitiveComponent, UScriptComponent* ScriptComponent, sol::function LuaFunc)
+		{
+			if (!PrimitiveComponent || !ScriptComponent)
+			{
+				UE_LOG_ERROR("BindEndOverlap: 유효하지 않은 컴포넌트가 전달되었습니다.");
+				return;
+			}
+
+			if (!LuaFunc.valid())
+			{
+				UE_LOG_ERROR("BindEndOverlap: 유효하지 않은 Lua 함수가 전달되었습니다.");
+				return;
+			}
+
+			auto WrapperLambda = [LuaFuncCaptured = std::move(LuaFunc)] (const FOverlapInfo& Info)
+			{
+				if (!LuaFuncCaptured.valid())
+				{
+					return;
+				}
+
+				AActor* OtherActor = Info.OverlappingComponent ?
+									 Info.OverlappingComponent->GetOwner() : nullptr;
+
+				sol::protected_function_result  Result = LuaFuncCaptured(OtherActor);
+				if (!Result.valid())
+				{
+					sol::error Error = Result;
+					UE_LOG_ERROR("Lua [BindEndOverlap] Error: %s", Error.what());
+				}
+			};
+
+			PrimitiveComponent->OnComponentEndOverlap.AddWeakLambda(
+				ScriptComponent,
+				std::move(WrapperLambda)
+			);
+
+			UE_LOG_DEBUG("BindEndOverlap: Lua 함수가 C++ 델리게이트에 바인딩되었습니다.");
+		}
 	);
 
 
 	//Coroutine WaitCondition
-	lua.new_usertype<FWaitCondition>("FWaitCondition",
+	lua.new_usertype<FWaitCondition>("WaitCondition",
 		sol::no_constructor,
 
 		"WaitTime", & FWaitCondition::WaitTime,
@@ -415,6 +522,40 @@ void UScriptManager::RegisterCoreTypes()
 			return FWaitCondition();
 		}
 	);
+
+	LuaState.new_enum("EKeyInput",
+		"W", EKeyInput::W,
+		"A", EKeyInput::A,
+		"S", EKeyInput::S,
+		"D", EKeyInput::D);
+
+	LuaState["IsKeyDown"] = [](EKeyInput InputKey)->bool {
+		return UInputManager::GetInstance().IsKeyDown(InputKey);
+		};
+	LuaState["IsKeyPressed"] = [](EKeyInput InputKey)->bool {
+		return UInputManager::GetInstance().IsKeyPressed(InputKey);
+		};
+	LuaState["IsKeyReleased"] = [](EKeyInput InputKey)->bool {
+		return UInputManager::GetInstance().IsKeyReleased(InputKey);
+		};
+	LuaState["GetMouseDelta"] = []()->FVector 
+		{
+		return UInputManager::GetInstance().GetMouseDelta();
+		};
+	lua.new_usertype<UCamera>("Camera",
+		"Location", sol::property(&UCamera::GetLocation, &UCamera::SetLocation),
+		"Rotation", sol::property(&UCamera::GetRotation, &UCamera::SetRotation),
+		"Forward", sol::property(&UCamera::GetForward),
+		"Right", sol::property(&UCamera::GetRight),
+		"Up", sol::property(&UCamera::GetUp)
+	);
+	LuaState["GetCamera"] = []()->UCamera*
+		{
+			auto& ViewportManager = UViewportManager::GetInstance();
+			const auto& Viewports = ViewportManager.GetViewports();
+			const auto& Clients = ViewportManager.GetClients();
+			return Clients[ViewportManager.GetActiveIndex()]->GetCamera();
+		};
 
 
 

@@ -37,9 +37,6 @@ void UScriptComponent::BeginPlay()
 
 	// BeginPlay 호출
 	CallLuaFunction("BeginPlay");
-
-	// Overlap 델리게이트 바인딩
-	BindOverlapDelegates();
 }
 
 void UScriptComponent::TickComponent(float DeltaTime)
@@ -47,7 +44,6 @@ void UScriptComponent::TickComponent(float DeltaTime)
 	Super::TickComponent(DeltaTime);
 
 	CallLuaFunction("Tick", DeltaTime);
-
 
 	//등록 대기중인 코루틴 등록
 	for (auto& pendingData : PendingCoroutines)
@@ -97,9 +93,6 @@ void UScriptComponent::EndPlay()
 {
 	// EndPlay 호출
 	CallLuaFunction("EndPlay");
-
-	// Overlap 델리게이트 해제
-	UnbindOverlapDelegates();
 
 	// ScriptManager에서 등록 해제
 	if (!ScriptPath.empty())
@@ -156,6 +149,8 @@ void UScriptComponent::SetInstanceTable(const sol::table GlobalTable)
 	// 1. Instance Environment 생성 (GlobalTable을 fallback으로)
 	//    Environment chain: InstanceEnv -> GlobalTable(ScriptEnv) -> lua.globals()
 	InstanceEnv = sol::environment(lua, sol::create, GlobalTable);
+
+	InstanceEnv["self"] = this;
 
 	// 2. Instance 데이터 설정
 	AActor* owner = GetOwner();
@@ -259,7 +254,33 @@ void UScriptComponent::SetInstanceTable(const sol::table GlobalTable)
 				UE_LOG("Location: (%.2f, %.2f, %.2f)", loc.X, loc.Y, loc.Z);
 			}
 		};
+		InstanceEnv["GetComponent"] = [this](const FString& ClassName) -> UActorComponent*
+		{
+			AActor* Owner = GetOwner();
+			UClass* TargetClass = UClass::FindClass(ClassName);
+			if (!TargetClass)
+			{
+				UE_LOG_WARNING("Actor:GetComponent: UClass '%s'를 찾을 수 없습니다.", ClassName.c_str());
+				return nullptr;
+			}
 
+			return Owner->GetComponentByClass(TargetClass);
+		};
+		InstanceEnv["GetPrimitiveComponentByName"] = [this](const FString& ComponentName) -> UPrimitiveComponent*
+		{
+			AActor* Owner = GetOwner();
+			for (UActorComponent* ActorComponent : Owner->GetOwnedComponents())
+			{
+				if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(ActorComponent))
+				{
+					if (PrimitiveComponent->GetName().ToString() == ComponentName)
+					{
+						return PrimitiveComponent;
+					}
+				}
+			}
+			return nullptr;
+		};
 
 		//StartCoroutine
 		InstanceEnv["StartCoroutine"] = [this](const FString& FuncName)

@@ -285,14 +285,6 @@ void UPrimitiveComponent::UpdateOverlaps(const TArray<UPrimitiveComponent*>& All
 		if (It == OverlapInfos.end())
 		{
 			OnComponentBeginOverlap.Broadcast(NewInfo);
-			// 새로 겹침 - 로그 출력
-			// AActor* MyOwner = GetOwner();
-			// AActor* OtherOwner = NewInfo.OverlappingComponent->GetOwner();
-			// UE_LOG_SUCCESS("BeginOverlap: [%s]%s <-> [%s]%s",
-			// 	MyOwner ? MyOwner->GetName().ToString().c_str() : "None",
-			// 	GetName().ToString().c_str(),
-			// 	OtherOwner ? OtherOwner->GetName().ToString().c_str() : "None",
-			// 	NewInfo.OverlappingComponent->GetName().ToString().c_str());
 		}
 	}
 
@@ -303,14 +295,6 @@ void UPrimitiveComponent::UpdateOverlaps(const TArray<UPrimitiveComponent*>& All
 		if (It == NewOverlapInfos.end())
 		{
 			OnComponentEndOverlap.Broadcast(OldInfo);
-			// 분리됨 - 로그 출력
-			// AActor* MyOwner = GetOwner();
-			// AActor* OtherOwner = OldInfo.OverlappingComponent->GetOwner();
-			// UE_LOG_WARNING("EndOverlap: [%s]%s <-> [%s]%s",
-			// 	MyOwner ? MyOwner->GetName().ToString().c_str() : "None",
-			// 	GetName().ToString().c_str(),
-			// 	OtherOwner ? OtherOwner->GetName().ToString().c_str() : "None",
-			// 	OldInfo.OverlappingComponent->GetName().ToString().c_str());
 		}
 	}
 

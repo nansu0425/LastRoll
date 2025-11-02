@@ -533,6 +533,22 @@ void AActor::Tick(float DeltaTimes)
 	}
 }
 
+UActorComponent* AActor::GetComponentByClass(UClass* ComponentClass) const
+{
+	UActorComponent* FoundComponent = nullptr;
+	
+	for (UActorComponent* Component : OwnedComponents)
+	{
+		if (Component && Component->GetClass()->IsChildOf(ComponentClass))
+		{
+			FoundComponent = Component;
+			break;
+		}
+	}
+
+	return FoundComponent;
+}
+
 void AActor::BeginPlay()
 {
 	if (bBegunPlay) return;
