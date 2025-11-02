@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Public/Object.h"
 #include "Component/Public/ActorComponent.h"
+#include "Component/Public/PrimitiveComponent.h"
 #include "Component/Public/SceneComponent.h"
 #include "Core/Public/NewObject.h"
 
@@ -38,6 +39,7 @@ public:
 
 	// Getter & Setter
 	USceneComponent* GetRootComponent() const { return RootComponent; }
+	UActorComponent* GetComponentByClass(UClass* ComponentClass) const;
 	TArray<UActorComponent*>& GetOwnedComponents()  { return OwnedComponents; }
 
 	void SetRootComponent(USceneComponent* InOwnedComponents) { RootComponent = InOwnedComponents; }

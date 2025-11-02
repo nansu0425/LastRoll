@@ -113,26 +113,6 @@ private:
 	 * Lua 리소스 정리
 	 */
 	// void CleanupLuaResources();
-
-	/**
-	 * Owner Actor의 모든 PrimitiveComponent에 Overlap 델리게이트 바인딩
-	 */
-	void BindOverlapDelegates();
-
-	/**
-	 * 모든 Overlap 델리게이트 바인딩 해제
-	 */
-	void UnbindOverlapDelegates();
-
-	/**
-	 * BeginOverlap 델리게이트 콜백 (Lua 함수 호출)
-	 */
-	void OnBeginOverlapCallback(const FOverlapInfo& OverlapInfo);
-
-	/**
-	 * EndOverlap 델리게이트 콜백 (Lua 함수 호출)
-	 */
-	void OnEndOverlapCallback(const FOverlapInfo& OverlapInfo);
 };
 
 // 템플릿 구현
