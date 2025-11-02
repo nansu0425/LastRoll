@@ -4,12 +4,17 @@
 
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Component/Public/ScriptComponent.h"
+#include "Component/Shape/Public/SphereComponent.h"
 
 IMPLEMENT_CLASS(AEnemy, AActor)
 
 AEnemy::AEnemy()
 {
+    // ScriptComponent 생성
     EnemyScriptComponent = CreateDefaultSubobject<UScriptComponent>();
+
+    // SphereComponent 생성 (충돌 감지용)
+    SphereCollider = CreateDefaultSubobject<USphereComponent>();
 }
 
 UClass* AEnemy::GetDefaultRootComponent()
@@ -20,10 +25,18 @@ UClass* AEnemy::GetDefaultRootComponent()
 void AEnemy::InitializeComponents()
 {
     AActor::InitializeComponents();
-    
+
     auto StaticMeshComponent = Cast<UStaticMeshComponent>(GetRootComponent());
-    
+
     StaticMeshComponent->SetStaticMesh("Data/Apple.obj");
-    
+
+    // SphereCollider를 RootComponent에 부착
+    SphereCollider->AttachToComponent(StaticMeshComponent);
+
+    // SphereCollider 설정
+    SphereCollider->SetSphereRadius(1.0f);  // Enemy 충돌 반지름
+    SphereCollider->SetGenerateOverlapEvents(true);  // Overlap 이벤트 활성화
+    SphereCollider->SetBlockComponent(false);  // Block 비활성화 (Overlap만 사용)
+
     EnemyScriptComponent->SetScriptPath("Enemy.lua");
 }

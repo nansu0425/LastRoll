@@ -140,11 +140,6 @@ function ShootProjectile()
     -- 3D 레이캐스팅으로 마우스 커서의 월드 위치 계산
     local MouseWorldPos2D = ScreenToWorldPosition(MouseScreenPos, obj.Location.z)
 
-    print("========== Shooting Projectile ==========")
-    print(string.format("  Mouse Screen Pos: (%.2f, %.2f)", MouseScreenPos.x, MouseScreenPos.y))
-    print(string.format("  Mouse World Pos (2D): (%.4f, %.4f)", MouseWorldPos2D.x, MouseWorldPos2D.y))
-    print(string.format("  Player Location: (%.2f, %.2f, %.2f)", obj.Location.x, obj.Location.y, obj.Location.z))
-
     -- 플레이어 위치에서 마우스 월드 위치로의 방향 계산
     local ShootDirection = Vector(
         MouseWorldPos2D.x - obj.Location.x,
@@ -152,7 +147,6 @@ function ShootProjectile()
         0
     )
     ShootDirection:Normalize()
-    print(string.format("  Shoot Direction (3D): (%.4f, %.4f, %.4f)", ShootDirection.x, ShootDirection.y, ShootDirection.z))
 
     -- ActorPool에서 투사체 가져오기 (AProjectileActor 사용)
     local Projectile = ActorPool:Get("AProjectileActor")
@@ -161,7 +155,6 @@ function ShootProjectile()
         -- 투사체 위치 설정 (플레이어 위치에서 약간 앞)
         local SpawnPos = obj.Location + ShootDirection * 2.0
         Projectile.Location = SpawnPos
-        print(string.format("  Projectile Spawn Pos: (%.2f, %.2f, %.2f)", SpawnPos.x, SpawnPos.y, SpawnPos.z))
 
         -- 투사체 ScriptComponent 가져오기 (타입 안전한 메서드 사용)
         local ProjScript = Projectile:GetScriptComponent()
@@ -169,18 +162,14 @@ function ShootProjectile()
             -- Setup 함수 호출 (Projectile.lua의 Setup 함수)
             local Env = ProjScript:GetEnv()
             if Env["Setup"] then
-                print("  Calling Projectile Setup...")
                 Env["Setup"](ShootDirection, ProjectileSpeed, ProjectileDamage, ProjectileRange)
             else
-                print("  ERROR: Setup function not found in Projectile!")
+                print("[Player] ERROR: Setup function not found in Projectile!")
             end
         else
-            print("  ERROR: ScriptComponent not found!")
+            print("[Player] ERROR: ScriptComponent not found!")
         end
-
-        print("Projectile shot successfully!")
     else
-        print("Failed to get projectile from pool")
+        print("[Player] Failed to get projectile from pool")
     end
-    print("=========================================")
 end

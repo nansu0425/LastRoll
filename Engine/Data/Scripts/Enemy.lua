@@ -15,6 +15,16 @@ function BeginPlay()
     obj.HP = 20
     obj.Dmg = 5
     obj.CurAttackDelay = AttackDelay
+
+    -- Overlap 델리게이트 바인딩 - SphereComponent만 찾아서 바인딩
+    local SphereComp = Owner:GetComponent("USphereComponent")
+    if SphereComp then
+        print("[Enemy] Binding overlap to SphereComponent")
+        SphereComp:BindBeginOverlap(self, OnBeginOverlap)
+        SphereComp:BindEndOverlap(self, OnEndOverlap)
+    else
+        print("[Enemy] WARNING: No SphereComponent found!")
+    end
 end
 
 
@@ -83,13 +93,15 @@ end
 -- Called when overlap starts with another Actor
 -- @param OtherActor: The Actor that began overlapping with this one
 function OnBeginOverlap(OtherActor)
-  
+    print("[Enemy] OnBeginOverlap called")
+    print("[Enemy] Overlapped with: " .. OtherActor:GetName() .. " (UUID: " .. OtherActor.UUID .. ")")
 end
 
 -- Called when overlap ends with another Actor
 -- @param OtherActor: The Actor that stopped overlapping with this one
 function OnEndOverlap(OtherActor)
-   
+    print("[Enemy] OnEndOverlap called")
+    print("[Enemy] Overlap ended with: " .. OtherActor:GetName())
 end
 
 

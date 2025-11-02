@@ -23,6 +23,16 @@ function BeginPlay()
     obj.IsInitialized = false
 
     print("Projectile created: " .. obj.UUID)
+
+    -- Overlap 델리게이트 바인딩 - SphereComponent만 찾아서 바인딩
+    local SphereComp = Owner:GetComponent("USphereComponent")
+    if SphereComp then
+        print("[Projectile] Binding overlap to SphereComponent")
+        SphereComp:BindBeginOverlap(self, OnBeginOverlap)
+        SphereComp:BindEndOverlap(self, OnEndOverlap)
+    else
+        print("[Projectile] WARNING: No SphereComponent found!")
+    end
 end
 
 ---
@@ -41,14 +51,6 @@ function Setup(InDirection, InSpeed, InDamage, InMaxDistance)
     obj.MaxDistance = InMaxDistance or DefaultMaxDistance
     obj.TraveledDistance = 0.0
     obj.IsInitialized = true
-
-    print("========== Projectile Setup ==========")
-    print(string.format("  Direction: (%.4f, %.4f, %.4f)", obj.Direction.x, obj.Direction.y, obj.Direction.z))
-    print("  Speed: " .. obj.Speed)
-    print("  Damage: " .. obj.Damage)
-    print("  MaxDistance: " .. obj.MaxDistance)
-    print("  IsInitialized: " .. tostring(obj.IsInitialized))
-    print("======================================")
 end
 
 -- Called every frame
@@ -72,16 +74,6 @@ function Tick(dt)
     local MovementLength = Movement:Length()
     obj.TraveledDistance = obj.TraveledDistance + MovementLength
 
-    -- 디버그: 5프레임마다 거리 출력 (너무 많은 로그 방지)
-    if not obj.TickCount then
-        obj.TickCount = 0
-    end
-    obj.TickCount = obj.TickCount + 1
-
-    if obj.TickCount % 30 == 0 then  -- 대략 0.5초마다 (60fps 기준)
-        print("Projectile " .. obj.UUID .. " - Traveled: " .. string.format("%.2f", obj.TraveledDistance) .. " / " .. obj.MaxDistance)
-    end
-
     -- 최대 거리 도달 시 제거
     if obj.TraveledDistance >= obj.MaxDistance then
         print("Projectile reached max distance: " .. obj.TraveledDistance .. " >= " .. obj.MaxDistance)
@@ -101,28 +93,38 @@ end
 -- Called when overlap starts with another Actor
 -- @param OtherActor: The Actor that began overlapping with this one
 function OnBeginOverlap(OtherActor)
+    print("[Projectile] OnBeginOverlap called")
+
     if not obj.IsInitialized then
+        print("[Projectile] Not initialized, ignoring overlap")
         return
     end
 
     -- 자신과의 충돌 무시
     if OtherActor.UUID == obj.UUID then
+        print("[Projectile] Self-collision, ignoring")
         return
     end
 
-    print("Projectile hit: " .. OtherActor:GetName())
+    print("[Projectile] Hit: " .. OtherActor:GetName() .. " (UUID: " .. OtherActor.UUID .. ")")
 
     -- Enemy와 충돌 체크
     local ScriptComp = OtherActor:GetScriptComponent()
     if ScriptComp then
+        print("[Projectile] ScriptComponent found on target")
         local Env = ScriptComp:GetEnv()
 
         -- TakeDamage 함수가 있으면 호출 (Enemy 판별)
         if Env["TakeDamage"] ~= nil then
-            print("Dealing damage: " .. obj.Damage)
+            print("[Projectile] TakeDamage function found, dealing " .. obj.Damage .. " damage")
             Env["TakeDamage"](obj.Damage)
+            print("[Projectile] Returning to pool")
             ReturnToPool()
+        else
+            print("[Projectile] No TakeDamage function on target")
         end
+    else
+        print("[Projectile] No ScriptComponent on target")
     end
 end
 
@@ -140,12 +142,11 @@ end
 -- ActorPool에 투사체 반납
 ---
 function ReturnToPool()
-    print("Projectile returned to pool: " .. obj.UUID)
+    print("[Projectile] Returning to pool: " .. obj.UUID)
 
     -- 초기화 플래그 리셋
     obj.IsInitialized = false
     obj.TraveledDistance = 0.0
-    obj.TickCount = 0
 
     -- ActorPool에 반납
     ActorPool:Return(Owner)

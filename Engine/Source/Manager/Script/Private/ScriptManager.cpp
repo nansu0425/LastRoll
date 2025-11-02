@@ -13,6 +13,10 @@
 #include "Component/Public/SceneComponent.h"
 #include "Component/Public/ScriptComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
+#include "Component/Shape/Public/ShapeComponent.h"
+#include "Component/Shape/Public/SphereComponent.h"
+#include "Component/Shape/Public/BoxComponent.h"
+#include "Component/Shape/Public/CapsuleComponent.h"
 #include "Physics/Public/CollisionTypes.h"
 #include "Manager/Time/Public/TimeManager.h"
 #include "Manager/Path/Public/PathManager.h"
@@ -412,15 +416,55 @@ void UScriptManager::RegisterCoreTypes()
 		"SetActorEnableCollision", &AActor::SetActorEnableCollision,
 		"StopAllCoroutine", &AActor::StopAllCoroutine,
 
-		// Component access
-		"GetComponent", [](AActor* self, const std::string& ClassName) -> UActorComponent* {
+		// Component access - 실제 타입을 반환하도록 다형성 지원
+		"GetComponent", [](sol::this_state s, AActor* self, const std::string& ClassName) -> sol::object {
+			sol::state_view lua(s);
+
 			UClass* ComponentClass = UClass::FindClass(FName(ClassName.c_str()));
 			if (!ComponentClass)
 			{
 				UE_LOG_WARNING("GetComponent: Class '%s' not found", ClassName.c_str());
-				return nullptr;
+				return sol::nil;
 			}
-			return self->GetComponentByClass(ComponentClass);
+
+			UActorComponent* Component = self->GetComponentByClass(ComponentClass);
+			if (!Component)
+			{
+				return sol::nil;
+			}
+
+			// 실제 타입에 따라 적절한 sol::object 생성 (가장 구체적인 타입부터 체크)
+			if (auto* SphereComp = Cast<USphereComponent>(Component))
+			{
+				return sol::make_object(lua, SphereComp);
+			}
+			else if (auto* BoxComp = Cast<UBoxComponent>(Component))
+			{
+				return sol::make_object(lua, BoxComp);
+			}
+			else if (auto* CapsuleComp = Cast<UCapsuleComponent>(Component))
+			{
+				return sol::make_object(lua, CapsuleComp);
+			}
+			else if (auto* ShapeComp = Cast<UShapeComponent>(Component))
+			{
+				return sol::make_object(lua, ShapeComp);
+			}
+			else if (auto* PrimComp = Cast<UPrimitiveComponent>(Component))
+			{
+				return sol::make_object(lua, PrimComp);
+			}
+			else if (auto* ScriptComp = Cast<UScriptComponent>(Component))
+			{
+				return sol::make_object(lua, ScriptComp);
+			}
+			else if (auto* SceneComp = Cast<USceneComponent>(Component))
+			{
+				return sol::make_object(lua, SceneComp);
+			}
+
+			// 기본적으로 UActorComponent로 반환
+			return sol::make_object(lua, Component);
 		},
 
 		// ScriptComponent 전용 접근 메서드 (타입 안전)
@@ -563,6 +607,64 @@ void UScriptManager::RegisterCoreTypes()
 
 			UE_LOG_DEBUG("BindEndOverlap: Lua 함수가 C++ 델리게이트에 바인딩되었습니다.");
 		}
+	);
+
+	// ====================================================================
+	// UShapeComponent - Shape 컴포넌트 기본 클래스
+	// ====================================================================
+	lua.new_usertype<UShapeComponent>("ShapeComponent",
+		sol::no_constructor,
+
+		// 상속 관계 명시 (UPrimitiveComponent 상속)
+		sol::base_classes, sol::bases<UPrimitiveComponent>(),
+
+		// Shape color
+		"ShapeColor", sol::property(
+			&UShapeComponent::GetShapeColor,
+			&UShapeComponent::SetShapeColor
+		),
+
+		// Draw settings
+		"DrawOnlyIfSelected", sol::property(
+			&UShapeComponent::IsDrawOnlyIfSelected,
+			&UShapeComponent::SetDrawOnlyIfSelected
+		)
+	);
+
+	// ====================================================================
+	// USphereComponent - Sphere 충돌 형상 컴포넌트
+	// ====================================================================
+	lua.new_usertype<USphereComponent>("USphereComponent",
+		sol::no_constructor,
+
+		// 상속 관계 명시 (UShapeComponent 상속)
+		sol::base_classes, sol::bases<UShapeComponent, UPrimitiveComponent>(),
+
+		// Sphere radius
+		"SphereRadius", sol::property(
+			&USphereComponent::GetSphereRadius,
+			&USphereComponent::SetSphereRadius
+		)
+	);
+
+	// ====================================================================
+	// UBoxComponent - Box 충돌 형상 컴포넌트
+	// ====================================================================
+	lua.new_usertype<UBoxComponent>("UBoxComponent",
+		sol::no_constructor,
+
+		// 상속 관계 명시 (UShapeComponent 상속)
+		sol::base_classes, sol::bases<UShapeComponent, UPrimitiveComponent>()
+	);
+
+	// ====================================================================
+	// UCapsuleComponent - Capsule 충돌 형상 컴포넌트
+	// ====================================================================
+	lua.new_usertype<UCapsuleComponent>("UCapsuleComponent",
+		sol::no_constructor,
+
+		// 상속 관계 명시 (UShapeComponent 상속)
+		sol::base_classes, sol::bases<UShapeComponent, UPrimitiveComponent>()
 	);
 
 	// ====================================================================
