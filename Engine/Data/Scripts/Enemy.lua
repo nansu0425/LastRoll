@@ -1,4 +1,6 @@
 
+local Util = require("Data\\Scripts\\Util")
+
 AttackDis = 1
 AttackDelay = 2
 

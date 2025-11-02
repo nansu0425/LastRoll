@@ -18,6 +18,7 @@
 #include "Render/UI/Viewport/Public/Viewport.h"
 #include "Render/UI/Viewport/Public/ViewportClient.h"
 #include "Source/Editor/Public/Camera.h"
+#include "Render/UI/GameUI/Public/GameUI.h"
 
 IMPLEMENT_SINGLETON_CLASS(UScriptManager, UObject)
 
@@ -281,6 +282,60 @@ void UScriptManager::RegisterCoreTypes()
 		[](float x, float y, float z) { return FVector(x, y, z); }
 	));
 
+	lua.set_function("Vector2", sol::overload(
+		[]() { return FVector2(0.0f, 0.0f); },
+		[](float x, float y) { return FVector2(x, y); }
+	));
+
+
+	lua.set_function("Vector4", sol::overload(
+		[]() { return FVector4(0.0f, 0.0f, 0.0f, 0.0f); },
+		[](float x, float y, float z, float w) { return FVector4(x, y, z, w); }
+	));
+
+	lua.new_usertype<FVector2>("FVector2",
+		sol::no_constructor,  // 생성자는 위에서 Vector 함수로 등록했음
+
+		// Properties
+		"x", &FVector2::X,
+		"y", &FVector2::Y,
+
+		// Operators
+		sol::meta_function::addition, [](const FVector2& a, const FVector2& b) -> FVector2 {
+			return FVector2(a.X + b.X, a.Y + b.Y);
+		},
+		sol::meta_function::subtraction, [](const FVector2& a, const FVector2& b) -> FVector2 {
+			return FVector2(a.X - b.X, a.Y - b.Y);
+		},
+		sol::meta_function::multiplication, sol::overload(
+			[](const FVector2& v, float f) -> FVector2 { return v * f; },
+			[](float f, const FVector2& v) -> FVector2 { return v * f; }
+		)
+	);
+
+	lua.new_usertype<FVector4>("FVector4",
+		sol::no_constructor,  // 생성자는 위에서 Vector 함수로 등록했음
+
+		// Properties
+		"x", &FVector4::X,
+		"y", &FVector4::Y,
+		"z", &FVector4::Z,
+		"w", &FVector4::W,
+
+		// Operators
+		sol::meta_function::addition, [](const FVector4& a, const FVector4& b) -> FVector4 {
+			return a + b;
+		},
+		sol::meta_function::subtraction, [](const FVector4& a, const FVector4& b) -> FVector4 {
+			return a - b;
+		},
+		sol::meta_function::multiplication, sol::overload(
+			[](const FVector4& v, float f) -> FVector4 { return v * f; },
+			[](float f, const FVector4& v) -> FVector4 { return v * f; }
+		)
+	);
+
+
 	// FVector usertype 등록 (메서드와 프로퍼티)
 	lua.new_usertype<FVector>("FVector",
 		sol::no_constructor,  // 생성자는 위에서 Vector 함수로 등록했음
@@ -308,6 +363,7 @@ void UScriptManager::RegisterCoreTypes()
 		"Dot", [](const FVector& a, const FVector& b) { return a.Dot(b); },
 		"Cross", [](const FVector& a, const FVector& b) { return a.Cross(b); }
 	);
+
 
 	// ====================================================================
 	// FQuaternion - Rotation representation
@@ -561,6 +617,24 @@ void UScriptManager::RegisterCoreTypes()
 			const auto& Clients = ViewportManager.GetClients();
 			return Clients[ViewportManager.GetActiveIndex()]->GetCamera();
 		};
+	LuaState["WorldToScreenPos"] = [](FVector WorldPos)->FVector2
+		{
+			auto& ViewportManager = UViewportManager::GetInstance();
+			const auto& Viewports = ViewportManager.GetViewports();
+			const auto& Clients = ViewportManager.GetClients();
+			FViewportClient* ViewportClient = Clients[ViewportManager.GetActiveIndex()];
+			FViewport* Viewport = ViewportClient->GetOwningViewport();
+			const FCameraConstants& CamConstant = ViewportClient->GetCamera()->GetFViewProjConstants();
+
+			FVector4 ViewPos = FVector4(WorldPos, 1) * CamConstant.View;
+			FVector4 ClipPos = ViewPos * CamConstant.Projection;
+			FVector2 NDC = FVector2(ClipPos.X / ClipPos.W, ClipPos.Y / ClipPos.W);
+			FVector2 ScreenUV = NDC * 0.5f + FVector2(0.5f, 0.5f);
+			ScreenUV.Y = 1 - ScreenUV.Y;
+			FRect Rect = Viewport->GetRect();
+			FVector2 ScreenPos = FVector2(Rect.Left + Rect.Width * ScreenUV.X, Rect.Top + Rect.Height * ScreenUV.Y);
+			return ScreenPos;
+		};
 
 
 
@@ -658,6 +732,11 @@ void UScriptManager::RegisterGlobalFunctions()
 	lua["GetTime"] = []() -> float {
 		return UTimeManager::GetInstance().GetGameTime();
 		};
+
+	lua["DrawText"] = [](const std::string& Text, const FVector2& ScreenPos, const float Size, const FVector4& Color)
+	{
+		UGameUI::GetInstance().TextUI(Text, ScreenPos, Size, Color);
+	};
 
 
 
