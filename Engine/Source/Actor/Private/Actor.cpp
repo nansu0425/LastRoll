@@ -368,12 +368,18 @@ bool AActor::RemoveComponent(UActorComponent* InComponentToDelete, bool bShouldD
         }
     }
 
-	if (GEditor->GetEditorModule()->GetSelectedComponent() == InComponentToDelete)
+	// CRITICAL: Component 삭제 시 모든 선택 상태를 무조건 정리
+	// 이유: PIE World와 Editor World의 Component는 독립적이므로 포인터 비교(==)가 실패할 수 있음
+	// 안전을 위해 조건 없이 모든 선택 상태를 정리
+	GEditor->GetEditorModule()->SelectComponent(nullptr);
+
+	if (GEditor->IsPIESessionActive())
 	{
-		GEditor->GetEditorModule()->SelectComponent(nullptr);
+		GEditor->GetEditorModule()->SelectPIEComponent(nullptr);
 	}
-	OwnedComponents.erase(It); 
-    SafeDelete(InComponentToDelete); 
+
+	OwnedComponents.erase(It);
+    SafeDelete(InComponentToDelete);
     return true;
 }
 

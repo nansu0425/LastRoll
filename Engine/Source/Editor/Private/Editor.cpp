@@ -278,7 +278,34 @@ void UEditor::UpdateBatchLines()
 
 	// 1. 선택된 Component 렌더링 (BoundingBoxLines에)
 	bool bRenderedSelectedComponent = false;
-	if (UActorComponent* Component = GetSelectedComponent())
+
+	// UpdateBatchLines는 항상 Editor World만 렌더링하므로, Editor World의 SelectedComponent만 사용
+	// PIE 모드에서는 PIESelectedComponent가 아닌 Editor World의 SelectedComponent를 사용해야 함
+	UActorComponent* Component = SelectedComponent;
+
+	// CRITICAL: Component가 Editor World에 실제로 속하는지 안전하게 검증
+	// dangling pointer 접근을 방지하기 위해 EditorWorld의 Actor 목록에서 Component를 찾음
+	// Component->GetOwner()를 호출하면 dangling pointer 접근으로 크래시 발생 가능
+	bool bIsValidComponent = false;
+	if (Component && EditorWorld && EditorWorld->GetLevel())
+	{
+		const auto& LevelActors = EditorWorld->GetLevel()->GetLevelActors();
+		for (AActor* Actor : LevelActors)
+		{
+			if (Actor && !Actor->IsPendingDestroy())
+			{
+				const auto& Components = Actor->GetOwnedComponents();
+				auto it = std::find(Components.begin(), Components.end(), Component);
+				if (it != Components.end())
+				{
+					bIsValidComponent = true;
+					break;
+				}
+			}
+		}
+	}
+
+	if (bIsValidComponent)
 	{
 		if (UShapeComponent* ShapeComponent = Cast<UShapeComponent>(Component))
 		{
@@ -344,7 +371,40 @@ void UEditor::UpdateBatchLines()
 	// 2. bDrawOnlyIfSelected=false인 ShapeComponent 및 SF_Bounds가 켜진 경우 모든 StaticMeshComponent의 AABB 렌더링
 	// 단, 선택된 컴포넌트는 이미 Section 1에서 렌더링했으므로 제외
 	BatchLines.ClearShapeComponentLines(); // 이전 프레임 데이터 초기화
-	UActorComponent* SelectedComponent = GetSelectedComponent();
+
+	// UpdateBatchLines는 항상 Editor World만 렌더링하므로, Editor World의 SelectedComponent만 사용
+	UActorComponent* SelectedComponent = this->SelectedComponent;
+
+	// CRITICAL: SelectedComponent가 Editor World에 실제로 속하는지 안전하게 검증
+	// dangling pointer 접근을 방지하기 위해 EditorWorld의 Actor 목록에서 Component를 찾음
+	// SelectedComponent->GetOwner()를 호출하면 dangling pointer 접근으로 크래시 발생 가능
+	if (SelectedComponent)
+	{
+		bool bFoundInEditorWorld = false;
+		if (EditorWorld && EditorWorld->GetLevel())
+		{
+			const auto& LevelActors = EditorWorld->GetLevel()->GetLevelActors();
+			for (AActor* Actor : LevelActors)
+			{
+				if (Actor && !Actor->IsPendingDestroy())
+				{
+					const auto& Components = Actor->GetOwnedComponents();
+					auto it = std::find(Components.begin(), Components.end(), SelectedComponent);
+					if (it != Components.end())
+					{
+						bFoundInEditorWorld = true;
+						break;
+					}
+				}
+			}
+		}
+
+		// Editor World에 없으면 nullptr로 설정 (dangling pointer 방지)
+		if (!bFoundInEditorWorld)
+		{
+			SelectedComponent = nullptr;
+		}
+	}
 
 	if (EditorWorld && EditorWorld->GetLevel())
 	{
@@ -1244,6 +1304,155 @@ void UEditor::SelectComponent(UActorComponent* InComponent)
 	{
 		Gizmo.SetSelectedComponent(nullptr);
 	}
+	UUIManager::GetInstance().OnSelectedComponentChanged(SelectedComponent);
+}
+
+/**
+ * @brief PIE World Actor 선택
+ */
+void UEditor::SelectPIEActor(AActor* InActor)
+{
+	if (InActor == PIESelectedActor) return;
+
+	// 이전 선택 해제 (모든 컴포넌트)
+	if (PIESelectedActor)
+	{
+		for (UActorComponent* Component : PIESelectedActor->GetOwnedComponents())
+		{
+			if (Component)
+			{
+				Component->OnDeselected();
+			}
+		}
+	}
+
+	PIESelectedActor = InActor;
+
+	if (PIESelectedActor)
+	{
+		// Actor 선택 시 모든 컴포넌트 하이라이팅
+		for (UActorComponent* Component : PIESelectedActor->GetOwnedComponents())
+		{
+			if (Component)
+			{
+				Component->OnSelected();
+			}
+		}
+
+		// PIE에서는 RootComponent에 부착
+		PIESelectedComponent = InActor->GetRootComponent();
+		// Note: PIE 모드에서는 Gizmo 비활성화 (뷰포트 입력이 차단되므로)
+	}
+	else
+	{
+		PIESelectedComponent = nullptr;
+	}
+
+	// Detail Panel 업데이트
+	UUIManager::GetInstance().OnSelectedComponentChanged(PIESelectedComponent);
+}
+
+void UEditor::SelectPIEActorAndComponent(AActor* InActor, UActorComponent* InComponent)
+{
+	// 이전 Actor의 모든 컴포넌트 선택 해제
+	if (PIESelectedActor && PIESelectedActor != InActor)
+	{
+		for (UActorComponent* Component : PIESelectedActor->GetOwnedComponents())
+		{
+			if (Component)
+			{
+				Component->OnDeselected();
+			}
+		}
+	}
+	else if (PIESelectedActor == InActor)
+	{
+		// 같은 Actor 내에서 컴포넌트만 변경: 기존 모든 컴포넌트 해제
+		for (UActorComponent* Component : PIESelectedActor->GetOwnedComponents())
+		{
+			if (Component)
+			{
+				Component->OnDeselected();
+			}
+		}
+	}
+
+	PIESelectedActor = InActor;
+	SelectPIEComponent(InComponent);
+}
+
+void UEditor::SelectPIEComponent(UActorComponent* InComponent)
+{
+	if (InComponent == PIESelectedComponent) return;
+
+	// Component 선택 시 단일 컴포넌트만 하이라이팅
+	if (PIESelectedComponent)
+	{
+		PIESelectedComponent->OnDeselected();
+	}
+
+	PIESelectedComponent = InComponent;
+	if (PIESelectedComponent)
+	{
+		PIESelectedComponent->OnSelected();
+		// PIE 모드에서는 Gizmo 비활성화
+	}
+
+	// Detail Panel 업데이트
+	UUIManager::GetInstance().OnSelectedComponentChanged(PIESelectedComponent);
+}
+
+/**
+ * @brief 현재 World에 맞는 선택된 Actor 반환
+ */
+AActor* UEditor::GetSelectedActorForCurrentWorld() const
+{
+	// PIE 모드인지 확인
+	if (GEditor && GEditor->IsPIESessionActive())
+	{
+		return PIESelectedActor;
+	}
+	return SelectedActor;
+}
+
+/**
+ * @brief 현재 World에 맞는 선택된 Component 반환
+ */
+UActorComponent* UEditor::GetSelectedComponentForCurrentWorld() const
+{
+	// PIE 모드인지 확인
+	if (GEditor && GEditor->IsPIESessionActive())
+	{
+		return PIESelectedComponent;
+	}
+	return SelectedComponent;
+}
+
+/**
+ * @brief PIE 선택 상태 초기화
+ */
+void UEditor::ClearPIESelection()
+{
+	// PIE 선택 상태 해제
+	// CRITICAL: PIE World가 삭제되기 전에 호출되어야 함
+	// Actor/Component가 유효한 상태에서만 OnDeselected() 호출
+	if (PIESelectedActor && !PIESelectedActor->IsPendingDestroy())
+	{
+		for (UActorComponent* Component : PIESelectedActor->GetOwnedComponents())
+		{
+			// Component와 Owner가 유효한 경우에만 OnDeselected 호출
+			if (Component && Component->GetOwner() && !Component->GetOwner()->IsPendingDestroy())
+			{
+				Component->OnDeselected();
+			}
+		}
+	}
+
+	PIESelectedActor = nullptr;
+	PIESelectedComponent = nullptr;
+	bIsPIEActorSelected = true;
+
+	// Detail Panel 업데이트 (Editor World 선택으로 복원)
 	UUIManager::GetInstance().OnSelectedComponentChanged(SelectedComponent);
 }
 

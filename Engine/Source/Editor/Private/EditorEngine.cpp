@@ -136,6 +136,9 @@ void UEditorEngine::StartPIE()
         GEditor->GetEditorModule()->SelectActor(nullptr);
         GEditor->GetEditorModule()->SelectComponent(nullptr);
 
+        // PIE World 선택 상태도 초기화
+        GEditor->GetEditorModule()->ClearPIESelection();
+
         PIEWorld->BeginPlay();
     }
 }
@@ -154,6 +157,10 @@ void UEditorEngine::EndPIE()
     // PIE 전용 뷰포트 인덱스 리셋
     UViewportManager::GetInstance().SetPIEActiveViewportIndex(-1);
 
+    // CRITICAL: PIE World 삭제 전에 선택 상태를 먼저 정리해야 함
+    // (PIE World 삭제 후에는 Actor/Component가 dangling pointer가 되어 OnDeselected() 호출 시 크래시)
+    GEditor->GetEditorModule()->ClearPIESelection();
+
     FWorldContext* PIEContext = GetPIEWorldContext();
     if (PIEContext)
     {
@@ -166,11 +173,6 @@ void UEditorEngine::EndPIE()
 
     // GWorld를 다시 Editor World로 복원
     GWorld = GetEditorWorldContext().World();
-
-    // PIE 종료 시 PIE World의 Selection 초기화
-    // (PIE World가 삭제되었으므로 dangling pointer 방지)
-    GEditor->GetEditorModule()->SelectActor(nullptr);
-    GEditor->GetEditorModule()->SelectComponent(nullptr);
 }
 
 /**
