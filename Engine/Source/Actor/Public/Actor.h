@@ -121,6 +121,8 @@ public:
 	bool IsCollisionEnabled() const { return bActorEnableCollision; }
 	void SetActorEnableCollision(bool bInActorEnableCollision);
 
+	void StopAllCoroutine() const;
+
 	// Collision & Overlap
 	bool IsOverlappingActor(const AActor* Other) const;
 

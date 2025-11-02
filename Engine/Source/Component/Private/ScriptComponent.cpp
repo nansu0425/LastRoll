@@ -153,14 +153,14 @@ void UScriptComponent::SetInstanceTable(const sol::table GlobalTable)
 	InstanceEnv["self"] = this;
 
 	// 2. Instance 데이터 설정
-	AActor* owner = GetOwner();
-	if (owner)
+	AActor* Owner = GetOwner();
+	if (Owner)
 	{
 		// obj를 Proxy Table로 생성 (Actor 접근 + 동적 프로퍼티 저장 지원)
 		sol::table objProxy = lua.create_table();
 
 		// _actor 필드에 실제 Actor 포인터 저장 (내부용)
-		objProxy["_actor"] = owner;
+		objProxy["_actor"] = Owner;
 
 		// Metatable 설정
 		sol::table mt = lua.create_table();
@@ -234,25 +234,49 @@ void UScriptComponent::SetInstanceTable(const sol::table GlobalTable)
 		// InstanceEnv에 obj 등록
 		InstanceEnv["obj"] = objProxy;
 
+		// InstanceEnv에 Owner 등록
+		InstanceEnv["Owner"] = Owner;
+
 		// UUID는 직접 접근 가능하도록 (선택사항)
-		InstanceEnv["UUID"] = owner->GetUUID();
+		InstanceEnv["UUID"] = Owner->GetUUID();
 
 		// Helper 함수 - this를 캡처하여 매번 GetOwner()로 가져옴 (댕글링 포인터 방지)
-		InstanceEnv["GetLocation"] = [this]() {
-			AActor* owner = GetOwner();
-			return owner ? owner->GetActorLocation() : FVector(0, 0, 0);
+		InstanceEnv["GetLocation"] = [this]()
+		{
+			AActor* Owner = GetOwner();
+			return Owner ? Owner->GetActorLocation() : FVector(0, 0, 0);
 		};
-		InstanceEnv["SetLocation"] = [this](const FVector& v) {
-			AActor* owner = GetOwner();
-			if (owner) owner->SetActorLocation(v);
+		InstanceEnv["SetLocation"] = [this](const FVector& v)
+		{
+			AActor* Owner = GetOwner();
+			if (Owner) Owner->SetActorLocation(v);
 		};
-		InstanceEnv["PrintLocation"] = [this]() {
-			AActor* owner = GetOwner();
-			if (owner)
+		InstanceEnv["PrintLocation"] = [this]()
+		{
+			AActor* Owner = GetOwner();
+			if (Owner)
 			{
-				FVector loc = owner->GetActorLocation();
+				FVector loc = Owner->GetActorLocation();
 				UE_LOG("Location: (%.2f, %.2f, %.2f)", loc.X, loc.Y, loc.Z);
 			}
+		};
+		InstanceEnv["SetCanTick"] = [this](bool bInCanEverTick)
+		{
+			AActor* Owner = GetOwner();
+			Owner->SetCanTick(bInCanEverTick);
+			UE_LOG("SetCanTick!");
+		};
+		InstanceEnv["SetActorHiddenInGame"] = [this](bool bInHidden)
+		{
+			AActor* Owner = GetOwner();
+			Owner->SetActorHiddenInGame(bInHidden);
+			UE_LOG("SetActorHiddenGame!");
+		};
+		InstanceEnv["SetActorEnableCollision"] = [this](bool bInEnableCollision)
+		{
+			AActor* Owner = GetOwner();
+			Owner->SetActorEnableCollision(bInEnableCollision);
+			UE_LOG("SetActorEnableCollision!");
 		};
 		InstanceEnv["GetComponent"] = [this](const FString& ClassName) -> UActorComponent*
 		{

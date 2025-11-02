@@ -123,6 +123,8 @@ public:
 
 	// PIE 복제 시 Lua 리소스 초기화
 	virtual UObject* Duplicate() override;
+	
+	void StopAllCoroutine();
 
 private:
 	/**
@@ -155,7 +157,6 @@ private:
 	void StopCoroutine(const FString& FuncName);
 	bool ResumeCoroutine(CoroutineData& Coroutine);
 	void Update(const float DeltaTime);
-	void StopAllCoroutine();
 };
 
 // 템플릿 구현

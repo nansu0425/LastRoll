@@ -3,9 +3,12 @@
 
 
 // 엔진 인클루드
+#include <random>
+
 #include "Global/Vector.h"
 #include "Global/Quaternion.h"
 #include "Actor/Public/Actor.h"
+#include "Actor/Public/StaticMeshActor.h"
 #include "Component/Public/SceneComponent.h"
 #include "Component/Public/ScriptComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
@@ -343,22 +346,10 @@ void UScriptManager::RegisterCoreTypes()
 			UE_LOG("Actor %s Location: (%.2f, %.2f, %.2f)",
 				self->GetName().ToString().c_str(), loc.X, loc.Y, loc.Z);
 		},
-		"GetComponent", [](AActor* self, const FString& ClassName) -> UActorComponent*
-		{
-			UClass* TargetClass = UClass::FindClass(ClassName);
-			if (!TargetClass)
-			{
-				UE_LOG_WARNING("Actor:GetComponent: UClass '%s'를 찾을 수 없습니다.", ClassName.c_str());
-				return nullptr;
-			}
-
-			return self->GetComponentByClass(TargetClass);
-		},
-		"GetPrimitiveComponent", [](AActor* self) -> UPrimitiveComponent*
-		{
-			UClass* TargetClass = UClass::FindClass("UPrimitiveComponent");
-			return Cast<UPrimitiveComponent>(self->GetComponentByClass(TargetClass));
-		}
+		"SetCanTick", &AActor::SetCanTick,
+		"SetActorHiddenInGame", &AActor::SetActorHiddenInGame,
+		"SetActorEnableCollision", &AActor::SetActorEnableCollision,
+		"StopAllCoroutine", &AActor::StopAllCoroutine
 	);
 
 	// ====================================================================
@@ -496,8 +487,10 @@ void UScriptManager::RegisterCoreTypes()
 		}
 	);
 
+	// ====================================================================
+	// Coroutine 
+	// ====================================================================
 
-	//Coroutine WaitCondition
 	lua.new_usertype<FWaitCondition>("WaitCondition",
 		sol::no_constructor,
 
@@ -522,26 +515,77 @@ void UScriptManager::RegisterCoreTypes()
 			return FWaitCondition();
 		}
 	);
+	
+	// ====================================================================
+	// World
+	// ====================================================================
 
+	LuaState["SpawnActor"] = []() -> AActor*
+	{
+		return GWorld->SpawnActor(AActor::StaticClass());
+	};
+
+	LuaState["SpawnActorByName"] = [](const FString& ActorName) -> AActor*
+	{
+		UClass* ActorClass = UClass::FindClass(ActorName);
+		if (ActorClass == nullptr)
+		{
+			UE_LOG_ERROR("SpawnActorByName: 액터 '%s'를 찾을 수 없습니다.", ActorName.c_str());
+			return nullptr;
+		}
+		return GWorld->SpawnActor(ActorClass);
+	};
+
+	LuaState["SpawnActorFromScript"] = [](const FString& ScriptName) -> AActor*
+	{
+		AActor* Actor = GWorld->SpawnActor(AStaticMeshActor::StaticClass());
+		UScriptComponent* ScriptComponent = static_cast<UScriptComponent*>(Actor->AddComponent(UScriptComponent::StaticClass()));
+		ScriptComponent->SetScriptPath(ScriptName);
+		ScriptComponent->BeginPlay();
+		return Actor;
+	};
+
+	LuaState["SpawnActorByNameFromScript"] = [](const FString& ActorName, const FString& ScriptName) -> AActor*
+	{
+		UClass* ActorClass = UClass::FindClass(ActorName);
+		if (ActorClass == nullptr)
+		{
+			UE_LOG_ERROR("SpawnActorByName: 액터 '%s'를 찾을 수 없습니다.", ActorName.c_str());
+			return nullptr;
+		}
+		AActor* Actor = GWorld->SpawnActor(ActorClass);
+		UScriptComponent* ScriptComponent = static_cast<UScriptComponent*>(Actor->AddComponent(UScriptComponent::StaticClass()));
+		ScriptComponent->SetScriptPath(ScriptName);
+		ScriptComponent->BeginPlay();
+		return Actor;
+	};
+
+	// ====================================================================
+	// Player 
+	// ====================================================================
+	
 	LuaState.new_enum("EKeyInput",
 		"W", EKeyInput::W,
 		"A", EKeyInput::A,
 		"S", EKeyInput::S,
 		"D", EKeyInput::D);
 
-	LuaState["IsKeyDown"] = [](EKeyInput InputKey)->bool {
+	LuaState["IsKeyDown"] = [](EKeyInput InputKey) -> bool
+	{
 		return UInputManager::GetInstance().IsKeyDown(InputKey);
-		};
-	LuaState["IsKeyPressed"] = [](EKeyInput InputKey)->bool {
+	};
+	LuaState["IsKeyPressed"] = [](EKeyInput InputKey) -> bool
+	{
 		return UInputManager::GetInstance().IsKeyPressed(InputKey);
-		};
-	LuaState["IsKeyReleased"] = [](EKeyInput InputKey)->bool {
+	};
+	LuaState["IsKeyReleased"] = [](EKeyInput InputKey) -> bool
+	{
 		return UInputManager::GetInstance().IsKeyReleased(InputKey);
-		};
-	LuaState["GetMouseDelta"] = []()->FVector 
+	};
+	LuaState["GetMouseDelta"] = []() -> FVector 
 		{
 		return UInputManager::GetInstance().GetMouseDelta();
-		};
+	};
 	lua.new_usertype<UCamera>("Camera",
 		"Location", sol::property(&UCamera::GetLocation, &UCamera::SetLocation),
 		"Rotation", sol::property(&UCamera::GetRotation, &UCamera::SetRotation),
@@ -550,16 +594,26 @@ void UScriptManager::RegisterCoreTypes()
 		"Up", sol::property(&UCamera::GetUp)
 	);
 	LuaState["GetCamera"] = []()->UCamera*
-		{
-			auto& ViewportManager = UViewportManager::GetInstance();
-			const auto& Viewports = ViewportManager.GetViewports();
-			const auto& Clients = ViewportManager.GetClients();
-			return Clients[ViewportManager.GetActiveIndex()]->GetCamera();
-		};
-
-
+	{
+		auto& ViewportManager = UViewportManager::GetInstance();
+		const auto& Viewports = ViewportManager.GetViewports();
+		const auto& Clients = ViewportManager.GetClients();
+		return Clients[ViewportManager.GetActiveIndex()]->GetCamera();
+	};
 
 	UE_LOG_INFO("Lua core types registered (Vector, Quaternion, Actor, OverlapInfo, PrimitiveComponent)");
+
+	// ====================================================================
+	// Helper Functions
+	// ====================================================================
+	
+	LuaState["Random"] = [](float MinValue, float MaxValue) -> float
+	{
+		std::random_device RandomDevice;
+		std::mt19937 RandomGenerator(RandomDevice());
+		std::uniform_real_distribution<float> Distribution(MinValue, MaxValue);
+		return Distribution(RandomGenerator);
+	};
 }
 
 void UScriptManager::RegisterGlobalFunctions()
@@ -653,10 +707,6 @@ void UScriptManager::RegisterGlobalFunctions()
 	lua["GetTime"] = []() -> float {
 		return UTimeManager::GetInstance().GetGameTime();
 		};
-
-
-
-
 
 	UE_LOG_INFO("Lua global functions registered");
 }
