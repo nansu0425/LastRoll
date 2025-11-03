@@ -169,14 +169,8 @@ function Tick(dt)
     -- ==============================================================================
     -- 체스 말 이동 상태 기계 (State Machine)
     -- ==============================================================================
-    -- 
-
-    -- ==============================================================================
-    -- 체스 말 이동 상태 기계 (State Machine)
-    -- ==============================================================================
 
     if obj.MoveState == "Idle" then
-        -- (이 부분은 수정 없음)
         obj.MoveTimer = obj.MoveTimer - dt
         local Dir = _G.PlayerData.PlayerPos - obj.Location
         local Dis = Dir:Length()
@@ -220,7 +214,6 @@ function Tick(dt)
             newZ = Lerp(obj.GroundZ, obj.GroundZ + obj.LiftHeight, -t * (t - 2))
         end
         
-        -- [수정] .z만 바꾸는 대신 새 Vector를 통째로 할당
         obj.Location = Vector(obj.StartMovePos.x, obj.StartMovePos.y, newZ)
 
     elseif obj.MoveState == "Moving" then
@@ -243,7 +236,6 @@ function Tick(dt)
             newY = Lerp(obj.StartMovePos.y, obj.TargetMovePos.y, Alpha)
         end
         
-        -- [수정] .x, .y만 바꾸는 대신 새 Vector를 통째로 할당
         obj.Location = Vector(newX, newY, obj.GroundZ + obj.LiftHeight)
         
     elseif obj.MoveState == "Landing" then
@@ -257,11 +249,9 @@ function Tick(dt)
             obj.MoveState = "Idle"
             obj.MoveTimer = obj.MoveInterval -- 다음 이동 타이머 시작
         else
-            -- 부드러운 착지 (EaseInQuad)
             local t = Alpha
             local newZ = Lerp(obj.GroundZ + obj.LiftHeight, obj.GroundZ, t * t)
             
-            -- [수정] .z만 바꾸는 대신 새 Vector를 통째로 할당
             obj.Location = Vector(obj.TargetMovePos.x, obj.TargetMovePos.y, newZ)
         end
     end 
