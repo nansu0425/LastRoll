@@ -14,7 +14,7 @@ class UGameUI : public UObject
 
 public:
 	void TextUI(const FString& Text, const FVector2& ScreenPos, const FVector2& RectSize, float Size, const FVector4& InColor = FVector4(1, 1, 1, 1));
-	void HPBar(const FVector2& ScreenPos, const FVector2& Size, float HPPer);
+	void GaugeBar(const FVector2& ScreenPos, const FVector2& Size, float GaugePercent, const FVector4& InBGColor, const FVector4& InGaugeColor);
 
 
 };
