@@ -41,6 +41,13 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
     // 불러오기 (Load)
     if (bInIsLoading)
     {
+		FString OutName;
+		FJsonSerializer::ReadString(InOutHandle, "ActorName", OutName);
+		if (OutName.empty())
+		{
+			OutName = "Empty";
+		}
+		SetName(OutName);
     	// 컴포넌트 포인터와 JSON 데이터를 임시 저장할 구조체
         struct FSceneCompData
         {
@@ -150,6 +157,7 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
     // 저장 (Save)
     else
     {
+		InOutHandle["ActorName"] = GetName().ToString();
 		InOutHandle["Location"] = FJsonSerializer::VectorToJson(GetActorLocation());
         InOutHandle["Rotation"] = FJsonSerializer::VectorToJson(GetActorRotation().ToEuler());
         InOutHandle["Scale"] = FJsonSerializer::VectorToJson(GetActorScale3D());
