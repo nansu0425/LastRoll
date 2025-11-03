@@ -1,5 +1,5 @@
 
-
+local ActorPool = require("Data/Scripts/ActorPool")
 local Util = require("Data\\Scripts\\Util")
 if _G.GameData == nil then
 _G.GameData = {}
@@ -31,6 +31,9 @@ ChangeGameState(EGameState.Playing)
 _G.GameData.Score = 0
 _G.GameData.EXP = 0
 _G.GameData.Level = 1
+SpawnedActor = ActorPool:Get("APlayer")
+print("캐릭터 생성")
+SpawnedActor:GetScriptComponentByName("Player.lua"):GetEnv().BeginPlay()
 end
 
 function AddScore(Score)
@@ -81,6 +84,7 @@ end
 
 
 function BeginPlay()
+ActorPool:Clear()
 _G.GameData.ManagerActor = FindActorByName("Managers")
 _G.GameData.GMEnv = _G.GameData.ManagerActor:GetScriptComponentByName("GameManager.lua"):GetEnv()
 _G.GameData.GameState = EGameState.Lobby
