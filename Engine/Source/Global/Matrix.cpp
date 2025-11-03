@@ -501,6 +501,89 @@ FMatrix FMatrix::Inverse() const
     return Result;
 }
 
+// Full 4x4 matrix inverse using Gauss-Jordan elimination (for projection matrices and general transformations)
+FMatrix FMatrix::InverseGeneral() const
+{
+	// Create augmented matrix [M | I]
+	float Aug[4][8];
+
+	// Copy original matrix to left side, identity to right side
+	for (int32 i = 0; i < 4; ++i)
+	{
+		for (int32 j = 0; j < 4; ++j)
+		{
+			Aug[i][j] = Data[i][j];
+			Aug[i][j + 4] = (i == j) ? 1.0f : 0.0f;
+		}
+	}
+
+	// Forward elimination with partial pivoting
+	for (int32 i = 0; i < 4; ++i)
+	{
+		// Find pivot (largest absolute value in column i)
+		int32 PivotRow = i;
+		float MaxVal = std::abs(Aug[i][i]);
+		for (int32 k = i + 1; k < 4; ++k)
+		{
+			float AbsVal = std::abs(Aug[k][i]);
+			if (AbsVal > MaxVal)
+			{
+				MaxVal = AbsVal;
+				PivotRow = k;
+			}
+		}
+
+		// Check for singular matrix
+		if (MaxVal < 1e-8f)
+		{
+			return FMatrix::Identity();
+		}
+
+		// Swap rows if needed
+		if (PivotRow != i)
+		{
+			for (int32 j = 0; j < 8; ++j)
+			{
+				float Temp = Aug[i][j];
+				Aug[i][j] = Aug[PivotRow][j];
+				Aug[PivotRow][j] = Temp;
+			}
+		}
+
+		// Scale pivot row to make diagonal element 1
+		float Pivot = Aug[i][i];
+		for (int32 j = 0; j < 8; ++j)
+		{
+			Aug[i][j] /= Pivot;
+		}
+
+		// Eliminate column i in all other rows
+		for (int32 k = 0; k < 4; ++k)
+		{
+			if (k != i)
+			{
+				float Factor = Aug[k][i];
+				for (int32 j = 0; j < 8; ++j)
+				{
+					Aug[k][j] -= Factor * Aug[i][j];
+				}
+			}
+		}
+	}
+
+	// Extract inverse matrix from right side of augmented matrix
+	FMatrix Result;
+	for (int32 i = 0; i < 4; ++i)
+	{
+		for (int32 j = 0; j < 4; ++j)
+		{
+			Result.Data[i][j] = Aug[i][j + 4];
+		}
+	}
+
+	return Result;
+}
+
 FQuaternion FMatrix::ToQuaternion() const
 {
     float Trace = Data[0][0] + Data[1][1] + Data[2][2];

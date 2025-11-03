@@ -9,9 +9,14 @@
 #include "Global/Quaternion.h"
 #include "Actor/Public/Actor.h"
 #include "Actor/Public/StaticMeshActor.h"
+#include "Component/Public/ActorComponent.h"
 #include "Component/Public/SceneComponent.h"
 #include "Component/Public/ScriptComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
+#include "Component/Shape/Public/ShapeComponent.h"
+#include "Component/Shape/Public/SphereComponent.h"
+#include "Component/Shape/Public/BoxComponent.h"
+#include "Component/Shape/Public/CapsuleComponent.h"
 #include "Physics/Public/CollisionTypes.h"
 #include "Manager/Time/Public/TimeManager.h"
 #include "Manager/Path/Public/PathManager.h"
@@ -409,7 +414,64 @@ void UScriptManager::RegisterCoreTypes()
 		"SetCanTick", &AActor::SetCanTick,
 		"SetActorHiddenInGame", &AActor::SetActorHiddenInGame,
 		"SetActorEnableCollision", &AActor::SetActorEnableCollision,
-		"StopAllCoroutine", &AActor::StopAllCoroutine
+		"StopAllCoroutine", &AActor::StopAllCoroutine,
+
+		// Component access - 실제 타입을 반환하도록 다형성 지원
+		"GetComponent", [](sol::this_state s, AActor* self, const std::string& ClassName) -> sol::object {
+			sol::state_view lua(s);
+
+			UClass* ComponentClass = UClass::FindClass(FName(ClassName.c_str()));
+			if (!ComponentClass)
+			{
+				UE_LOG_WARNING("GetComponent: Class '%s' not found", ClassName.c_str());
+				return sol::nil;
+			}
+
+			UActorComponent* Component = self->GetComponentByClass(ComponentClass);
+			if (!Component)
+			{
+				return sol::nil;
+			}
+
+			// 실제 타입에 따라 적절한 sol::object 생성 (가장 구체적인 타입부터 체크)
+			if (auto* SphereComp = Cast<USphereComponent>(Component))
+			{
+				return sol::make_object(lua, SphereComp);
+			}
+			else if (auto* BoxComp = Cast<UBoxComponent>(Component))
+			{
+				return sol::make_object(lua, BoxComp);
+			}
+			else if (auto* CapsuleComp = Cast<UCapsuleComponent>(Component))
+			{
+				return sol::make_object(lua, CapsuleComp);
+			}
+			else if (auto* ShapeComp = Cast<UShapeComponent>(Component))
+			{
+				return sol::make_object(lua, ShapeComp);
+			}
+			else if (auto* PrimComp = Cast<UPrimitiveComponent>(Component))
+			{
+				return sol::make_object(lua, PrimComp);
+			}
+			else if (auto* ScriptComp = Cast<UScriptComponent>(Component))
+			{
+				return sol::make_object(lua, ScriptComp);
+			}
+			else if (auto* SceneComp = Cast<USceneComponent>(Component))
+			{
+				return sol::make_object(lua, SceneComp);
+			}
+
+			// 기본적으로 UActorComponent로 반환
+			return sol::make_object(lua, Component);
+		},
+
+		// ScriptComponent 전용 접근 메서드 (타입 안전)
+		"GetScriptComponent", [](AActor* self) -> UScriptComponent* {
+			UActorComponent* Component = self->GetComponentByClass(UScriptComponent::StaticClass());
+			return Cast<UScriptComponent>(Component);
+		}
 	);
 
 	// ====================================================================
@@ -548,7 +610,90 @@ void UScriptManager::RegisterCoreTypes()
 	);
 
 	// ====================================================================
-	// Coroutine 
+	// UShapeComponent - Shape 컴포넌트 기본 클래스
+	// ====================================================================
+	lua.new_usertype<UShapeComponent>("ShapeComponent",
+		sol::no_constructor,
+
+		// 상속 관계 명시 (UPrimitiveComponent 상속)
+		sol::base_classes, sol::bases<UPrimitiveComponent>(),
+
+		// Shape color
+		"ShapeColor", sol::property(
+			&UShapeComponent::GetShapeColor,
+			&UShapeComponent::SetShapeColor
+		),
+
+		// Draw settings
+		"DrawOnlyIfSelected", sol::property(
+			&UShapeComponent::IsDrawOnlyIfSelected,
+			&UShapeComponent::SetDrawOnlyIfSelected
+		)
+	);
+
+	// ====================================================================
+	// USphereComponent - Sphere 충돌 형상 컴포넌트
+	// ====================================================================
+	lua.new_usertype<USphereComponent>("USphereComponent",
+		sol::no_constructor,
+
+		// 상속 관계 명시 (UShapeComponent 상속)
+		sol::base_classes, sol::bases<UShapeComponent, UPrimitiveComponent>(),
+
+		// Sphere radius
+		"SphereRadius", sol::property(
+			&USphereComponent::GetSphereRadius,
+			&USphereComponent::SetSphereRadius
+		)
+	);
+
+	// ====================================================================
+	// UBoxComponent - Box 충돌 형상 컴포넌트
+	// ====================================================================
+	lua.new_usertype<UBoxComponent>("UBoxComponent",
+		sol::no_constructor,
+
+		// 상속 관계 명시 (UShapeComponent 상속)
+		sol::base_classes, sol::bases<UShapeComponent, UPrimitiveComponent>()
+	);
+
+	// ====================================================================
+	// UCapsuleComponent - Capsule 충돌 형상 컴포넌트
+	// ====================================================================
+	lua.new_usertype<UCapsuleComponent>("UCapsuleComponent",
+		sol::no_constructor,
+
+		// 상속 관계 명시 (UShapeComponent 상속)
+		sol::base_classes, sol::bases<UShapeComponent, UPrimitiveComponent>()
+	);
+
+	// ====================================================================
+	// UActorComponent - 컴포넌트 기본 클래스
+	// ====================================================================
+	lua.new_usertype<UActorComponent>("ActorComponent",
+		sol::no_constructor,
+
+		// Methods
+		"GetOwner", &UActorComponent::GetOwner
+	);
+
+	// ====================================================================
+	// UScriptComponent - Lua 스크립팅 컴포넌트
+	// ====================================================================
+	lua.new_usertype<UScriptComponent>("ScriptComponent",
+		sol::no_constructor,
+
+		// 상속 관계 명시 (UActorComponent 상속)
+		sol::base_classes, sol::bases<UActorComponent>(),
+
+		// Methods
+		"GetEnv", &UScriptComponent::GetEnv,
+		"SetScriptPath", &UScriptComponent::SetScriptPath,
+		"BeginPlay", &UScriptComponent::BeginPlay
+	);
+
+	// ====================================================================
+	// Coroutine
 	// ====================================================================
 
 	lua.new_usertype<FWaitCondition>("WaitCondition",
@@ -628,7 +773,9 @@ void UScriptManager::RegisterCoreTypes()
 		"W", EKeyInput::W,
 		"A", EKeyInput::A,
 		"S", EKeyInput::S,
-		"D", EKeyInput::D);
+		"D", EKeyInput::D,
+		"MouseLeft", EKeyInput::MouseLeft,
+		"MouseRight", EKeyInput::MouseRight);
 
 	LuaState["IsKeyDown"] = [](EKeyInput InputKey) -> bool
 	{
@@ -642,10 +789,108 @@ void UScriptManager::RegisterCoreTypes()
 	{
 		return UInputManager::GetInstance().IsKeyReleased(InputKey);
 	};
-	LuaState["GetMouseDelta"] = []() -> FVector 
+	LuaState["GetMouseDelta"] = []() -> FVector
 		{
 		return UInputManager::GetInstance().GetMouseDelta();
 	};
+
+	// 마우스 스크린 위치 가져오기
+	LuaState["GetMousePosition"] = []() -> FVector2
+	{
+		FVector mousePos = UInputManager::GetInstance().GetMousePosition();
+		return FVector2(mousePos.X, mousePos.Y);
+	};
+
+	// 스크린 좌표 -> 월드 위치 변환 (3D 레이캐스팅 기반)
+	// 스크린 좌표에서 레이를 쏴서 Z=PlayerZ 평면과의 교차점을 계산
+	LuaState["ScreenToWorldPosition"] = [](FVector2 ScreenPos, float PlayerZ) -> FVector2
+	{
+		auto& ViewportManager = UViewportManager::GetInstance();
+		FViewportClient* ViewportClient = ViewportManager.GetClients()[ViewportManager.GetActiveIndex()];
+		FViewport* Viewport = ViewportClient->GetOwningViewport();
+		const FCameraConstants& CamConstant = ViewportClient->GetCamera()->GetFViewProjConstants();
+		FRect Rect = Viewport->GetRect();
+
+		// 1. Screen → Normalized Screen (0~1 범위)
+		float NormalizedX = (ScreenPos.X - static_cast<float>(Rect.Left)) / static_cast<float>(Rect.Width);
+		float NormalizedY = (ScreenPos.Y - static_cast<float>(Rect.Top)) / static_cast<float>(Rect.Height);
+
+		// 2. Normalized Screen → NDC (-1~1 범위)
+		// Y는 반전 (screen Y down = NDC Y up)
+		float NDCX = NormalizedX * 2.0f - 1.0f;
+		float NDCY = (1.0f - NormalizedY) * 2.0f - 1.0f;
+
+		// 3. ViewProjection의 역행렬 계산 (한 번에)
+		// Row-vector system: Clip = World * View * Proj
+		// 역변환: World = Clip * (View * Proj)^-1
+		FMatrix ViewProj = CamConstant.View * CamConstant.Projection;
+		FMatrix InvViewProj = ViewProj.InverseGeneral();  // Use general 4x4 inverse for projection matrices
+
+		// 4. Near plane (Z=0)과 Far plane (Z=1)에서 레이 포인트 생성
+		FVector4 ClipNear = FVector4(NDCX, NDCY, 0.0f, 1.0f);
+		FVector4 ClipFar = FVector4(NDCX, NDCY, 1.0f, 1.0f);
+
+		// 5. Clip → World 변환
+		FVector4 WorldNear = ClipNear * InvViewProj;
+		FVector4 WorldFar = ClipFar * InvViewProj;
+
+		// 6. Perspective divide
+		FVector RayStart = FVector(WorldNear.X / WorldNear.W, WorldNear.Y / WorldNear.W, WorldNear.Z / WorldNear.W);
+		FVector RayEnd = FVector(WorldFar.X / WorldFar.W, WorldFar.Y / WorldFar.W, WorldFar.Z / WorldFar.W);
+
+		// 7. 레이 방향 계산
+		FVector RayDir = RayEnd - RayStart;
+		RayDir.Normalize();
+
+		// 8. 레이와 Z = PlayerZ 평면의 교차점 계산
+		// Ray: P = RayStart + t * RayDir
+		// Plane: Z = PlayerZ
+		// RayStart.Z + t * RayDir.Z = PlayerZ
+		// t = (PlayerZ - RayStart.Z) / RayDir.Z
+		float t = (PlayerZ - RayStart.Z) / RayDir.Z;
+		FVector IntersectionPoint = RayStart + RayDir * t;
+
+		return FVector2(IntersectionPoint.X, IntersectionPoint.Y);
+	};
+
+	// 스크린 좌표 -> 마우스 방향 변환 (탑다운 게임용 - 간단한 2D 매핑)
+	// 화면 중앙을 기준으로 마우스 오프셋을 월드 XY 방향으로 변환
+	// [DEPRECATED] ScreenToWorldPosition을 사용하세요
+	LuaState["ScreenToWorldDirection"] = [](FVector2 ScreenPos) -> FVector2
+	{
+		auto& ViewportManager = UViewportManager::GetInstance();
+		FViewportClient* ViewportClient = ViewportManager.GetClients()[ViewportManager.GetActiveIndex()];
+		FViewport* Viewport = ViewportClient->GetOwningViewport();
+
+		// 화면 크기 및 중앙 좌표 계산 (Rect.Left, Rect.Top 오프셋 포함)
+		FRect Rect = Viewport->GetRect();
+		float CenterX = static_cast<float>(Rect.Left) + static_cast<float>(Rect.Width) * 0.5f;
+		float CenterY = static_cast<float>(Rect.Top) + static_cast<float>(Rect.Height) * 0.5f;
+
+		// 화면 중앙으로부터의 오프셋
+		float OffsetX = ScreenPos.X - CenterX;
+		float OffsetY = ScreenPos.Y - CenterY;
+
+		// 탑다운 뷰 매핑:
+		// Screen X+ (오른쪽) → World Y+ (오른쪽)
+		// Screen Y+ (아래) → World X- (뒤)
+		// Screen Y- (위) → World X+ (앞)
+		FVector2 WorldDir = FVector2(
+			-OffsetY,  // Screen Y 반전 → World X
+			OffsetX    // Screen X → World Y
+		);
+
+		// 정규화
+		float Length = sqrtf(WorldDir.X * WorldDir.X + WorldDir.Y * WorldDir.Y);
+		if (Length > 0.0f)
+		{
+			WorldDir.X /= Length;
+			WorldDir.Y /= Length;
+		}
+
+		return WorldDir;
+	};
+
 	lua.new_usertype<UCamera>("Camera",
 		"Location", sol::property(&UCamera::GetLocation, &UCamera::SetLocation),
 		"Rotation", sol::property(&UCamera::GetRotation, &UCamera::SetRotation),
@@ -686,7 +931,8 @@ void UScriptManager::RegisterCoreTypes()
 		FViewportClient* ViewportClient = Clients[ViewportManager.GetActiveIndex()];
 		FViewport* Viewport = ViewportClient->GetOwningViewport();
 		FRect Rect = Viewport->GetRect();
-		return FVector4(Rect.Left, Rect.Top, Rect.Width, Rect.Height);
+		return FVector4(static_cast<float>(Rect.Left), static_cast<float>(Rect.Top),
+		                static_cast<float>(Rect.Width), static_cast<float>(Rect.Height));
 	};
 
 

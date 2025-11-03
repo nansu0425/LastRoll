@@ -7,6 +7,7 @@
 #include "Utility/Public/JsonSerializer.h"
 #include "Manager/Config/Public/ConfigManager.h"
 #include "Manager/Path/Public/PathManager.h"
+#include "Editor/Public/Editor.h"
 
 IMPLEMENT_CLASS(UWorld, UObject)
 
@@ -322,6 +323,15 @@ void UWorld::UpdateCollisions()
 void UWorld::SwitchToLevel(ULevel* InNewLevel)
 {
 	EndPlay();
+
+	// CRITICAL: Level 전환 전에 Editor의 선택 상태를 클리어
+	// 이전 Level의 Actor를 가리키는 댕글링 포인터 방지
+	if (GEditor)
+	{
+		GEditor->GetEditorModule()->SelectActor(nullptr);
+		GEditor->GetEditorModule()->SelectComponent(nullptr);
+	}
+
 	if (Level)
 	{
 		ULevel* OldLevel = Level;

@@ -48,6 +48,16 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 			OutName = "Empty";
 		}
 		SetName(OutName);
+    	// 생성자에서 생성된 컴포넌트 제거 (중복 방지)
+    	// NewObject()가 생성자를 호출하여 CreateDefaultSubobject()로 컴포넌트가 이미 생성되어 있음
+    	// ⚠️ 메모리 누수 방지: clear() 전에 반드시 delete 해야 함!
+    	for (UActorComponent* Component : OwnedComponents)
+    	{
+    		SafeDelete(Component);
+    	}
+    	OwnedComponents.clear();
+    	SetRootComponent(nullptr);
+
     	// 컴포넌트 포인터와 JSON 데이터를 임시 저장할 구조체
         struct FSceneCompData
         {

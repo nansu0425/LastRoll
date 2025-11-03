@@ -116,7 +116,8 @@ struct FMatrix
 	static FMatrix CreateLookAtLH(const FVector& Eye, const FVector& Target, const FVector& Up);
 	
 	FMatrix Transpose() const;
-	FMatrix Inverse() const;
+	FMatrix Inverse() const;  // Affine transformation only (assumes [3][3]=1)
+	FMatrix InverseGeneral() const;  // Full 4x4 matrix inverse (for projection matrices)
 
 	FVector GetLocation() const;
 	FVector GetRotation() const;
