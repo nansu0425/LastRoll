@@ -22,8 +22,20 @@ void AEnemy::InitializeComponents()
     AActor::InitializeComponents();
     
     auto StaticMeshComponent = Cast<UStaticMeshComponent>(GetRootComponent());
-    
-    StaticMeshComponent->SetStaticMesh("Data/Apple.obj");
-    
-    EnemyScriptComponent->SetScriptPath("Enemy.lua");
+
+    StaticMeshComponent->SetStaticMesh("Data/Knight.obj");
+
+    // SphereCollider를 RootComponent에 부착
+    SphereCollider->AttachToComponent(StaticMeshComponent);
+
+    // SphereCollider 설정
+    SphereCollider->SetSphereRadius(0.4f);  // Enemy 충돌 반지름
+    SphereCollider->SetGenerateOverlapEvents(true);  // Overlap 이벤트 활성화
+    SphereCollider->SetBlockComponent(false);  // Block 비활성화 (Overlap만 사용)
+
+    EnemyScriptComponent->SetScriptPath("EnemyA.lua");
+
+    SphereCollider->AttachToComponent(GetRootComponent());
+    SphereCollider->SetSphereRadius(1.0f);
+    SphereCollider->SetBlockComponent(true);
 }
