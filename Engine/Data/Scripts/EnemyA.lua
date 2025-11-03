@@ -48,6 +48,11 @@ function BeginPlay()
     obj.HasSetGroundZ = false        -- GroundZ를 설정했는지 여부
     -- ================================================
     
+    -- ========== 재배치 로직용 변수 =====================
+    obj.MaxDistanceBeforeRelocate = 100.0 -- 이 거리(Z축 무시)보다 멀어지면 재배치
+    obj.RelocateRadius = 70.0            -- 플레이어 중심 이 반경(링의 외곽)
+    -- ================================================
+    
     -- ========== 체스 말 죽음 로직용 변수 추가 ============
     obj.IsDying = false                         -- 죽음 애니메이션 재생 여부
     obj.DeathInitialFlySpeed = 45.0             -- 초기 상승 속도
@@ -248,16 +253,43 @@ function Tick(dt)
         obj.HasSetGroundZ = true
     end
 
+    local PlayerPos = _G.PlayerData.PlayerPos
+    local DirToPlayer = PlayerPos - obj.Location
+    DirToPlayer.z = 0 -- Z축 무시
+    local CurrentPlayerDis = DirToPlayer:Length()
+    if obj.MoveState == "Idle" and obj.HasSetGroundZ and CurrentPlayerDis > obj.MaxDistanceBeforeRelocate then
+        
+        -- 플레이어 주변 원형 "링" 영역에 랜덤 위치 생성
+        local RandomAngle = math.rad(Random(0, 360))
+        -- (반지름 * 0.5) ~ (반지름) 사이의 랜덤 거리
+        local RandomDist = Random(obj.RelocateRadius, obj.RelocateRadius * 1.2) 
+        
+        local OffsetX = math.cos(RandomAngle) * RandomDist
+        local OffsetY = math.sin(RandomAngle) * RandomDist
+        
+        local NewX = PlayerPos.x + OffsetX
+        local NewY = PlayerPos.y + OffsetY
+        
+        -- 위치 강제 설정 및 상태 초기화
+        obj.Location = Vector(NewX, NewY, obj.GroundZ)
+        obj.MoveTimer = obj.MoveInterval -- 이동 타이머 초기화
+        
+        -- 재배치 후 거리/방향 재계산 (바로 이어질 'Idle' 상태 로직을 위해)
+        DirToPlayer = PlayerPos - obj.Location
+        DirToPlayer.z = 0
+        CurrentPlayerDis = DirToPlayer:Length()
+        
+        -- print("[Enemy] Relocated due to distance.")
+    end
+
     -- ==============================================================================
     -- 체스 말 이동 상태 기계 (State Machine)
     -- ==============================================================================
 
     if obj.MoveState == "Idle" then
         obj.MoveTimer = obj.MoveTimer - dt
-        local Dir = _G.PlayerData.PlayerPos - obj.Location
-        local Dis = Dir:Length()
 
-        if Dis <= AttackDis then
+        if CurrentPlayerDis <= AttackDis then
             obj.CurAttackDelay = obj.CurAttackDelay - dt
             if obj.CurAttackDelay < 0 then
                 Attack()
@@ -268,17 +300,17 @@ function Tick(dt)
             obj.MoveState = "Lifting"
             obj.MoveAnimTimer = 0.0
             obj.StartMovePos = obj.Location
-            Dir:Normalize()
-            local TargetXY = obj.Location + Dir * obj.StepDistance
-            local MaxMoveDist = math.max(0, Dis - AttackDis)
+            local DirNorm = Vector(DirToPlayer.x, DirToPlayer.y, 0)
+            DirNorm:Normalize()
+            local TargetXY = obj.Location + DirNorm * obj.StepDistance
+            local MaxMoveDist = math.max(0, CurrentPlayerDis - AttackDis)
             if (TargetXY - obj.Location):Length() > MaxMoveDist then
-                 TargetXY = obj.Location + Dir * MaxMoveDist
+                 TargetXY = obj.Location + DirNorm * MaxMoveDist
             end
             obj.TargetMovePos = Vector(TargetXY.x, TargetXY.y, obj.GroundZ)
             obj.StartMovePos.z = obj.GroundZ
 
-            local ToPlayer = _G.PlayerData.PlayerPos - obj.Location
-            local ToPlayerDirXY = Vector2(ToPlayer.x, ToPlayer.y)
+            local ToPlayerDirXY = Vector2(DirToPlayer.x, DirToPlayer.y)
             ToPlayerDirXY:Normalize()
             obj.ToPlayerDirXY = ToPlayerDirXY
         end

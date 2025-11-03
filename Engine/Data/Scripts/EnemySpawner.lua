@@ -13,10 +13,10 @@ local Util = require("Data\\Scripts\\Util")
 local SpawnInterval = 2.0
 
 -- 스폰 반경
-local SpawnRadius = 30.0
+local SpawnRadius = 80.0
 
 -- 스폰 최소 반경
-local MinSpawnRadius = 5.0
+local MinSpawnRadius = 70.0
 
 local SpawnTimer = 0.0
 

@@ -1,14 +1,15 @@
 -- ==============================================================================
 -- 직선 돌진형 Enemy 스크립트 (굴러가기 적용)
 --
--- [수정된 로직]
 -- 1. 'Attacking' 상태를 제거. 이동 상태와 공격 로직을 완전히 분리.
 -- 2. Tick 상단에서 매 프레임 공격 쿨다운을 확인.
 -- 3. 쿨다운이 0이고 플레이어가 사거리(AttackDistance) 내에 있으면,
 --    현재 'MoveState'와 관계없이 즉시 Attack() 호출.
 -- 4. "Idle": 플레이어가 AttackDistance *밖에* 있을 때만 "Moving" 시작.
--- 5. "Moving": 목표를 향해 가속/이동. (이동 중 공격 가능)
--- 6. "Decelerating": 감속 후 "Idle"로 돌아감. (감속 중 공격 가능)
+-- 5. "Idle" 중 플레이어와 너무 멀어지면(MaxDistanceBeforeRelocate),
+--    플레이어 주변(RelocateRadius)으로 순간이동(재배치)함.
+-- 6. "Moving": 목표를 향해 가속/이동. (이동 중 공격 가능)
+-- 7. "Decelerating": 감속 후 "Idle"로 돌아감. (감속 중 공격 가능)
 -- ==============================================================================
 
 local Util = require("Data\\Scripts\\Util")
@@ -48,7 +49,6 @@ function BeginPlay()
     obj.KnockbackDis = 0
 
     -- ========== 직선 이동 로직용 변수 ==========
-    -- [!! 수정 !!] "Attacking" 상태 제거
     obj.MoveState = "Idle"           -- 현재 상태: "Idle", "Moving", "Decelerating"
     obj.MaxSpeed = 30.0              -- 최대 이동 속도
     obj.CurrentSpeed = 0.0           -- 현재 이동 속도
@@ -65,6 +65,12 @@ function BeginPlay()
     obj.MinStopSpeed = 0.1           -- 감속 후 정지했다고 판단하는 속도
     
     obj.RollSpeedFactor = 55.0       -- 굴러가는 속도 계수 (Speed * Factor = Degrees/sec)
+    
+    -- ========== 재배치 로직용 변수 추가 ==========
+    obj.MaxDistanceBeforeRelocate = 100.0 -- 이 거리보다 멀어지면 재배치
+    obj.RelocateRadius = 70.0            -- 플레이어 중심 이 반경
+    obj.GroundZ = 0.0                    -- 지면 높이
+    obj.HasSetGroundZ = false            -- 지면 높이를 설정했는지 여부
     -- ================================================
     
     -- ========== 죽음 애니메이션 변수 ============
@@ -177,7 +183,7 @@ function CheckCanReturnToPool()
     end
     
     -- 지면에서 충분히 멀리 떨어지면 반납 (Z축 기준)
-    if obj.Location.z < -200.0 then
+    if obj.HasSetGroundZ and obj.Location.z < (obj.GroundZ - 200.0) then
         ReturnToPool()
     end
 end
@@ -200,6 +206,7 @@ function ReturnToPool()
     obj.TargetPosition = Vector(0,0,0)
     obj.MoveDirection = Vector(0,0,0)
     obj.LastPlayerDistance = 0.0  
+    obj.HasSetGroundZ = false
     -- ========================================
     
     -- ========== 죽음 상태 변수 초기화 ==========
@@ -241,17 +248,26 @@ function Tick(dt)
     local HPPer = obj.HP / obj.MaxHP
     Util.RenderHPBar(obj.Location, Vector2(50, 15), HPPer)
 
+    -- 처음 Tick이 돌 때 현재 Z 위치를 "지면"으로 저장
+    if not obj.HasSetGroundZ then
+        obj.GroundZ = obj.Location.z
+        obj.HasSetGroundZ = true
+    end
+
     -- 플레이어와의 현재 거리 계산 (Z축 무시)
     local PlayerPos = _G.PlayerData.PlayerPos
     local DirToPlayer = PlayerPos - obj.Location
     DirToPlayer.z = 0 
     local CurrentPlayerDis = DirToPlayer:Length()
 
+    -- ==============================================================================
+    -- 공격 로직 (상태와 분리)
+    -- ==============================================================================
     if obj.CurrentAttackDelay > 0 then
         obj.CurrentAttackDelay = obj.CurrentAttackDelay - dt
     end
     
-    -- 쿨다운이 0이고, 사거리 내에 있다면 공격
+    -- 쿨다운이 0이고, 사거리 내에 있다면 (현재 이동 상태와 관계없이) 공격
     if obj.CurrentAttackDelay <= 0 and CurrentPlayerDis <= obj.AttackDistance then
         Attack()
         obj.CurrentAttackDelay = AttackDelay 
@@ -263,6 +279,27 @@ function Tick(dt)
 
     -- 상태: Idle (새로운 목표 설정)
     if obj.MoveState == "Idle" then
+    
+        -- ========== 재배치 로직 ==========
+        if obj.HasSetGroundZ and CurrentPlayerDis > obj.MaxDistanceBeforeRelocate then
+            local RandomAngle = math.rad(Random(0, 360))
+            local RandomDist = Random(obj.RelocateRadius, obj.RelocateRadius * 1.1) 
+            
+            local OffsetX = math.cos(RandomAngle) * RandomDist
+            local OffsetY = math.sin(RandomAngle) * RandomDist
+            
+            local NewX = PlayerPos.x + OffsetX
+            local NewY = PlayerPos.y + OffsetY
+            
+            obj.Location = Vector(NewX, NewY, obj.GroundZ)
+            
+            -- 재배치 후 거리/방향 재계산
+            DirToPlayer = PlayerPos - obj.Location
+            DirToPlayer.z = 0 
+            CurrentPlayerDis = DirToPlayer:Length()
+        end
+        -- =================================
+    
         if CurrentPlayerDis > obj.AttackDistance then
             -- 플레이어 위치를 새 목표로 설정
             obj.TargetPosition = PlayerPos
