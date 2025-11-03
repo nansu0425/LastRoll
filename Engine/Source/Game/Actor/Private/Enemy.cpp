@@ -43,6 +43,6 @@ void AEnemy::InitializeComponents()
     EnemyScriptComponent->SetScriptPath("EnemyA.lua");
 
     SphereCollider->AttachToComponent(GetRootComponent());
-    SphereCollider->SetSphereRadius(1.0f);
+    SphereCollider->SetSphereRadius(1.5f);
     SphereCollider->SetBlockComponent(true);
 }

@@ -168,6 +168,9 @@ UObject* UPrimitiveComponent::Duplicate()
 	PrimitiveComponent->NumVertices = NumVertices;
 	PrimitiveComponent->NumIndices = NumIndices;
 
+	PrimitiveComponent->bGenerateOverlapEvents = bGenerateOverlapEvents;
+	PrimitiveComponent->bBlockComponent = bBlockComponent;
+
 	if (!bOwnsBoundingVolume)
 	{
 		PrimitiveComponent->BoundingVolume = BoundingVolume;
@@ -259,6 +262,11 @@ bool UPrimitiveComponent::CheckOverlapWith(const UPrimitiveComponent* Other) con
 	return false;
 }
 
+bool UPrimitiveComponent::GetPenetration(const UPrimitiveComponent* Other, FVector& OutPenetration) const
+{
+	return false;
+}
+
 void UPrimitiveComponent::UpdateOverlaps(const TArray<UPrimitiveComponent*>& AllComponents)
 {
 	if (!bGenerateOverlapEvents)
@@ -275,6 +283,19 @@ void UPrimitiveComponent::UpdateOverlaps(const TArray<UPrimitiveComponent*>& All
 		if (CheckOverlapWith(Other))
 		{
 			NewOverlapInfos.push_back(FOverlapInfo(Other));
+
+			if (bBlockComponent && Other->GetBlockComponent())
+			{
+				FVector Penetration;
+				if (GetPenetration(Other, Penetration))
+				{
+					AActor* MyOwner = GetOwner();
+					if (MyOwner)
+					{
+						MyOwner->SetActorLocation(MyOwner->GetActorLocation() + Penetration);
+					}
+				}
+			}
 		}
 	}
 

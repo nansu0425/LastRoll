@@ -100,6 +100,28 @@ bool USphereComponent::CheckOverlapWithCapsule(const UCapsuleComponent* OtherCap
 	return CollisionDetection::CheckOverlap(MySphere, OtherCap);
 }
 
+bool USphereComponent::GetPenetration(const UPrimitiveComponent* Other, FVector& OutPenetration) const
+{
+	if (const USphereComponent* OtherSphere = Cast<USphereComponent>(Other))
+	{
+		FBoundingSphere MySphere = GetWorldSphere();
+		FBoundingSphere OtherSph = OtherSphere->GetWorldSphere();
+
+		FVector Direction = MySphere.Center - OtherSph.Center;
+		float Distance = Direction.Length();
+		Direction.Normalize();
+
+		float PenetrationDepth = MySphere.Radius + OtherSph.Radius - Distance;
+		if (PenetrationDepth > 0.f)
+		{
+			OutPenetration = Direction * PenetrationDepth;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 UObject* USphereComponent::Duplicate()
 {
 	USphereComponent* DuplicatedSphereComponent = Cast<USphereComponent>(Super::Duplicate());

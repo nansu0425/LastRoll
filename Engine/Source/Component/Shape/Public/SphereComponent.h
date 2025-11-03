@@ -31,6 +31,7 @@ public:
 
 	// 충돌 체크 오버라이드
 	virtual bool CheckOverlapWith(const UPrimitiveComponent* Other) const override;
+	virtual bool GetPenetration(const UPrimitiveComponent* Other, FVector& OutPenetration) const override;
 
 	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 

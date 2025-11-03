@@ -74,6 +74,7 @@ public:
 	void RemoveOverlapInfo(const UPrimitiveComponent* Component);
 
 	virtual bool CheckOverlapWith(const UPrimitiveComponent* Other) const;
+	virtual bool GetPenetration(const UPrimitiveComponent* Other, FVector& OutPenetration) const;
 	void UpdateOverlaps(const TArray<UPrimitiveComponent*>& AllComponents);
 
 	// 데칼에 덮일 수 있는가
