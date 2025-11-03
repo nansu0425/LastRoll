@@ -39,7 +39,7 @@ void AHomingProjectile::InitializeComponents()
 
 	// 3. SphereCollider 설정
 	SphereCollider->SetRelativeLocation(FVector(0.0f, 0.0f, 0.5f));
-	SphereCollider->SetSphereRadius(1.5f);  // 투사체 충돌 반지름
+	SphereCollider->SetSphereRadius(0.6f);  // 투사체 충돌 반지름 (작게 조정)
 	SphereCollider->SetGenerateOverlapEvents(true);  // Overlap 이벤트 활성화a
 	SphereCollider->SetBlockComponent(false);  // Block 비활성화 (Overlap만 사용)
 

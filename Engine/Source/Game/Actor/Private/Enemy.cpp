@@ -36,13 +36,9 @@ void AEnemy::InitializeComponents()
     SphereCollider->AttachToComponent(StaticMeshComponent);
 
     // SphereCollider 설정
-    SphereCollider->SetSphereRadius(0.4f);  // Enemy 충돌 반지름
+    SphereCollider->SetSphereRadius(1.0f);  // Enemy 충돌 반지름 (메시 크기에 맞게 조정)
     SphereCollider->SetGenerateOverlapEvents(true);  // Overlap 이벤트 활성화
     SphereCollider->SetBlockComponent(false);  // Block 비활성화 (Overlap만 사용)
 
     EnemyScriptComponent->SetScriptPath("EnemyA.lua");
-
-    SphereCollider->AttachToComponent(GetRootComponent());
-    SphereCollider->SetSphereRadius(1.5f);
-    SphereCollider->SetBlockComponent(true);
 }

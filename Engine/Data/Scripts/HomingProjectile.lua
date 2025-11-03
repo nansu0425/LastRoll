@@ -18,8 +18,8 @@ local InitialSpeed = 6.0  -- 초기 속도 (천천히 시작)
 local TargetReachTime = 0.6  -- 목표 도달 시간 (초) - 거리에 상관없이 이 시간 내에 도달
 local DefaultDamage = 15
 local DefaultMaxDistance = 100.0
-local RotationSpeed = 5.0  -- 유도 강도 (높을수록 급격하게 회전)
-local MaxSpeed = 60.0  -- 최대 속도 제한 (안전장치)
+local RotationSpeed = 3.5  -- 유도 강도 (낮춰서 빙글빙글 방지)
+local MaxSpeed = 45.0  -- 최대 속도 제한 (낮춰서 tunneling 방지)
 
 -- 거리 기반 설정
 local VeryCloseDistance = 2.0  -- 즉시 충돌 처리 거리
@@ -27,11 +27,12 @@ local CloseDistance = 5.0  -- 가까운 거리 기준
 local MediumDistance = 10.0  -- 중간 거리 기준
 local CriticalDistance = 8.0  -- 급가속 시작 거리
 local SlowdownDistance = 1.5  -- 감속 시작 거리
+local ForceCollisionDistance = 1.2  -- 강제 충돌 체크 거리 (Overlap 없어도 충돌 처리)
 
 -- 속도 제한
-local CloseMaxSpeed = 20.0  -- 가까운 거리 최대 속도
-local MediumMaxSpeed = 30.0  -- 중간 거리 최대 속도
-local FarMaxSpeed = 60.0  -- 먼 거리 최대 속도
+local CloseMaxSpeed = 18.0  -- 가까운 거리 최대 속도 (낮춤)
+local MediumMaxSpeed = 28.0  -- 중간 거리 최대 속도 (낮춤)
+local FarMaxSpeed = 45.0  -- 먼 거리 최대 속도 (낮춤)
 
 -- 도달 시간
 local CloseReachTime = 1.2  -- 가까운 거리 도달 시간
@@ -41,8 +42,8 @@ local FarReachTime = 0.6  -- 먼 거리 도달 시간
 -- 각도 기반 설정
 local AngleThreshold = 0.85  -- 각도 보정 시작 threshold (약 30도)
 local MinSpeedRatio = 0.3  -- 최소 속도 비율 (각도가 클 때)
-local MinRotationBoost = 2.0  -- 최소 회전 속도 부스트
-local MaxRotationBoost = 5.0  -- 최대 회전 속도 부스트
+local MinRotationBoost = 1.5  -- 최소 회전 속도 부스트 (낮춤)
+local MaxRotationBoost = 3.0  -- 최대 회전 속도 부스트 (낮춰서 빙글빙글 방지)
 
 -- ==============================================================================
 -- Lifecycle Functions
@@ -160,6 +161,13 @@ function Tick(dt)
     -- 타겟 방향 및 거리 계산
     local ToTarget = obj.TargetLocation - obj.Location
     local DistanceToTarget = ToTarget:Length()
+
+    -- 강제 충돌 체크: 거리가 매우 가까우면 Overlap 이벤트 없어도 충돌 처리 (tunneling 방지)
+    if not obj.TargetLost and obj.TargetActor and DistanceToTarget <= ForceCollisionDistance then
+        --print("[HomingProjectile] Force collision triggered at distance: " .. DistanceToTarget)
+        HandleTargetCollision(obj.TargetActor)
+        return
+    end
 
     -- 타겟 도달 체크 (타겟이 사라진 경우)
     if obj.TargetLost and DistanceToTarget < 1.0 then
@@ -363,35 +371,18 @@ function CalculateSpeedForActiveTarget(DistanceToTarget)
     CalculatedSpeed = math.min(CalculatedSpeed, CurrentMaxSpeed)
     CalculatedSpeed = math.max(CalculatedSpeed, InitialSpeed)
 
-    -- 거리 기반 3단계 속도 조절
-    if DistanceToTarget < SlowdownDistance then
-        -- 1단계: 매우 가까운 거리 - 감속 (충돌 직전)
-        local SlowdownRatio = DistanceToTarget / SlowdownDistance
-        local MinSlowdownSpeed = InitialSpeed * 0.5
-        obj.Speed = MinSlowdownSpeed + (CalculatedSpeed - MinSlowdownSpeed) * SlowdownRatio
-    elseif DistanceToTarget < CriticalDistance then
-        -- 2단계: 중간 거리 - 적당한 가속 (스치지 않도록)
-        local BoostRatio = 1.0 - ((DistanceToTarget - SlowdownDistance) / (CriticalDistance - SlowdownDistance))
-        local BoostSpeed = CurrentMaxSpeed * 1.3
-        obj.Speed = CalculatedSpeed + (BoostSpeed - CalculatedSpeed) * BoostRatio
-    else
-        -- 3단계: 멀리 있을 때 - 정상 가속
-        obj.Speed = CalculatedSpeed
-    end
+    -- 감속 없이 일정한 속도 유지 (충돌까지 빠르게)
+    obj.Speed = CalculatedSpeed
 end
 
 ---
 -- 회전 계산 및 적용
 ---
 function CalculateAndApplyRotation(ToTarget, DistanceToTarget, dt)
-    -- 타겟이 매우 가까우면 유도 중지 (오버슈팅 방지)
-    if DistanceToTarget <= 0.5 then
-        return
-    end
-
+    -- 타겟이 매우 가까워도 계속 유도 (충돌까지)
     ToTarget:Normalize()
 
-    -- 각도 기반 속도 제한
+    -- 각도 기반 속도 제한 (제거됨)
     ApplyAngleBasedSpeedPenalty(ToTarget)
 
     -- 회전 속도 계산
@@ -406,16 +397,8 @@ end
 -- 각도 기반 속도 제한 (각도가 크면 속도 감소)
 ---
 function ApplyAngleBasedSpeedPenalty(ToTarget)
-    -- 현재 방향과 타겟 방향의 내적으로 각도 계산
-    local DotProduct = obj.Direction.x * ToTarget.x + obj.Direction.y * ToTarget.y + obj.Direction.z * ToTarget.z
-    local AngleFactor = (DotProduct + 1.0) / 2.0  -- 0.0 ~ 1.0 범위로 정규화
-
-    if AngleFactor < AngleThreshold then
-        -- 속도를 크게 줄여서 회전에 집중
-        local AnglePenalty = AngleFactor / AngleThreshold
-        obj.Speed = obj.Speed * (MinSpeedRatio + AnglePenalty * (1.0 - MinSpeedRatio))
-        print("[HomingProjectile] Angle correction: DotProduct=" .. DotProduct .. ", Speed reduced to " .. obj.Speed)
-    end
+    -- 각도 페널티 제거 - 일정한 속도로 유도만 수행
+    -- 이렇게 하면 타겟 근처에서 느려지지 않음
 end
 
 ---
