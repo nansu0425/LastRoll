@@ -2,6 +2,7 @@
 
 class UScriptComponent;
 class UStaticMeshComponent;
+class USphereComponent;
 
 UCLASS()
 class AEnemy : public AActor
@@ -14,9 +15,10 @@ public:
     virtual ~AEnemy() = default;
 
     virtual UClass* GetDefaultRootComponent() override;
-    
+
     virtual void InitializeComponents() override;
 
 private:
     UScriptComponent* EnemyScriptComponent = nullptr;
+    USphereComponent* SphereCollider = nullptr;
 };

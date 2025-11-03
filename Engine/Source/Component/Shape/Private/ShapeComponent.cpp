@@ -8,9 +8,6 @@ UShapeComponent::UShapeComponent()
 {
 	// Shape Component는 기본적으로 overlap 이벤트를 생성
 	bGenerateOverlapEvents = true;
-
-	// 기본적으로 보이지 않음 (디버그용)
-	bVisible = false;
 }
 
 UShapeComponent::~UShapeComponent()

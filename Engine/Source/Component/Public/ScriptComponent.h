@@ -156,7 +156,6 @@ private:
 	void MakeCoroutine(const FString& FuncName);
 	void StopCoroutine(const FString& FuncName);
 	bool ResumeCoroutine(CoroutineData& Coroutine);
-	void Update(const float DeltaTime);
 };
 
 // 템플릿 구현
@@ -168,12 +167,32 @@ void UScriptComponent::CallLuaFunction(const char* FunctionName, Args&&... args)
 
 	try
 	{
-		// 캐싱된 함수에서 찾기 (이미 environment가 설정됨)
+		// 1. 캐싱된 함수에서 먼저 찾기 (빠른 경로)
 		auto it = CachedFunctions.find(FString(FunctionName));
 		if (it != CachedFunctions.end())
 		{
-			// 캐싱된 함수 호출 (environment가 InstanceEnv로 설정되어 있음)
+			// 캐싱된 함수 호출 (environment가 이미 InstanceEnv로 설정되어 있음)
 			sol::protected_function_result result = it->second(std::forward<Args>(args)...);
+
+			if (!result.valid())
+			{
+				sol::error err = result;
+				UE_LOG_ERROR("Lua function '%s' error: %s", FunctionName, err.what());
+			}
+			return;
+		}
+
+		// 2. 캐시에 없으면 InstanceEnv에서 동적으로 찾기 (느린 경로)
+		sol::optional<sol::function> func_opt = InstanceEnv[FunctionName];
+		if (func_opt)
+		{
+			sol::function func = *func_opt;
+
+			// environment 설정 (InstanceEnv를 사용하도록)
+			InstanceEnv.set_on(func);
+
+			// 함수 호출
+			sol::protected_function_result result = func(std::forward<Args>(args)...);
 
 			if (!result.valid())
 			{
@@ -183,7 +202,10 @@ void UScriptComponent::CallLuaFunction(const char* FunctionName, Args&&... args)
 		}
 		else
 		{
-			UE_LOG_WARNING("Lua function '%s' not found or not cached", FunctionName);
+			// 함수가 정말 존재하지 않는 경우 (디버그 빌드에서만 경고)
+			#if _DEBUG
+			UE_LOG_WARNING("Lua function '%s' not found in script", FunctionName);
+			#endif
 		}
 	}
 	catch (const std::exception& e)

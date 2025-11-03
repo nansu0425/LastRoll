@@ -76,6 +76,7 @@ void UPathManager::ValidateAndCreateDirectories() const
 		WorldPath,
 		ConfigPath,
 		FontPath,
+		DataPath / "Scripts",
 		EngineDataPath,
 		EngineDataPath / "Scripts"
 	};
