@@ -127,6 +127,7 @@ function Move(dt)
     end
     if IsKeyDown(EKeyInput.D) then
         MoveDir.y = MoveDir.y + 1
+        --_G.GameData.GMEnv.PlayerDead()
     end
 
     MoveDir:Normalize()

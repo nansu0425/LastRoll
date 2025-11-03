@@ -108,7 +108,9 @@ function ReturnToPool()
     obj.CurAttackDelay = AttackDelay
     obj.TargetingProjectiles = {}  -- 타겟팅 리스트 초기화
 
-    -- ActorPool에 반납
+    -- ActorPool에 반납 (재사용)
+    _G.GameData.GMEnv.AddScore(1)
+    _G.GameData.GMEnv.AddEXP(1)
     ActorPool:Return(Owner)
 end
 
