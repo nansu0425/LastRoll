@@ -116,6 +116,12 @@ function OnBeginOverlap(OtherActor)
 
         -- TakeDamage 함수가 있으면 호출 (Enemy 판별)
         if Env["TakeDamage"] ~= nil then
+            -- 죽은 Enemy는 무시 (Homing Projectile이 처리할 것)
+            if Env["obj"] and Env["obj"].IsDead then
+                print("[LinearProjectile] Target is dead, ignoring collision")
+                return
+            end
+
             print("[LinearProjectile] TakeDamage function found, dealing " .. obj.Damage .. " damage")
             Env["TakeDamage"](obj.Damage)
             print("[LinearProjectile] Returning to pool")

@@ -13,6 +13,13 @@ local ProjectileSpeed = 30.0
 local ProjectileDamage = 10
 local ProjectileRange = 50.0
 
+-- 자동 타겟 설정
+local AutoTargetCooldown = 1.0  -- 자동 타겟 발사 주기 (초)
+local AutoTargetRange = 20.0  -- Detection Collider 반지름과 동일
+
+-- Enemy 탐지 리스트
+local DetectedEnemies = {}
+
 
 
 function BeginPlay()
@@ -23,7 +30,18 @@ function BeginPlay()
     obj.HP = 100.0
     obj.Dmg = 10
     obj.AttackTimer = 0.0  -- 발사 타이머
-    print("Actor started: " .. obj.UUID)
+    obj.AutoTargetTimer = 0.0  -- 자동 타겟 타이머
+    print("[Player] Actor started: " .. obj.UUID)
+
+    -- DetectionCollider의 Overlap 이벤트 바인딩
+    local DetectionCollider = Owner:GetComponent("USphereComponent")
+    if DetectionCollider then
+        print("[Player] Binding overlap to Detection Collider")
+        DetectionCollider:BindBeginOverlap(self, OnDetectionBeginOverlap)
+        DetectionCollider:BindEndOverlap(self, OnDetectionEndOverlap)
+    else
+        print("[Player] WARNING: No Detection Collider found!")
+    end
 end
 
 -- Called every frame
@@ -34,7 +52,8 @@ function Tick(dt)
     end
 
     Move(dt)
-    HandleAttack(dt)  -- 발사 로직
+    HandleAttack(dt)  -- 마우스 방향 발사 로직
+    HandleAutoTarget(dt)  -- 자동 타겟 발사 로직
 
     HPPer = obj.HP / obj.MaxHP
     Util.RenderHPBar(obj.Location, Vector2(70, 20), HPPer)
@@ -47,36 +66,41 @@ function EndPlay()
 end
 
 -- ==============================================================================
--- Overlap Event Functions
+-- Detection Collider Overlap Event Functions
 -- ==============================================================================
 
--- Called when overlap starts with another Actor
--- @param OtherActor: The Actor that began overlapping with this one
-function OnBeginOverlap(OtherActor)
-    obj.OverlapCount = obj.OverlapCount + 1
+---
+-- Detection Collider에 Enemy 진입
+---
+function OnDetectionBeginOverlap(OtherActor)
+    print("[Player] Detection overlap started: " .. OtherActor:GetName())
 
-    print("========== Overlap Started ==========")
-    print("  My Actor: " .. obj.UUID)
-    print("  Other Actor: " .. OtherActor:GetName())
-    print("  Other Location: " .. tostring(OtherActor.Location))
-    print("  Total Overlaps: " .. obj.OverlapCount)
-
-    -- Example: Stop moving when overlapping
-    -- obj.Velocity = Vector(0, 0, 0)
-
-    -- Example: Change location on overlap
-    -- obj.Location = obj.Location + Vector(0, 0, 10)
+    -- Enemy인지 확인 (ScriptComponent의 TakeDamage 함수로 판별)
+    local ScriptComp = OtherActor:GetScriptComponent()
+    if ScriptComp then
+        local Env = ScriptComp:GetEnv()
+        if Env["TakeDamage"] then
+            -- Enemy로 판별됨
+            table.insert(DetectedEnemies, OtherActor)
+            print("[Player] Enemy detected! Total enemies: " .. #DetectedEnemies)
+        end
+    end
 end
 
--- Called when overlap ends with another Actor
--- @param OtherActor: The Actor that stopped overlapping with this one
-function OnEndOverlap(OtherActor)
-    print("========== Overlap Ended ==========")
-    print("  My Actor: " .. obj.UUID)
-    print("  Other Actor: " .. OtherActor:GetName())
+---
+-- Detection Collider에서 Enemy 이탈
+---
+function OnDetectionEndOverlap(OtherActor)
+    print("[Player] Detection overlap ended: " .. OtherActor:GetName())
 
-    -- Example: Resume movement after overlap
-    -- obj.Velocity = Vector(10, 0, 0)
+    -- 리스트에서 제거
+    for i, Enemy in ipairs(DetectedEnemies) do
+        if Enemy.UUID == OtherActor.UUID then
+            table.remove(DetectedEnemies, i)
+            print("[Player] Enemy removed from detection. Remaining: " .. #DetectedEnemies)
+            break
+        end
+    end
 end
 
 
@@ -171,5 +195,94 @@ function ShootProjectile()
         end
     else
         print("[Player] Failed to get projectile from pool")
+    end
+end
+
+-- ==============================================================================
+-- Auto Target Functions
+-- ==============================================================================
+
+---
+-- 자동 타겟 발사 처리
+---
+function HandleAutoTarget(dt)
+    -- 쿨타임 감소
+    if obj.AutoTargetTimer > 0 then
+        obj.AutoTargetTimer = obj.AutoTargetTimer - dt
+        return
+    end
+
+    -- 가장 가까운 Enemy 찾기
+    local TargetEnemy = FindNearestEnemy()
+
+    if TargetEnemy then
+        ShootHomingProjectile(TargetEnemy)
+        obj.AutoTargetTimer = AutoTargetCooldown
+    end
+end
+
+---
+-- 가장 가까운 Enemy 찾기 (살아있는 Enemy만)
+---
+function FindNearestEnemy()
+    if #DetectedEnemies == 0 then
+        return nil
+    end
+
+    local NearestEnemy = nil
+    local MinDistance = math.huge
+
+    for _, Enemy in ipairs(DetectedEnemies) do
+        -- 죽은 Enemy는 새로운 타겟으로 선택하지 않음
+        local ScriptComp = Enemy:GetScriptComponent()
+        if ScriptComp then
+            local Env = ScriptComp:GetEnv()
+            if Env["obj"] and Env["obj"].IsDead then
+                -- 죽은 Enemy 무시
+                print("[Player] Skipping dead enemy: " .. Enemy:GetName())
+                goto continue
+            end
+        end
+
+        -- Enemy가 여전히 유효한지 확인 (거리 계산이 성공하면 유효)
+        local Distance = (Enemy.Location - obj.Location):Length()
+
+        if Distance < MinDistance then
+            MinDistance = Distance
+            NearestEnemy = Enemy
+        end
+
+        ::continue::
+    end
+
+    return NearestEnemy
+end
+
+---
+-- 유도 투사체 발사
+---
+function ShootHomingProjectile(TargetActor)
+    local Projectile = ActorPool:Get("AHomingProjectile")
+
+    if Projectile then
+        -- 투사체 위치 설정 (플레이어 위치)
+        Projectile.Location = obj.Location
+
+        -- 투사체 ScriptComponent 가져오기
+        local ProjScript = Projectile:GetScriptComponent()
+        if ProjScript then
+            -- Setup 함수 호출 (HomingProjectile.lua의 Setup 함수)
+            local Env = ProjScript:GetEnv()
+            if Env["Setup"] then
+                Env["Setup"](TargetActor, ProjectileSpeed, ProjectileDamage, ProjectileRange)
+                print("[Player] Homing projectile launched at target: " .. TargetActor:GetName())
+            else
+                print("[Player] ERROR: Setup function not found in HomingProjectile!")
+            end
+        else
+            print("[Player] ERROR: ScriptComponent not found!")
+        end
+    else
+        print("[Player] Failed to get homing projectile from pool")
     end
 end
