@@ -13,7 +13,7 @@ function DamageTextUIUpdate(dt)
         if Text.LifeTime <= 0 then
             table.remove(_G.UIData.DamageTextList, i)
         else
-            DrawText(tostring(Text.Damage), WorldToScreenPos(Text.WorldPos), Vector2(80,30), 30, Vector4(1,1,1,Text.LifeTime))
+            DrawText(tostring(Text.Damage), WorldToScreenPos(Text.WorldPos), Vector2(80,30), 30, Vector4(Text.Color.x,Text.Color.y,Text.Color.z,Text.LifeTime))
            Text.WorldPos = Text.WorldPos + Vector(1 * dt,0 ,0)
         end
     end

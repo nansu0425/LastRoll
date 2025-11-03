@@ -318,7 +318,9 @@ void UScriptManager::RegisterCoreTypes()
 		sol::meta_function::multiplication, sol::overload(
 			[](const FVector2& v, float f) -> FVector2 { return v * f; },
 			[](float f, const FVector2& v) -> FVector2 { return v * f; }
-		)
+		),
+		"Length", & FVector2::Length,
+		"Normalize", & FVector2::GetNormalized
 	);
 
 	lua.new_usertype<FVector4>("FVector4",

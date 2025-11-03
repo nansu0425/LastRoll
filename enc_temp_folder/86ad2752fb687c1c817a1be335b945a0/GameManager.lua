@@ -53,9 +53,9 @@ end
 
 function GetLevelText()
  if _G.GameData.Level >= MaxLevel then
-    return "Lv Max"
+    return "Max"
     else
-    return "Lv "..tostring(_G.GameData.Level)
+    return tostring(_G.GameData.Level)
     end
 end
 
@@ -114,9 +114,9 @@ elseif _G.GameData.GameState == EGameState.Loading then
 
 elseif _G.GameData.GameState == EGameState.Playing then
     --Score
-    DrawText("Score "..tostring(_G.GameData.Score), Vector2(100,100) + ViewportLTop, Vector2(400,100), 40, Vector4(0,1,0,1))
+    DrawText(tostring(_G.GameData.Score), Vector2(100,100) + ViewportLTop, Vector2(200,100), 50, Vector4(0,1,0,1))
     --Level, EXP
-    DrawText(GetLevelText(), Vector2(ScreenCenter.x - 430, ViewportLTop.y + 100), Vector2(200,70), 40, Vector4(0,1,0,1))
+    DrawText(GetLevelText(), Vector2(ScreenCenter.x - 400, ViewportLTop.y + 100), Vector2(100,70), 50, Vector4(0,1,0,1))
     DrawGaugeBar(Vector2(ScreenCenter.x, ViewportLTop.y + 100), Vector2(700, 40), GetCurEXPPer(), Vector4(0.2,0.2,0.2,1.0), Vector4(0.0, 1.0, 0.0, 1.0))
 
 elseif _G.GameData.GameState == EGameState.EndSequence then
