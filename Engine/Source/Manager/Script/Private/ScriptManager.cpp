@@ -407,6 +407,8 @@ void UScriptManager::RegisterCoreTypes()
 		"SetLocation", &AActor::SetActorLocation,
 		"GetRotation", &AActor::GetActorRotation,
 		"SetRotation", &AActor::SetActorRotation,
+		"AxisRotation", &AActor::AxisAngle,
+
 		"PrintLocation", [](AActor* self) {
 			FVector loc = self->GetActorLocation();
 			UE_LOG("Actor %s Location: (%.2f, %.2f, %.2f)",

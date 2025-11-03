@@ -213,6 +213,12 @@ void AActor::SetActorRotation(const FQuaternion& InRotation) const
 		RootComponent->SetRelativeRotation(InRotation);
 	}
 }
+void AActor::AxisAngle(const FVector& Axis, const float Degree)
+{
+	FQuaternion OriginRot = GetActorRotation();
+	FQuaternion CurRot = FQuaternion::FromAxisAngle(Axis, -FVector::GetDegreeToRadian(Degree));
+	SetActorRotation(OriginRot * CurRot);
+}
 
 void AActor::SetActorScale3D(const FVector& InScale) const
 {

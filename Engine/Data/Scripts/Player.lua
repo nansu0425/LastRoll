@@ -50,6 +50,7 @@ function Init()
 
     TopCamera()
     print("[Player] Actor Init: " .. obj.UUID)
+
 end
 
 -- Called every frame
@@ -139,7 +140,7 @@ end
 
 function TopCamera()
 TargetPos = obj.Location
-GetCamera().Location = TargetPos + Vector(-2,0,25)
+GetCamera().Location = TargetPos + Vector(-5,0,25)
 GetCamera().Rotation = Vector(0,-70,0)
 end
 
@@ -147,15 +148,19 @@ function Move(dt)
     MoveDir = Vector(0,0,0)
     if IsKeyDown(EKeyInput.W) then
         MoveDir.x = MoveDir.x + 1
+        Owner:AxisRotation(Vector(0,1,0), 500 * dt)
     end
     if IsKeyDown(EKeyInput.A) then
         MoveDir.y = MoveDir.y - 1
+        Owner:AxisRotation(Vector(1,0,0), 500 * dt)
     end
     if IsKeyDown(EKeyInput.S) then
         MoveDir.x = MoveDir.x - 1
+        Owner:AxisRotation(Vector(0,1,0), -500 * dt)
     end
     if IsKeyDown(EKeyInput.D) then
         MoveDir.y = MoveDir.y + 1
+        Owner:AxisRotation(Vector(1,0,0), -500 * dt)
     end
 
     MoveDir:Normalize()

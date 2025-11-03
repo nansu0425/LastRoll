@@ -28,6 +28,7 @@ public:
 	void SetActorRotation(const FQuaternion& InRotation) const;
 	void SetActorScale3D(const FVector& InScale) const;
 	void SetUniformScale(bool IsUniform);
+	void AxisAngle(const FVector& Axis, const float Degree);
 	virtual UClass* GetDefaultRootComponent();
 	virtual void InitializeComponents();
 

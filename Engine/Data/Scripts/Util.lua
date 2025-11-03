@@ -47,4 +47,12 @@ function Util.IsActiveMode()
     return false
 end
 
+function Util.Vt2ToRotZDegree(Vt2)
+    -- atan2(y, x) 는 2D 벡터가 X축과 이루는 라디안 각도 반환
+    local rad = math.atan2(Vt2.y, Vt2.x)
+    -- 라디안을 도 단위로 변환
+    local deg = math.deg(rad)
+
+    return deg
+end
 return Util
