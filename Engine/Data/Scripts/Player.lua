@@ -44,7 +44,10 @@ function Init()
     obj.Dmg = 10
     obj.AttackTimer = 0.0  -- 발사 타이머
     obj.AutoTargetTimer = 0.0  -- 자동 타겟 타이머
-    obj.Location = Vector(0,0,0)
+    obj.Location = Vector(0,0,1)
+    _G.PlayerData.PlayerEnv =  Owner:GetScriptComponentByName("Player.lua"):GetEnv()
+    _G.PlayerData.bPlayerAlive = true
+
     TopCamera()
     print("[Player] Actor Init: " .. obj.UUID)
 end
@@ -127,6 +130,8 @@ end
 -- 사망 처리
 ---
 function Die()
+    _G.PlayerData.bPlayerAlive = false
+    _G.PlayerData.PlayerEnv = nil
     ActorPool:Return(Owner)
     _G.GameData.GMEnv.PlayerDead()
 end
@@ -151,12 +156,14 @@ function Move(dt)
     end
     if IsKeyDown(EKeyInput.D) then
         MoveDir.y = MoveDir.y + 1
-        TakeDamagePlayer(1)
     end
 
     MoveDir:Normalize()
     obj.Location = obj.Location + MoveDir * obj.Speed * dt
     _G.PlayerData.PlayerPos = obj.Location
+
+    --모든 Enemy 돌면서 겹치면 밀리도록 처리
+
     TopCamera()
 end
 

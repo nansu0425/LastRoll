@@ -86,8 +86,8 @@ end
 
 function BeginPlay()
 ActorPool:Clear()
-_G.GameData.ManagerActor = FindActorByName("Managers")
-_G.GameData.GMEnv = _G.GameData.ManagerActor:GetScriptComponentByName("GameManager.lua"):GetEnv()
+_G.GameData.ManagerActor = Owner
+_G.GameData.GMEnv = Owner:GetScriptComponentByName("GameManager.lua"):GetEnv()
 _G.GameData.GameState = EGameState.Lobby
 local ScriptComp = Owner:GetScriptComponentByName("EnemySpawner.lua")
 if ScriptComp ~= nil then
