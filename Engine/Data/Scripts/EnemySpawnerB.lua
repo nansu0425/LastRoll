@@ -10,7 +10,7 @@ local Util = require("Data\\Scripts\\Util")
 -- ==============================================================================
 
 -- 스폰 주기
-local SpawnInterval = 2.0
+local SpawnInterval = 5.0
 
 -- 스폰 반경
 local SpawnRadius = 80.0
@@ -64,7 +64,7 @@ function SpawnFromPool()
         return
     end
 
-    local SpawnedActor = TestPool:Get("AEnemy")
+    local SpawnedActor = TestPool:Get("AEightBallEnemy")
     if not SpawnedActor then 
         print("EnemySpawner:SpawnFromPool - Failed to get Enemy from Pool.")
         return

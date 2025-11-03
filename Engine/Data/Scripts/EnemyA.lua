@@ -28,21 +28,29 @@ function BeginPlay()
     obj.TargetingProjectiles = {}
     obj.KnockbackDir = Vector(0,0,0)
     obj.KnockbackDis = 0
+    obj.Rotation = Quaternion(0, 0, 0, 1)
+    obj.CurRotZ = 90
+    obj.ToPlayerDirXY = Vector2(0,0)
 
     -- ========== 체스 말 이동 로직용 변수 추가 ==========
-    obj.StepDistance = 10.0          -- 한 번의 "홉(hop)"으로 이동할 거리
+    obj.StepDistance = 14.0          -- 한 번의 "홉(hop)"으로 이동할 거리
     obj.MoveState = "Idle"           -- 현재 상태: "Idle", "Lifting", "Moving", "Landing"
     obj.MoveInterval = 1.0           -- 이동 사이의 대기 시간 (초)
     obj.MoveTimer = obj.MoveInterval -- 다음 이동까지 남은 시간
 
     obj.LiftHeight = 5.0            -- "홉" 할 때 떠오르는 높이 (Z축)
-    obj.MoveAnimDuration = 1.0       -- "홉" 애니메이션(상승-이동-하강)에 걸리는 총 시간
+    obj.MoveAnimDuration = 0.7       -- "홉" 애니메이션(상승-이동-하강)에 걸리는 총 시간
     obj.MoveAnimTimer = 0.0          -- "홉" 애니메이션 타이머
 
     obj.StartMovePos = nil           -- 이동 시작 위치
     obj.TargetMovePos = nil          -- 이동 목표 위치
     obj.GroundZ = 0.0                -- 지면의 Z 레벨 (Tick에서 자동으로 설정됨)
     obj.HasSetGroundZ = false        -- GroundZ를 설정했는지 여부
+    -- ================================================
+    
+    -- ========== 재배치 로직용 변수 =====================
+    obj.MaxDistanceBeforeRelocate = 100.0 -- 이 거리(Z축 무시)보다 멀어지면 재배치
+    obj.RelocateRadius = 70.0            -- 플레이어 중심 이 반경(링의 외곽)
     -- ================================================
     
     -- ========== 체스 말 죽음 로직용 변수 추가 ============
@@ -89,7 +97,7 @@ function TakeDamage(InDamage)
     obj.HP = obj.HP - InDamage
 
     -- 데미지 텍스트 표시
-    Util.MakeDamageText(InDamage, obj.Location)
+    Util.MakeDamageText(InDamage, obj.Location, Vector4(0.8,0.8,0.8,1))
 
     Dir = obj.Location - _G.PlayerData.PlayerPos
     Dir:Normalize()
@@ -201,6 +209,7 @@ function ReturnToPool()
     obj.DeathFlightVelocity = Vector(0, 0, 0)
     obj.DeathSpinAxis = Vector(1, 0, 0)
     obj.Rotation = Quaternion(0, 0, 0, 1)
+    obj.CurRotZ = 90
     -- ========================================
 
     -- ActorPool에 반납 (재사용)
@@ -244,16 +253,43 @@ function Tick(dt)
         obj.HasSetGroundZ = true
     end
 
+    local PlayerPos = _G.PlayerData.PlayerPos
+    local DirToPlayer = PlayerPos - obj.Location
+    DirToPlayer.z = 0 -- Z축 무시
+    local CurrentPlayerDis = DirToPlayer:Length()
+    if obj.MoveState == "Idle" and obj.HasSetGroundZ and CurrentPlayerDis > obj.MaxDistanceBeforeRelocate then
+        
+        -- 플레이어 주변 원형 "링" 영역에 랜덤 위치 생성
+        local RandomAngle = math.rad(Random(0, 360))
+        -- (반지름 * 0.5) ~ (반지름) 사이의 랜덤 거리
+        local RandomDist = Random(obj.RelocateRadius, obj.RelocateRadius * 1.2) 
+        
+        local OffsetX = math.cos(RandomAngle) * RandomDist
+        local OffsetY = math.sin(RandomAngle) * RandomDist
+        
+        local NewX = PlayerPos.x + OffsetX
+        local NewY = PlayerPos.y + OffsetY
+        
+        -- 위치 강제 설정 및 상태 초기화
+        obj.Location = Vector(NewX, NewY, obj.GroundZ)
+        obj.MoveTimer = obj.MoveInterval -- 이동 타이머 초기화
+        
+        -- 재배치 후 거리/방향 재계산 (바로 이어질 'Idle' 상태 로직을 위해)
+        DirToPlayer = PlayerPos - obj.Location
+        DirToPlayer.z = 0
+        CurrentPlayerDis = DirToPlayer:Length()
+        
+        -- print("[Enemy] Relocated due to distance.")
+    end
+
     -- ==============================================================================
     -- 체스 말 이동 상태 기계 (State Machine)
     -- ==============================================================================
 
     if obj.MoveState == "Idle" then
         obj.MoveTimer = obj.MoveTimer - dt
-        local Dir = _G.PlayerData.PlayerPos - obj.Location
-        local Dis = Dir:Length()
 
-        if Dis <= AttackDis then
+        if CurrentPlayerDis <= AttackDis then
             obj.CurAttackDelay = obj.CurAttackDelay - dt
             if obj.CurAttackDelay < 0 then
                 Attack()
@@ -264,14 +300,19 @@ function Tick(dt)
             obj.MoveState = "Lifting"
             obj.MoveAnimTimer = 0.0
             obj.StartMovePos = obj.Location
-            Dir:Normalize()
-            local TargetXY = obj.Location + Dir * obj.StepDistance
-            local MaxMoveDist = math.max(0, Dis - AttackDis)
+            local DirNorm = Vector(DirToPlayer.x, DirToPlayer.y, 0)
+            DirNorm:Normalize()
+            local TargetXY = obj.Location + DirNorm * obj.StepDistance
+            local MaxMoveDist = math.max(0, CurrentPlayerDis - AttackDis)
             if (TargetXY - obj.Location):Length() > MaxMoveDist then
-                 TargetXY = obj.Location + Dir * MaxMoveDist
+                 TargetXY = obj.Location + DirNorm * MaxMoveDist
             end
             obj.TargetMovePos = Vector(TargetXY.x, TargetXY.y, obj.GroundZ)
             obj.StartMovePos.z = obj.GroundZ
+
+            local ToPlayerDirXY = Vector2(DirToPlayer.x, DirToPlayer.y)
+            ToPlayerDirXY:Normalize()
+            obj.ToPlayerDirXY = ToPlayerDirXY
         end
 
     elseif obj.MoveState == "Lifting" then
@@ -284,7 +325,7 @@ function Tick(dt)
 
         if Alpha >= 1.0 then
             newZ = obj.GroundZ + obj.LiftHeight -- 정확히 최고 높이로
-            obj.MoveState = "Moving"
+            obj.MoveState = "Rotate"
             obj.MoveAnimTimer = 0.0          -- 다음 상태를 위해 타이머 리셋
         else
             -- 부드러운 시작 (EaseOutQuad)
@@ -293,6 +334,24 @@ function Tick(dt)
         end
         
         obj.Location = Vector(obj.StartMovePos.x, obj.StartMovePos.y, newZ)
+    
+    elseif obj.MoveState == "Rotate" then
+        
+        CurForwardXY = Util.GetForwardFromDegreeZ(obj.CurRotZ)
+        --플레이어를 바라보기 위한 회전 값
+        ToPlayerDegree = Util.Rotate2DDegree(CurForwardXY, obj.ToPlayerDirXY)
+        --현재 회전 가능한 최대값
+        CurRotDegree = math.random(500, 1000) * dt * Util.Sign(ToPlayerDegree)
+        --print(CurForwardXY.x.." "..CurForwardXY.y.." "..obj.ToPlayerDirXY.x.." "..obj.ToPlayerDirXY.y.." "..ToPlayerDegree)
+        if math.abs(ToPlayerDegree) <= math.abs(CurRotDegree) then
+            Owner:AxisRotation(Vector(0,0,1), ToPlayerDegree)
+            obj.CurRotZ = obj.CurRotZ + ToPlayerDegree
+            obj.MoveState = "Moving"
+        else
+            Owner:AxisRotation(Vector(0,0,1), CurRotDegree)
+            obj.CurRotZ = obj.CurRotZ + CurRotDegree
+        end
+        
 
     elseif obj.MoveState == "Moving" then
         -- Moving 상태: 수평 이동 (애니메이션 시간의 40%)

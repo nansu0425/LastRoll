@@ -18,7 +18,7 @@ public:
 
     virtual void InitializeComponents() override;
 
-private:
+protected:
     UScriptComponent* EnemyScriptComponent = nullptr;
     USphereComponent* SphereCollider = nullptr;
 };

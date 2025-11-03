@@ -30,48 +30,58 @@
 --   obj.Location = obj.Location + obj.Velocity * dt
 -- ==============================================================================
 
-local TILE_SIDE_LENGTH = 300.0
-
 -- Called once when the Actor begins play
 function BeginPlay()
     -- Initialize custom properties
-    obj.WrapDistance = 2.0 * TILE_SIDE_LENGTH
-    
-    obj.WrapThreshold = 1.0 * TILE_SIDE_LENGTH
+    obj.Velocity = Vector(10, 0, 0)
+    obj.Speed = 100.0
+    obj.OverlapCount = 0
+
+    print("Actor started: " .. obj.UUID)
 end
 
 -- Called every frame
 -- @param dt: Delta time in seconds
 function Tick(dt)
-    if not _G.PlayerData or not _G.PlayerData.PlayerPos then 
-        --print("Tile:Tick - Player not found.")
-        return
-    end
-
-    local PlayerPos = _G.PlayerData.PlayerPos
-    local TilePos = obj.Location
-    
-    local DeltaX = PlayerPos.x - TilePos.x 
-    local DeltaY = PlayerPos.y - TilePos.y
-    
-    local NewX = TilePos.x 
-    local NewY = TilePos.y 
-    
-    if DeltaX > obj.WrapThreshold then 
-        NewX = NewX + obj.WrapDistance
-    elseif DeltaX < -obj.WrapThreshold then
-        NewX = NewX - obj.WrapDistance
-    end
-
-    if DeltaY > obj.WrapThreshold then
-        NewY = NewY + obj.WrapDistance
-    elseif DeltaY < -obj.WrapThreshold then
-        NewY = NewY - obj.WrapDistance
-    end
-
-    obj.Location = Vector(NewX, NewY, TilePos.z)
+    -- Update location based on velocity
+    -- obj.Location = obj.Location + obj.Velocity * dt
 end
 
 -- Called once when the Actor ends play
 function EndPlay()
+    print("Actor ending: " .. obj.UUID)
+    print("Total overlaps detected: " .. obj.OverlapCount)
+end
+
+-- ==============================================================================
+-- Overlap Event Functions
+-- ==============================================================================
+
+-- Called when overlap starts with another Actor
+-- @param OtherActor: The Actor that began overlapping with this one
+function OnBeginOverlap(OtherActor)
+    obj.OverlapCount = obj.OverlapCount + 1
+
+    print("========== Overlap Started ==========")
+    print("  My Actor: " .. obj.UUID)
+    print("  Other Actor: " .. OtherActor:GetName())
+    print("  Other Location: " .. tostring(OtherActor.Location))
+    print("  Total Overlaps: " .. obj.OverlapCount)
+
+    -- Example: Stop moving when overlapping
+    -- obj.Velocity = Vector(0, 0, 0)
+
+    -- Example: Change location on overlap
+    -- obj.Location = obj.Location + Vector(0, 0, 10)
+end
+
+-- Called when overlap ends with another Actor
+-- @param OtherActor: The Actor that stopped overlapping with this one
+function OnEndOverlap(OtherActor)
+    print("========== Overlap Ended ==========")
+    print("  My Actor: " .. obj.UUID)
+    print("  Other Actor: " .. OtherActor:GetName())
+
+    -- Example: Resume movement after overlap
+    -- obj.Velocity = Vector(10, 0, 0)
 end

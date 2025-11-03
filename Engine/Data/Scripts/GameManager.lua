@@ -10,7 +10,26 @@ local EndSeuenceText = ""
 local EnemySpawner = nil
 local LevelEXP = {2, 2, 2, 2}
 local MaxLevel = 5
+local BlueLight
+local PinkLight
+local YellowLight
+local BlueLightOffset
+local PinkLightOffset
+local YellowLightOffset
+local CurLightPos = Vector(0,0,0)
 
+function LightMove(dt)
+LightToPlayer = _G.PlayerData.PlayerPos - CurLightPos
+LightToPlayer.z = 0
+CurLightPos = CurLightPos + LightToPlayer * dt * 1.3
+SetLightPos()
+end
+
+function SetLightPos()
+BlueLight.Location = CurLightPos + BlueLightOffset
+PinkLight.Location = CurLightPos + PinkLightOffset
+YellowLight.Location = CurLightPos + YellowLightOffset
+end
 
 function PlayerDead()
 ChangeGameState(EGameState.EndSequence)
@@ -21,6 +40,10 @@ function StartSequence()
 _G.GameData.Score = 0
 _G.GameData.EXP = 0
 _G.GameData.Level = 1
+
+CurLightPos = Vector(0,0,0)
+SetLightPos()
+
 SpawnedActor = ActorPool:Get("APlayer")
 print("캐릭터 생성")
 SpawnedActor:GetScriptComponentByName("Player.lua"):GetEnv().Init()
@@ -53,9 +76,9 @@ end
 
 function GetLevelText()
  if _G.GameData.Level >= MaxLevel then
-    return "Max"
+    return "Lv Max"
     else
-    return tostring(_G.GameData.Level)
+    return "Lv "..tostring(_G.GameData.Level)
     end
 end
 
@@ -69,7 +92,10 @@ end
 
 function EndingSequence()
 EndSeuenceText = "죽었습니다.\n Score" .._G.GameData.Score
-coroutine.yield(WaitForSeconds(3.0))
+coroutine.yield(WaitForSeconds(1.5))
+CurLightPos = Vector(10000,10000,10000)
+SetLightPos()
+coroutine.yield(WaitForSeconds(1.5))
 ChangeGameState(EGameState.End)
 end
 
@@ -93,6 +119,16 @@ local ScriptComp = Owner:GetScriptComponentByName("EnemySpawner.lua")
 if ScriptComp ~= nil then
 EnemySpawner = ScriptComp
 end
+
+BlueLight = FindActorByName("BlueLight")
+PinkLight = FindActorByName("PinkLight")
+YellowLight = FindActorByName("YellowLight")
+BlueLightOffset = BlueLight.Location
+PinkLightOffset = PinkLight.Location
+YellowLightOffset = YellowLight.Location
+
+print(BlueLightOffset)
+
 end
 
 -- Called every frame
@@ -114,13 +150,18 @@ elseif _G.GameData.GameState == EGameState.Loading then
 
 elseif _G.GameData.GameState == EGameState.Playing then
     --Score
-    DrawText(tostring(_G.GameData.Score), Vector2(100,100) + ViewportLTop, Vector2(200,100), 50, Vector4(0,1,0,1))
+    DrawText("Score "..tostring(_G.GameData.Score), Vector2(100,100) + ViewportLTop, Vector2(400,100), 40, Vector4(0,1,0,1))
     --Level, EXP
-    DrawText(GetLevelText(), Vector2(ScreenCenter.x - 400, ViewportLTop.y + 100), Vector2(100,70), 50, Vector4(0,1,0,1))
+    DrawText(GetLevelText(), Vector2(ScreenCenter.x - 430, ViewportLTop.y + 100), Vector2(200,70), 40, Vector4(0,1,0,1))
     DrawGaugeBar(Vector2(ScreenCenter.x, ViewportLTop.y + 100), Vector2(700, 40), GetCurEXPPer(), Vector4(0.2,0.2,0.2,1.0), Vector4(0.0, 1.0, 0.0, 1.0))
+
+    --LightMove
+    LightMove(dt)
 
 elseif _G.GameData.GameState == EGameState.EndSequence then
     DrawText(EndSeuenceText, ScreenCenter, Vector2(700,300), 50, Vector4(0.5,1,1,1))
+    --LightMove
+    LightMove(dt)
 
 elseif _G.GameData.GameState == EGameState.End then
     DrawText("Restart Press W", ScreenCenter, Vector2(500,100), 50, Vector4(0.5,1,1,1))
@@ -128,6 +169,8 @@ elseif _G.GameData.GameState == EGameState.End then
         ChangeGameState(EGameState.Loading)
         end
 end
+
+
 
 end
 

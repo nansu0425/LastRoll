@@ -22,6 +22,16 @@ function Util.Round(value)
     return math.floor(value + 0.5)
 end
 
+function Util.Sign(x)
+    if x > 0 then
+        return 1
+    elseif x < 0 then
+        return -1
+    else
+        return 0
+    end
+end
+
 function Util.Test()
 print("test")
 end
@@ -30,14 +40,25 @@ function Util.RenderHPBar(WorldPos, Size, HPPer)
 DrawGaugeBar(WorldToScreenPos(WorldPos + Vector(1,0,0)), Size, HPPer, Vector4(0.2,0.2,0.2,1.0), Vector4(1.0, 0.2, 0.2, 1.0))
 end
 
-function Util.MakeDamageText(InDamage, InWorldPos)
+function Util.MakeDamageText(InDamage, InWorldPos, InColor)
  local DamageText = 
     {
         Damage = InDamage,
         WorldPos = InWorldPos + Vector(2,0,0),
-        LifeTime = 1.0
+        LifeTime = 1.0,
+        Color = InColor
     }
 table.insert(_G.UIData.DamageTextList, DamageText)
+end
+
+function Util.MakeTrailText(InWorldPos, InColor)
+    local TrailText = 
+    {
+        WorldPos = InWorldPos,
+        Color = InColor,
+        LifeTime = 1.0
+    }
+    table.insert(_G.UIData.TrailTextList, TrailText)
 end
 
 function Util.IsActiveMode()
@@ -47,12 +68,30 @@ function Util.IsActiveMode()
     return false
 end
 
-function Util.Vt2ToRotZDegree(Vt2)
-    -- atan2(y, x) 는 2D 벡터가 X축과 이루는 라디안 각도 반환
-    local rad = math.atan2(Vt2.y, Vt2.x)
-    -- 라디안을 도 단위로 변환
-    local deg = math.deg(rad)
+function Util.GetForwardFromDegreeZ(Degree)
+    local rad = math.rad(Degree)
+    local x = math.cos(rad)
+    local y = math.sin(rad)
+    return Vector2(x, y)
+end
 
-    return deg
+function Util.Rotate2DDegree(VtA, VtB)
+    -- 각 벡터의 각도(라디안)
+    local angleA = math.atan2(VtA.y, VtA.x)
+    local angleB = math.atan2(VtB.y, VtB.x)
+
+    -- B - A 회전 차이 (라디안)
+    local diff = angleB - angleA
+
+    -- -π ~ π 범위로 정규화
+    if diff > math.pi then
+        diff = diff - 2 * math.pi
+    elseif diff < -math.pi then
+        diff = diff + 2 * math.pi
+    end
+
+    -- 도 단위로 변환
+    local degree = math.deg(diff)
+    return degree
 end
 return Util
