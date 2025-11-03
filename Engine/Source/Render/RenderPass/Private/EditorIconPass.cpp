@@ -9,8 +9,13 @@ FEditorIconPass::FEditorIconPass(UPipeline* InPipeline, ID3D11Buffer* InConstant
 	: FRenderPass(InPipeline, InConstantBufferCamera, InConstantBufferModel), VS(InVS), PS(InPS), InputLayout(InLayout), DS(InDS), BS(InBS)
 {
 	ConstantBufferMaterial = FRenderResourceFactory::CreateConstantBuffer<FMaterialConstants>();
+
+	// Zero-initialize the entire struct to prevent garbage values
+	EditorIconMaterialConstants = {};
+
 	EditorIconMaterialConstants.MaterialFlags |= HAS_DIFFUSE_MAP;
 	EditorIconMaterialConstants.Kd = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	EditorIconMaterialConstants.Ke = FVector4(0.0f, 0.0f, 0.0f, 0.0f);  // No emissive
 }
 
 void FEditorIconPass::Execute(FRenderingContext& Context)

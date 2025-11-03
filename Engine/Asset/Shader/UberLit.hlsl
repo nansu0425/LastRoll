@@ -52,6 +52,7 @@ cbuffer MaterialConstants : register(b2)
     float4 Ka; // Ambient color
     float4 Kd; // Diffuse color
     float4 Ks; // Specular color
+    float4 Ke; // Emissive color
     float Ns;  // Specular exponent
     float Ni;  // Index of refraction
     float D;   // Dissolve factor
@@ -1448,8 +1449,10 @@ PS_OUTPUT Uber_PS(PS_INPUT Input)
     
 #if LIGHTING_MODEL_GOURAUD
     // Use pre-calculated vertex lighting; apply diffuse material/texture per-pixel
-    finalPixel.rgb = Input.AmbientLight.rgb * ambientColor.rgb + Input.DiffuseLight.rgb * diffuseColor.rgb + Input.SpecularLight.rgb * specularColor.rgb;
-    
+    // Treat Ke as additional light source for diffuse (so texture glows with Ke color)
+    float3 totalDiffuseLight = Input.DiffuseLight.rgb + Ke.rgb;
+    finalPixel.rgb = Input.AmbientLight.rgb * ambientColor.rgb + totalDiffuseLight * diffuseColor.rgb + Input.SpecularLight.rgb * specularColor.rgb;
+
 #elif LIGHTING_MODEL_LAMBERT || LIGHTING_MODEL_BLINNPHONG
     // Calculate lighting in pixel shader
     FIllumination Illumination = (FIllumination)0;
@@ -1481,9 +1484,11 @@ PS_OUTPUT Uber_PS(PS_INPUT Input)
         FSpotLightInfo SpotLight = GetSpotLight(LightIndex);
         ADD_ILLUM(Illumination, CalculateSpotLight(SpotLight, LightIndex, N, Input.WorldPosition, ViewWorldLocation));
     }
-    
-    finalPixel.rgb = Illumination.Ambient.rgb * ambientColor.rgb + Illumination.Diffuse.rgb * diffuseColor.rgb + Illumination.Specular.rgb * specularColor.rgb;
-    
+
+    // Treat Ke as additional light source for diffuse (so texture glows with Ke color)
+    float3 totalDiffuseLight = Illumination.Diffuse.rgb + Ke.rgb;
+    finalPixel.rgb = Illumination.Ambient.rgb * ambientColor.rgb + totalDiffuseLight * diffuseColor.rgb + Illumination.Specular.rgb * specularColor.rgb;
+
 #elif LIGHTING_MODEL_NORMAL
     float3 EncodedWorldNormal = ShadedWorldNormal * 0.5f + 0.5f;
     finalPixel.rgb = EncodedWorldNormal;

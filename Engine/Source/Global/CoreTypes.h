@@ -40,6 +40,7 @@ struct FMaterialConstants
 	FVector4 Ka;
 	FVector4 Kd;
 	FVector4 Ks;
+	FVector4 Ke;
 	float Ns;
 	float Ni;
 	float D;

@@ -64,9 +64,13 @@ public:
 	UMaterial() {}
 	~UMaterial() override;
 
+	// Override Duplicate to properly copy MaterialData and Texture pointers
+	UObject* Duplicate() override;
+
 	FVector GetAmbientColor() const { return MaterialData.Ka; }
 	FVector GetDiffuseColor() const { return MaterialData.Kd; }
 	FVector GetSpecularColor() const { return MaterialData.Ks; }
+	FVector GetEmissiveColor() const { return MaterialData.Ke; }
 	float GetSpecularExponent() const { return MaterialData.Ns; }
 	float GetRefractionIndex() const { return MaterialData.Ni; }
 	float GetDissolveFactor() const { return MaterialData.D; }
@@ -92,6 +96,7 @@ public:
 	void SetAmbientColor(FVector& InColor) { MaterialData.Ka = InColor; }
 	void SetDiffuseColor(FVector& InColor) { MaterialData.Kd = InColor; }
 	void SetSpecularColor(FVector& InColor) { MaterialData.Ks = InColor; }
+	void SetEmissiveColor(FVector& InColor) { MaterialData.Ke = InColor; }
 
 private:
 	UTexture* DiffuseTexture = nullptr;

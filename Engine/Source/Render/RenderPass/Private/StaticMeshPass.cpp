@@ -134,6 +134,7 @@ void FStaticMeshPass::Execute(FRenderingContext& Context)
 				FVector AmbientColor = Material->GetAmbientColor(); MaterialConstants.Ka = FVector4(AmbientColor.X, AmbientColor.Y, AmbientColor.Z, 1.0f);
 				FVector DiffuseColor = Material->GetDiffuseColor(); MaterialConstants.Kd = FVector4(DiffuseColor.X, DiffuseColor.Y, DiffuseColor.Z, 1.0f);
 				FVector SpecularColor = Material->GetSpecularColor(); MaterialConstants.Ks = FVector4(SpecularColor.X, SpecularColor.Y, SpecularColor.Z, 1.0f);
+				FVector EmissiveColor = Material->GetEmissiveColor(); MaterialConstants.Ke = FVector4(EmissiveColor.X, EmissiveColor.Y, EmissiveColor.Z, 1.0f);
 				MaterialConstants.Ns = Material->GetSpecularExponent();
 				MaterialConstants.Ni = Material->GetRefractionIndex();
 				MaterialConstants.D = Material->GetDissolveFactor();

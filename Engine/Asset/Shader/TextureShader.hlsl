@@ -14,6 +14,7 @@ cbuffer MaterialConstants : register(b2)
 	float4 Ka;		// Ambient color
 	float4 Kd;		// Diffuse color
 	float4 Ks;		// Specular color
+	float4 Ke;		// Emissive color
 	float Ns;		// Specular exponent
 	float Ni;		// Index of refraction
 	float D;		// Dissolve factor
