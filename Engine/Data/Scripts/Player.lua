@@ -23,6 +23,7 @@ local DetectedEnemies = {}
 
 
 function BeginPlay()
+print("BeginPlayer")
     -- Initialize custom properties
     obj.OverlapCount = 0
     obj.Speed = 9
@@ -31,6 +32,8 @@ function BeginPlay()
     obj.Dmg = 10
     obj.AttackTimer = 0.0  -- 발사 타이머
     obj.AutoTargetTimer = 0.0  -- 자동 타겟 타이머
+    obj.Location = Vector(0,0,0)
+    TopCamera()
     --print("[Player] Actor started: " .. obj.UUID)
 
     -- DetectionCollider의 Overlap 이벤트 바인딩

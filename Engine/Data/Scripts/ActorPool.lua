@@ -63,7 +63,7 @@ function ActorPool:Get(ActorName)
         print("Get")
         ActorToGet:SetCanTick(true)
         ActorToGet:SetActorHiddenInGame(false)
-        ActorToGet:SetActorEnableCollision(true)
+        --ActorToGet:SetActorEnableCollision(true)
     else
         ActorToGet = SpawnActorByName(ActorName)
         
@@ -71,7 +71,7 @@ function ActorPool:Get(ActorName)
             print("Spawn")
             ActorToGet:SetCanTick(true)
             ActorToGet:SetActorHiddenInGame(false)
-            ActorToGet:SetActorEnableCollision(true)
+            --ActorToGet:SetActorEnableCollision(true)
             
             self.ActorToNameMap[ActorToGet.UUID] = ActorName
         else

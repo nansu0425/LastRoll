@@ -18,6 +18,13 @@ end
 
 
 function StartSequence()
+_G.GameData.Score = 0
+_G.GameData.EXP = 0
+_G.GameData.Level = 1
+SpawnedActor = ActorPool:Get("APlayer")
+print("캐릭터 생성")
+--SpawnedActor:GetScriptComponentByName("Player.lua"):GetEnv().BeginPlay()
+
 LoadingText = "3"
 coroutine.yield(WaitForSeconds(1.0))
 LoadingText = "2"
@@ -28,12 +35,6 @@ LoadingText = "0"
 EnemySpawner:GetEnv().InitSpawner()
 ChangeGameState(EGameState.Playing)
 --캐릭터 생성 필요
-_G.GameData.Score = 0
-_G.GameData.EXP = 0
-_G.GameData.Level = 1
-SpawnedActor = ActorPool:Get("APlayer")
-print("캐릭터 생성")
-SpawnedActor:GetScriptComponentByName("Player.lua"):GetEnv().BeginPlay()
 end
 
 function AddScore(Score)
