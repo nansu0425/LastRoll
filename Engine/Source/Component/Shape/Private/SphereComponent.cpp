@@ -108,6 +108,7 @@ bool USphereComponent::GetPenetration(const UPrimitiveComponent* Other, FVector&
 		FBoundingSphere OtherSph = OtherSphere->GetWorldSphere();
 
 		FVector Direction = MySphere.Center - OtherSph.Center;
+		Direction.Z = 0;
 		float Distance = Direction.Length();
 		Direction.Normalize();
 

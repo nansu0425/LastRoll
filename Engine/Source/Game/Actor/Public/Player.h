@@ -22,4 +22,5 @@ public:
 private:
     UScriptComponent* PlayerScriptComponent = nullptr;
     USphereComponent* DetectionCollider = nullptr;  // Enemy 탐지용
+    USphereComponent* PhysicsCollider = nullptr;
 };
