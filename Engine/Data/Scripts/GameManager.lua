@@ -9,7 +9,7 @@ local LoadingText = ""
 local EndSeuenceText = ""
 local EnemyASpawner = nil
 local EnemyBSpawner = nil
-local LevelEXP = {2, 2, 2, 2}
+local LevelEXP = {2, 5, 15, 30}
 local MaxLevel = 5
 local BlueLight
 local PinkLight
