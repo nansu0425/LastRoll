@@ -26,6 +26,8 @@ function BeginPlay()
     obj.CurAttackDelay = AttackDelay
     obj.IsDead = false
     obj.TargetingProjectiles = {}
+    obj.KnockbackDir = Vector(0,0,0)
+    obj.KnockbackDis = 0
 
     -- ========== 체스 말 이동 로직용 변수 추가 ==========
     obj.StepDistance = 10.0          -- 한 번의 "홉(hop)"으로 이동할 거리
@@ -54,6 +56,23 @@ function BeginPlay()
     end
 end
 
+function Knockback(dt)
+CurKnockbackDis = obj.KnockbackDis * 0.01
+    if CurKnockbackDis > obj.KnockbackDis then
+    CurKnockbackDis = obj.KnockbackDis
+    end
+
+    if CurKnockbackDis < 0.005 then
+        obj.Location = obj.Location + obj.KnockbackDir * CurKnockbackDis
+        obj.KnockbackDis = 0
+    else 
+        obj.Location = obj.Location + obj.KnockbackDir * CurKnockbackDis
+        obj.KnockbackDis  = obj.KnockbackDis - CurKnockbackDis
+        end
+
+end
+
+
 ---
 -- 투사체가 호출할 데미지 받기 함수
 -- @param InDamage: 받을 데미지
@@ -64,6 +83,10 @@ function TakeDamage(InDamage)
     -- 데미지 텍스트 표시
     Util.MakeDamageText(InDamage, obj.Location)
 
+    Dir = obj.Location - _G.PlayerData.PlayerPos
+    Dir:Normalize()
+    obj.KnockbackDir = Dir
+    obj.KnockbackDis = 3
     print("Enemy HP: " .. obj.HP .. " / " .. obj.MaxHP)
 
     -- 사망 처리
@@ -131,6 +154,8 @@ function ReturnToPool()
     -- obj.Speed = 5 -- 삭제됨
     obj.CurAttackDelay = AttackDelay
     obj.TargetingProjectiles = {}
+    obj.KnockbackDir = Vector(0,0,0)
+    obj.KnockbackDis = 0
 
     -- ========== 이동 상태 변수 초기화 ==========
     obj.MoveState = "Idle"
@@ -154,6 +179,9 @@ function Tick(dt)
     if Util.IsActiveMode() == false then
         return
     end
+    Knockback(dt)
+    
+
 
     -- HP 바 렌더링 (죽은 상태에서도 표시)
     local HPPer = obj.HP / obj.MaxHP
