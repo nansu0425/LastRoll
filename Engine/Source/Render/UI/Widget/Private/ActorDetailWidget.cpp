@@ -975,6 +975,26 @@ void UActorDetailWidget::RenderTransformEdit()
 
 		ImGui::PopID();
 		ImGui::Separator();
+
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
+
+		bool bGenerateOverlapEvents = ShapeComp->GetGenerateOverlapEvents();
+		if (ImGui::Checkbox("Generate Overlap Events", &bGenerateOverlapEvents))
+		{
+			ShapeComp->SetGenerateOverlapEvents(bGenerateOverlapEvents);
+		}
+
+		// Block Component (체크박스)
+		bool bBlockComponent = ShapeComp->GetBlockComponent();
+		if (ImGui::Checkbox("Block Component", &bBlockComponent))
+		{
+			ShapeComp->SetBlockComponent(bBlockComponent);
+		}
+
+		ImGui::PopStyleColor(4);
 	}
 
 	// --- SceneComponent Transform Properties ---
