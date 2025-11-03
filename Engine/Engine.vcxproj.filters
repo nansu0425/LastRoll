@@ -518,7 +518,7 @@
     <ClCompile Include="Source\Actor\Private\PointLight.cpp">
       <Filter>Source\Actor\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Actor\Private\ProjectileActor.cpp">
+    <ClCompile Include="Source\Actor\Private\LinearProjectile.cpp">
       <Filter>Source\Actor\Private</Filter>
     </ClCompile>
     <ClCompile Include="Source\Actor\Private\SphereActor.cpp">
@@ -1100,7 +1100,7 @@
     <ClInclude Include="Source\Actor\Public\PointLight.h">
       <Filter>Source\Actor\Public</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Actor\Public\ProjectileActor.h">
+    <ClInclude Include="Source\Actor\Public\LinearProjectile.h">
       <Filter>Source\Actor\Public</Filter>
     </ClInclude>
     <ClInclude Include="Source\Actor\Public\SphereActor.h">

@@ -1,12 +1,12 @@
 #include "pch.h"
-#include "Actor/Public/ProjectileActor.h"
+#include "Actor/Public/LinearProjectile.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Component/Shape/Public/SphereComponent.h"
 #include "Component/Public/ScriptComponent.h"
 
-IMPLEMENT_CLASS(AProjectileActor, AActor)
+IMPLEMENT_CLASS(ALinearProjectile, AActor)
 
-AProjectileActor::AProjectileActor()
+ALinearProjectile::ALinearProjectile()
 {
 	// 추가 컴포넌트들을 생성자에서 생성
 	// RootComponent는 InitializeComponents()에서 자동 생성됨
@@ -18,13 +18,13 @@ AProjectileActor::AProjectileActor()
 	ScriptComponent = CreateDefaultSubobject<UScriptComponent>();
 }
 
-UClass* AProjectileActor::GetDefaultRootComponent()
+UClass* ALinearProjectile::GetDefaultRootComponent()
 {
 	// RootComponent로 UStaticMeshComponent 사용 (렌더링용)
 	return UStaticMeshComponent::StaticClass();
 }
 
-void AProjectileActor::InitializeComponents()
+void ALinearProjectile::InitializeComponents()
 {
 	Super::InitializeComponents();
 
@@ -42,6 +42,9 @@ void AProjectileActor::InitializeComponents()
 	SphereCollider->SetGenerateOverlapEvents(true);  // Overlap 이벤트 활성화
 	SphereCollider->SetBlockComponent(false);  // Block 비활성화 (Overlap만 사용)
 
+	// 4 RootComponent의 스케일 설정
+	MeshComponent->SetRelativeScale3D(FVector(0.5f, 0.5f, 0.5f));
+
 	// 4. ScriptComponent 스크립트 경로 설정
-	ScriptComponent->SetScriptPath("Projectile.lua");
+	ScriptComponent->SetScriptPath("LinearProjectile.lua");
 }

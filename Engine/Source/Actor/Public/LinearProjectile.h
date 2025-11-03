@@ -7,13 +7,13 @@ class USphereComponent;
 class UScriptComponent;
 
 UCLASS()
-class AProjectileActor : public AActor
+class ALinearProjectile : public AActor
 {
 	GENERATED_BODY()
-	DECLARE_CLASS(AProjectileActor, AActor)
+	DECLARE_CLASS(ALinearProjectile, AActor)
 
 public:
-	AProjectileActor();
+	ALinearProjectile();
 
 	virtual UClass* GetDefaultRootComponent() override;
 	virtual void InitializeComponents() override;

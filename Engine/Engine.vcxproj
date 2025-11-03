@@ -330,7 +330,8 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClInclude Include="Source\Actor\Public\Light.h" />
     <ClInclude Include="Source\Actor\Public\MovingCubeActor.h" />
     <ClInclude Include="Source\Actor\Public\PointLight.h" />
-    <ClInclude Include="Source\Actor\Public\ProjectileActor.h" />
+    <ClInclude Include="Source\Actor\Public\LinearProjectile.h" />
+    <ClInclude Include="Source\Actor\Public\HomingProjectile.h" />
     <ClInclude Include="Source\Actor\Public\SphereActor.h" />
     <ClInclude Include="Source\Actor\Public\SpotLight.h" />
     <ClInclude Include="Source\Actor\Public\StaticMeshActor.h">
@@ -382,6 +383,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClInclude Include="Source\Core\Public\WindowsBinWriter.h" />
     <ClInclude Include="Source\Editor\Public\EditorEngine.h" />
     <ClInclude Include="Source\Game\Actor\Public\Enemy.h" />
+    <ClInclude Include="Source\Game\Actor\Public\Player.h" />
     <ClInclude Include="Source\Global\BVH.h" />
     <ClInclude Include="Source\Global\Octree.h" />
     <ClInclude Include="Source\Global\Quaternion.h" />
@@ -638,7 +640,8 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClCompile Include="Source\Actor\Private\MovingCubeActor.cpp">
     </ClCompile>
     <ClCompile Include="Source\Actor\Private\PointLight.cpp" />
-    <ClCompile Include="Source\Actor\Private\ProjectileActor.cpp" />
+    <ClCompile Include="Source\Actor\Private\LinearProjectile.cpp" />
+    <ClCompile Include="Source\Actor\Private\HomingProjectile.cpp" />
     <ClCompile Include="Source\Actor\Private\SphereActor.cpp" />
     <ClCompile Include="Source\Actor\Private\SpotLight.cpp" />
     <ClCompile Include="Source\Actor\Private\StaticMeshActor.cpp">
@@ -692,6 +695,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClCompile Include="Source\Editor\Private\GizmoMath.cpp" />
     <ClCompile Include="Source\Editor\Private\GizmoRenderer.cpp" />
     <ClCompile Include="Source\Game\Actor\Private\Enemy.cpp" />
+    <ClCompile Include="Source\Game\Actor\Private\Player.cpp" />
     <ClCompile Include="Source\Global\BVH.cpp" />
     <ClCompile Include="Source\Global\Octree.cpp" />
     <ClCompile Include="Source\Global\Quaternion.cpp" />
