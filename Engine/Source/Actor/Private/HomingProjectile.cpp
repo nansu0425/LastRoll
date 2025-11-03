@@ -32,18 +32,19 @@ void AHomingProjectile::InitializeComponents()
 	UStaticMeshComponent* MeshComponent = Cast<UStaticMeshComponent>(GetRootComponent());
 
 	// 1. 구형 메시 설정
-	MeshComponent->SetStaticMesh("Data/Shapes/Sphere.obj");
+	MeshComponent->SetStaticMesh("Data/snow_and_rocks_material/snow_and_rocks_material.obj");
 
 	// 2. SphereCollider를 RootComponent에 부착
 	SphereCollider->AttachToComponent(MeshComponent);
 
 	// 3. SphereCollider 설정
+	SphereCollider->SetRelativeLocation(FVector(0.0f, 0.0f, 0.5f));
 	SphereCollider->SetSphereRadius(1.5f);  // 투사체 충돌 반지름
 	SphereCollider->SetGenerateOverlapEvents(true);  // Overlap 이벤트 활성화a
 	SphereCollider->SetBlockComponent(false);  // Block 비활성화 (Overlap만 사용)
 
 	// 4 RootComponent의 스케일 설정
-	MeshComponent->SetRelativeScale3D(FVector(1.5f, 1.5f, 1.5f));
+	MeshComponent->SetRelativeScale3D(FVector(4.0f, 4.0f, 4.0f));
 
 	// 5. ScriptComponent 스크립트 경로 설정
 	ScriptComponent->SetScriptPath("HomingProjectile.lua");
