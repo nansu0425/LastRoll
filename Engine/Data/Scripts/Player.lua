@@ -52,7 +52,7 @@ end
 -- Called every frame
 -- @param dt: Delta time in seconds
 function Tick(dt)
-    if _G.GameData.GameState ~= EGameState.Playing then
+    if Util.IsActiveMode() == false then
         return
     end
 

@@ -115,7 +115,11 @@ function ReturnToPool()
 end
 
 function Tick(dt)
-    if _G.GameData.GameState ~= EGameState.Playing then
+    if _G.GameData.GameState == EGameState.End then
+        ReturnToPool()
+        return
+    end
+    if Util.IsActiveMode() == false then
         return
     end
 
