@@ -41,6 +41,13 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
     // 불러오기 (Load)
     if (bInIsLoading)
     {
+		FString OutName;
+		FJsonSerializer::ReadString(InOutHandle, "ActorName", OutName);
+		if (OutName.empty())
+		{
+			OutName = "Empty";
+		}
+		SetName(OutName);
     	// 생성자에서 생성된 컴포넌트 제거 (중복 방지)
     	// NewObject()가 생성자를 호출하여 CreateDefaultSubobject()로 컴포넌트가 이미 생성되어 있음
     	// ⚠️ 메모리 누수 방지: clear() 전에 반드시 delete 해야 함!
@@ -160,6 +167,7 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
     // 저장 (Save)
     else
     {
+		InOutHandle["ActorName"] = GetName().ToString();
 		InOutHandle["Location"] = FJsonSerializer::VectorToJson(GetActorLocation());
         InOutHandle["Rotation"] = FJsonSerializer::VectorToJson(GetActorRotation().ToEuler());
         InOutHandle["Scale"] = FJsonSerializer::VectorToJson(GetActorScale3D());
