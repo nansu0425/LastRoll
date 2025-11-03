@@ -28,7 +28,7 @@ function TrailTextUIUpdate(dt)
             table.remove(_G.UIData.TrailTextList, i)
         else
             local Alpha = TrailText.LifeTime
-            DrawText("o", WorldToScreenPos(TrailText.WorldPos), Vector2(50,30), 20, Vector4(TrailText.Color.x,TrailText.Color.y,TrailText.Color.z,Alpha))
+            DrawText(TrailText.Text, WorldToScreenPos(TrailText.WorldPos), Vector2(300,30), 50, Vector4(TrailText.Color.x,TrailText.Color.y,TrailText.Color.z,Alpha))
         end
     end
 end

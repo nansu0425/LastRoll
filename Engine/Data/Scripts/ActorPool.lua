@@ -60,7 +60,7 @@ function ActorPool:Get(ActorName)
     local ActorToGet = table.remove(TargetInactiveActors)
     
     if ActorToGet then 
-        print("Get")
+        --print("Get")
         ActorToGet:SetCanTick(true)
         ActorToGet:SetActorHiddenInGame(false)
         ActorToGet:SetActorEnableCollision(true)
@@ -68,14 +68,14 @@ function ActorPool:Get(ActorName)
         ActorToGet = SpawnActorByName(ActorName)
         
         if ActorToGet then 
-            print("Spawn")
+            --print("Spawn")
             ActorToGet:SetCanTick(true)
             ActorToGet:SetActorHiddenInGame(false)
             ActorToGet:SetActorEnableCollision(true)
             
             self.ActorToNameMap[ActorToGet.UUID] = ActorName
         else
-            print("ActorPool:Get - SpawnActorFromScript 실패: " .. ActorName)
+            --print("ActorPool:Get - SpawnActorFromScript 실패: " .. ActorName)
             return nil
         end
     end
@@ -89,13 +89,13 @@ end
 ---
 function ActorPool:Return(ActorToReturn)
     if not ActorToReturn then 
-        print ("ActorPool:Return - 반납할 Actor가 nil입니다.")
+        --print ("ActorPool:Return - 반납할 Actor가 nil입니다.")
         return
     end
     
     local ActorName = self.ActorToNameMap[ActorToReturn.UUID]
     if not ActorName then 
-        print("ActorPool:Return - 이 액터는 풀에서 관리하는 객체가 아닙니다.")
+        --print("ActorPool:Return - 이 액터는 풀에서 관리하는 객체가 아닙니다.")
         return
     end
 

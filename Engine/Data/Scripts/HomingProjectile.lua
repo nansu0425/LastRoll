@@ -64,21 +64,21 @@ function BeginPlay()
     obj.Direction = Vector(1, 0, 0)
     obj.IsInitialized = false
 
-    print("HomingProjectile created: " .. obj.UUID)
+    --print("HomingProjectile created: " .. obj.UUID)
 
     -- Overlap 델리게이트 바인딩
     local SphereComp = Owner:GetComponent("USphereComponent")
     if SphereComp then
-        print("[HomingProjectile] Binding overlap to SphereComponent")
+        --print("[HomingProjectile] Binding overlap to SphereComponent")
         SphereComp:BindBeginOverlap(self, OnBeginOverlap)
         SphereComp:BindEndOverlap(self, OnEndOverlap)
     else
-        print("[HomingProjectile] WARNING: No SphereComponent found!")
+        --print("[HomingProjectile] WARNING: No SphereComponent found!")
     end
 end
 
 function EndPlay()
-    print("HomingProjectile ending: " .. obj.UUID)
+    --print("HomingProjectile ending: " .. obj.UUID)
 end
 
 -- ==============================================================================
@@ -117,7 +117,7 @@ function Setup(InTargetActor, InSpeed, InDamage, InMaxDistance)
     -- 초기 방향 설정
     obj.Direction = obj.TargetActor.Location - obj.Location
     obj.Direction:Normalize()
-    print("[HomingProjectile] Target locked: " .. obj.TargetUUID)
+    --print("[HomingProjectile] Target locked: " .. obj.TargetUUID)
 
     -- 거리에 따른 동적 매개변수 계산
     CalculateDynamicParameters()
@@ -163,7 +163,7 @@ function Tick(dt)
 
     -- 타겟 도달 체크 (타겟이 사라진 경우)
     if obj.TargetLost and DistanceToTarget < 1.0 then
-        print("[HomingProjectile] Reached target location, returning to pool")
+        --print("[HomingProjectile] Reached target location, returning to pool")
         ReturnToPool()
         return
     end
@@ -191,7 +191,7 @@ function HandleImmediateCollision()
         return false
     end
 
-    print("[HomingProjectile] Target is very close (" .. obj.InitialDistance .. "), attempting immediate collision")
+    --print("[HomingProjectile] Target is very close (" .. obj.InitialDistance .. "), attempting immediate collision")
 
     local TargetScript = obj.TargetActor:GetScriptComponent()
     if not TargetScript then
@@ -208,7 +208,7 @@ function HandleImmediateCollision()
 
     if not TargetEnv["obj"].IsDead then
         TargetEnv["TakeDamage"](obj.Damage)
-        print("[HomingProjectile] Immediate damage dealt")
+        --print("[HomingProjectile] Immediate damage dealt")
     end
 
     TargetEnv["UnregisterProjectile"](obj.UUID)
@@ -247,14 +247,14 @@ function CalculateDynamicParameters()
 
     -- 음수 가속도 방지
     if obj.Acceleration < 0 then
-        print("[HomingProjectile] WARNING: Negative acceleration detected! Distance too short: " .. obj.InitialDistance)
+        --print("[HomingProjectile] WARNING: Negative acceleration detected! Distance too short: " .. obj.InitialDistance)
         obj.Acceleration = 0
     end
 
-    print("[HomingProjectile] Initial distance: " .. obj.InitialDistance)
-    print("[HomingProjectile] Dynamic reach time: " .. DynamicReachTime .. "s, Max speed: " .. DynamicMaxSpeed)
-    print("[HomingProjectile] Calculated acceleration: " .. obj.Acceleration)
-    print("[HomingProjectile] Will reach target in " .. DynamicReachTime .. " seconds")
+    --print("[HomingProjectile] Initial distance: " .. obj.InitialDistance)
+    --print("[HomingProjectile] Dynamic reach time: " .. DynamicReachTime .. "s, Max speed: " .. DynamicMaxSpeed)
+    --print("[HomingProjectile] Calculated acceleration: " .. obj.Acceleration)
+    --print("[HomingProjectile] Will reach target in " .. DynamicReachTime .. " seconds")
 end
 
 ---
@@ -269,7 +269,7 @@ function RegisterToTarget()
     local TargetEnv = TargetScript:GetEnv()
     if TargetEnv["RegisterProjectile"] then
         TargetEnv["RegisterProjectile"](obj.UUID)
-        print("[HomingProjectile] Registered to target enemy")
+        --print("[HomingProjectile] Registered to target enemy")
     end
 end
 
@@ -289,14 +289,14 @@ function UpdateTargetStatus()
     -- TargetActor가 nil이 된 경우
     if not obj.TargetActor then
         obj.TargetLost = true
-        print("[HomingProjectile] Target lost (actor destroyed)! Locked to last position: " .. tostring(obj.TargetLocation))
+        --print("[HomingProjectile] Target lost (actor destroyed)! Locked to last position: " .. tostring(obj.TargetLocation))
         return
     end
 
     -- UUID가 일치하지 않는 경우
     if obj.TargetUUID and obj.TargetActor.UUID ~= obj.TargetUUID then
         obj.TargetLost = true
-        print("[HomingProjectile] Target lost (UUID mismatch)! Locked to last position: " .. tostring(obj.TargetLocation))
+        --print("[HomingProjectile] Target lost (UUID mismatch)! Locked to last position: " .. tostring(obj.TargetLocation))
         return
     end
 
@@ -313,7 +313,7 @@ function UpdateTargetStatus()
         -- Enemy가 죽었음! 즉시 TargetLost 플래그 설정
         obj.TargetLost = true
         obj.TargetLocation = obj.TargetActor.Location
-        print("[HomingProjectile] Target died! Switching to fast return mode. Distance: " .. (obj.TargetLocation - obj.Location):Length())
+        --print("[HomingProjectile] Target died! Switching to fast return mode. Distance: " .. (obj.TargetLocation - obj.Location):Length())
     else
         -- Target이 살아있음: 현재 위치 계속 업데이트
         obj.TargetLocation = obj.TargetActor.Location
@@ -460,7 +460,7 @@ function ApplyMovement(dt)
 
     -- 최대 거리 도달 시 제거
     if obj.TraveledDistance >= obj.MaxDistance then
-        print("HomingProjectile reached max distance: " .. obj.TraveledDistance .. " >= " .. obj.MaxDistance)
+        --print("HomingProjectile reached max distance: " .. obj.TraveledDistance .. " >= " .. obj.MaxDistance)
         ReturnToPool()
     end
 end
@@ -470,24 +470,24 @@ end
 -- ==============================================================================
 
 function OnBeginOverlap(OtherActor)
-    print("[HomingProjectile] OnBeginOverlap called")
+    --print("[HomingProjectile] OnBeginOverlap called")
 
     if not obj.IsInitialized then
-        print("[HomingProjectile] Not initialized, ignoring overlap")
+        --print("[HomingProjectile] Not initialized, ignoring overlap")
         return
     end
 
     -- 자신과의 충돌 무시
     if OtherActor.UUID == obj.UUID then
-        print("[HomingProjectile] Self-collision, ignoring")
+        --print("[HomingProjectile] Self-collision, ignoring")
         return
     end
 
-    print("[HomingProjectile] Hit: " .. OtherActor:GetName() .. " (UUID: " .. OtherActor.UUID .. ")")
+    --print("[HomingProjectile] Hit: " .. OtherActor:GetName() .. " (UUID: " .. OtherActor.UUID .. ")")
 
     -- Target UUID 확인
     if obj.TargetUUID and OtherActor.UUID ~= obj.TargetUUID then
-        print("[HomingProjectile] Not our target (UUID mismatch), ignoring collision")
+        --print("[HomingProjectile] Not our target (UUID mismatch), ignoring collision")
         return
     end
 
@@ -505,37 +505,37 @@ end
 function HandleTargetCollision(OtherActor)
     local ScriptComp = OtherActor:GetScriptComponent()
     if not ScriptComp then
-        print("[HomingProjectile] No ScriptComponent on target")
+        --print("[HomingProjectile] No ScriptComponent on target")
         return
     end
 
-    print("[HomingProjectile] ScriptComponent found on target")
+    --print("[HomingProjectile] ScriptComponent found on target")
     local Env = ScriptComp:GetEnv()
 
     -- TakeDamage 함수가 있으면 Enemy로 판별
     if not Env["TakeDamage"] then
-        print("[HomingProjectile] No TakeDamage function on target")
+        --print("[HomingProjectile] No TakeDamage function on target")
         return
     end
 
-    print("[HomingProjectile] Hit our target!")
+    --print("[HomingProjectile] Hit our target!")
 
     -- Enemy가 살아있으면 데미지 처리
     if not Env["obj"] or not Env["obj"].IsDead then
-        print("[HomingProjectile] Dealing " .. obj.Damage .. " damage")
+        --print("[HomingProjectile] Dealing " .. obj.Damage .. " damage")
         Env["TakeDamage"](obj.Damage)
     else
-        print("[HomingProjectile] Target is already dead, skipping damage")
+        --print("[HomingProjectile] Target is already dead, skipping damage")
     end
 
     -- Enemy에서 자신을 등록 해제
     if Env["UnregisterProjectile"] then
-        print("[HomingProjectile] Unregistering from target enemy")
+        --print("[HomingProjectile] Unregistering from target enemy")
         Env["UnregisterProjectile"](obj.UUID)
     end
 
     -- 투사체 제거
-    print("[HomingProjectile] Returning to pool")
+    --print("[HomingProjectile] Returning to pool")
     ReturnToPool()
 end
 
@@ -544,7 +544,7 @@ end
 -- ==============================================================================
 
 function ReturnToPool()
-    print("[HomingProjectile] Returning to pool: " .. obj.UUID)
+    --print("[HomingProjectile] Returning to pool: " .. obj.UUID)
 
     -- Enemy에서 자신을 등록 해제
     UnregisterFromTarget()
@@ -571,7 +571,7 @@ function UnregisterFromTarget()
 
     local TargetEnv = TargetScript:GetEnv()
     if TargetEnv["UnregisterProjectile"] then
-        print("[HomingProjectile] Unregistering from target enemy before returning to pool")
+        --print("[HomingProjectile] Unregistering from target enemy before returning to pool")
         TargetEnv["UnregisterProjectile"](obj.UUID)
     end
 end

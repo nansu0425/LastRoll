@@ -68,9 +68,9 @@ function Init()
     AutoTargetCooldown = 1.0  -- 자동 타겟 발사 주기 (초)
     AutoTargetRange = 20.0  -- Detection Collider 반지름과 동일
 
-    SetOrbitRadius(10.0)       -- 회전 반경
-    SetOrbitSpeed(160)      -- 회전 속도 (degree/s)
-    SetOrbitCount(3)          -- 회전하는 투사체 개수
+    OrbitRadius = 10.0        -- 회전 반경
+    OrbitSpeed = 160.0        -- 회전 속도 (degree/s)
+    OrbitCount = 3           -- 회전하는 투사체 개수
     OrbitDamage = 5          -- 충돌 데미지
 
 
@@ -87,17 +87,19 @@ end
 
 
 function LevelUp(CurLevel)
-Util.MakeTrailText("LevelUp++", obj.Location + Vector(3,0,0), Vector4(0,1,0,1))
+Util.MakeTrailText("LevelUp", obj.Location + Vector(3,0,0), Vector4(0,1,0,1))
 ProjectileDamage = ProjectileDamage + 2
 AttackCooldown = AttackCooldown - 0.02
 if CurLevel == 3 then
-SetOrbitCount(4)
+OrbitCount = 4
 ProjectileSpeed = 35
 elseif CurLevel == 5 then
-SetOrbitSpeed(220)
-SetOrbitRadius(12.0)
+print("레벨5")
+OrbitSpeed = 220
+OrbitRadius = 12.0
 OrbitDamage = 8
 ProjectileSpeed = 40
+print("레벨5End")
 end
 end
 

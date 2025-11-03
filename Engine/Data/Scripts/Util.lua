@@ -51,9 +51,10 @@ function Util.MakeDamageText(InDamage, InWorldPos, InColor)
 table.insert(_G.UIData.DamageTextList, DamageText)
 end
 
-function Util.MakeTrailText(InWorldPos, InColor)
+function Util.MakeTrailText(InText, InWorldPos, InColor)
     local TrailText = 
     {
+        Text = InText,
         WorldPos = InWorldPos,
         Color = InColor,
         LifeTime = 1.0

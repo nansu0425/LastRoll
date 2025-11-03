@@ -7,7 +7,8 @@ end
 
 local LoadingText = ""
 local EndSeuenceText = ""
-local EnemySpawner = nil
+local EnemyASpawner = nil
+local EnemyBSpawner = nil
 local LevelEXP = {2, 2, 2, 2}
 local MaxLevel = 5
 local BlueLight
@@ -55,9 +56,16 @@ coroutine.yield(WaitForSeconds(1.0))
 LoadingText = "1"
 coroutine.yield(WaitForSeconds(1.0))
 LoadingText = "0"
-EnemySpawner:GetEnv().InitSpawner()
+EnemyASpawner:GetEnv().InitSpawner()
+EnemyBSpawner:GetEnv().InitSpawner()
 ChangeGameState(EGameState.Playing)
 --캐릭터 생성 필요
+end
+
+function LevelUp()
+if _G.PlayerData.bPlayerAlive then
+_G.PlayerData.PlayerEnv.LevelUp(_G.GameData.Level)
+end
 end
 
 function AddScore(Score)
@@ -70,6 +78,7 @@ if _G.GameData.Level < MaxLevel then
    if _G.GameData.EXP >=  LevelEXP[_G.GameData.Level] then
        _G.GameData.EXP = _G.GameData.EXP - LevelEXP[_G.GameData.Level]
        _G.GameData.Level = _G.GameData.Level + 1
+       LevelUp()
        end
    end
 end
@@ -115,10 +124,10 @@ ActorPool:Clear()
 _G.GameData.ManagerActor = Owner
 _G.GameData.GMEnv = Owner:GetScriptComponentByName("GameManager.lua"):GetEnv()
 _G.GameData.GameState = EGameState.Lobby
-local ScriptComp = Owner:GetScriptComponentByName("EnemySpawner.lua")
-if ScriptComp ~= nil then
-EnemySpawner = ScriptComp
-end
+local SpawnerAComp = Owner:GetScriptComponentByName("EnemySpawner.lua")
+local SpawnerBComp = Owner:GetScriptComponentByName("EnemySpawnerB.lua")
+EnemyASpawner = SpawnerAComp
+EnemyBSpawner = SpawnerBComp
 
 BlueLight = FindActorByName("BlueLight")
 PinkLight = FindActorByName("PinkLight")
@@ -128,7 +137,6 @@ PinkLightOffset = PinkLight.Location
 YellowLightOffset = YellowLight.Location
 
 print(BlueLightOffset)
-
 end
 
 -- Called every frame

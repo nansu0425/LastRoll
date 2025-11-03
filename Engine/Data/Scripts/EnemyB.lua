@@ -28,7 +28,6 @@ local function Lerp(a, b, t)
 end
 
 function Attack()
-    print("Attack!")
     if _G.PlayerData.bPlayerAlive then
         _G.PlayerData.PlayerEnv.TakeDamagePlayer(obj.Dmg)
     end
@@ -36,8 +35,8 @@ end
 
 function BeginPlay()
     -- 기본 스탯
-    obj.MaxHP = 50
-    obj.HP = 50
+    obj.MaxHP = 65
+    obj.HP = 65
     obj.Dmg = 5
     obj.CurrentAttackDelay = AttackDelay
     obj.IsDead = false
@@ -297,6 +296,8 @@ function Tick(dt)
             DirToPlayer = PlayerPos - obj.Location
             DirToPlayer.z = 0 
             CurrentPlayerDis = DirToPlayer:Length()
+            obj.HP = obj.MaxHP
+
         end
         -- =================================
     

@@ -14,15 +14,12 @@ local function Lerp(a, b, t)
     return a + (b - a) * t
 end
 
-function Attack()
-    print("Attack")
-end
 
 function BeginPlay()
     -- obj.Speed = 5 -- 이 변수는 StepDistance로 대체됩니다.
-    obj.MaxHP = 50
-    obj.HP = 50
-    obj.Dmg = 5
+    obj.MaxHP = 45
+    obj.HP = 45
+    obj.Dmg = 8
     obj.CurAttackDelay = AttackDelay
     obj.IsDead = false
     obj.TargetingProjectiles = {}
@@ -278,6 +275,7 @@ function Tick(dt)
         DirToPlayer = PlayerPos - obj.Location
         DirToPlayer.z = 0
         CurrentPlayerDis = DirToPlayer:Length()
+        obj.HP = obj.MaxHP
         
         -- print("[Enemy] Relocated due to distance.")
     end
@@ -292,7 +290,6 @@ function Tick(dt)
         if CurrentPlayerDis <= AttackDis then
             obj.CurAttackDelay = obj.CurAttackDelay - dt
             if obj.CurAttackDelay < 0 then
-                Attack()
                 obj.CurAttackDelay = AttackDelay
             end
             obj.MoveTimer = obj.MoveInterval

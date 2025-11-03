@@ -22,7 +22,8 @@ local SpawnTimer = 0.0
 
 function InitSpawner()
 print("InitSpawner")
-
+SpawnInterval = 2.0
+SpawnTimer = 0.0
 end
 
 -- Called once when the Actor begins play
@@ -79,4 +80,7 @@ function SpawnFromPool()
     local SpawnZ = PlayerPos.z
     
     SpawnedActor.Location = Vector(SpawnX, SpawnY, SpawnZ)
+
+    SpawnInterval = SpawnInterval - 0.03
+    SpawnInterval = math.max(SpawnInterval, 1.4)
 end
