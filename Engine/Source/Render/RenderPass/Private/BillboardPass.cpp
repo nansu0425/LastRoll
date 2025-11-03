@@ -9,8 +9,13 @@ FBillboardPass::FBillboardPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBu
         : FRenderPass(InPipeline, InConstantBufferCamera, InConstantBufferModel), VS(InVS), PS(InPS), InputLayout(InLayout), DS(InDS), BS(InBS)
 {
     ConstantBufferMaterial = FRenderResourceFactory::CreateConstantBuffer<FMaterialConstants>();
+
+    // Zero-initialize the entire struct to prevent garbage values
+    BillboardMaterialConstants = {};
+
     BillboardMaterialConstants.MaterialFlags |= HAS_DIFFUSE_MAP;
     BillboardMaterialConstants.Kd = FVector4(1.0f, 1.0f, 1.0f, 1.0f);  // White to preserve texture colors
+    BillboardMaterialConstants.Ke = FVector4(0.0f, 0.0f, 0.0f, 0.0f);  // No emissive
 }
 
 void FBillboardPass::Execute(FRenderingContext& Context)
