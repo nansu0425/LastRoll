@@ -23,8 +23,20 @@ local DetectedEnemies = {}
 
 
 function BeginPlay()
-print("BeginPlayer")
-    -- Initialize custom properties
+   
+    -- DetectionCollider의 Overlap 이벤트 바인딩
+    local DetectionCollider = Owner:GetComponent("USphereComponent")
+    if DetectionCollider then
+        print("[Player] Binding overlap to Detection Collider")
+        DetectionCollider:BindBeginOverlap(self, OnDetectionBeginOverlap)
+        DetectionCollider:BindEndOverlap(self, OnDetectionEndOverlap)
+    else
+        print("[Player] WARNING: No Detection Collider found!")
+    end
+end
+
+function Init()
+ -- Initialize custom properties
     obj.OverlapCount = 0
     obj.Speed = 9
     obj.MaxHP = 100.0
@@ -34,17 +46,7 @@ print("BeginPlayer")
     obj.AutoTargetTimer = 0.0  -- 자동 타겟 타이머
     obj.Location = Vector(0,0,0)
     TopCamera()
-    --print("[Player] Actor started: " .. obj.UUID)
-
-    -- DetectionCollider의 Overlap 이벤트 바인딩
-    local DetectionCollider = Owner:GetComponent("USphereComponent")
-    if DetectionCollider then
-        --print("[Player] Binding overlap to Detection Collider")
-        DetectionCollider:BindBeginOverlap(self, OnDetectionBeginOverlap)
-        DetectionCollider:BindEndOverlap(self, OnDetectionEndOverlap)
-    else
-        --print("[Player] WARNING: No Detection Collider found!")
-    end
+    print("[Player] Actor Init: " .. obj.UUID)
 end
 
 -- Called every frame
@@ -149,6 +151,7 @@ function Move(dt)
     end
     if IsKeyDown(EKeyInput.D) then
         MoveDir.y = MoveDir.y + 1
+        TakeDamagePlayer(1)
     end
 
     MoveDir:Normalize()
