@@ -22,16 +22,16 @@ function BeginPlay()
     obj.Direction = Vector(1, 0, 0)
     obj.IsInitialized = false
 
-    print("LinearProjectile created: " .. obj.UUID)
+   -- print("LinearProjectile created: " .. obj.UUID)
 
     -- Overlap 델리게이트 바인딩 - SphereComponent만 찾아서 바인딩
     local SphereComp = Owner:GetComponent("USphereComponent")
     if SphereComp then
-        print("[LinearProjectile] Binding overlap to SphereComponent")
+        --print("[LinearProjectile] Binding overlap to SphereComponent")
         SphereComp:BindBeginOverlap(self, OnBeginOverlap)
         SphereComp:BindEndOverlap(self, OnEndOverlap)
     else
-        print("[LinearProjectile] WARNING: No SphereComponent found!")
+        --print("[LinearProjectile] WARNING: No SphereComponent found!")
     end
 end
 
@@ -57,7 +57,11 @@ end
 -- @param dt: Delta time in seconds
 function Tick(dt)
     -- 게임 상태 체크
-    if _G.GameData and _G.GameData.GameState ~= EGameState.Playing then
+    if _G.GameData.GameState == EGameState.End then
+        ReturnToPool()
+        return
+    end
+    if Util.IsActiveMode() == false then
         return
     end
 
@@ -76,14 +80,14 @@ function Tick(dt)
 
     -- 최대 거리 도달 시 제거
     if obj.TraveledDistance >= obj.MaxDistance then
-        print("LinearProjectile reached max distance: " .. obj.TraveledDistance .. " >= " .. obj.MaxDistance)
+        --print("LinearProjectile reached max distance: " .. obj.TraveledDistance .. " >= " .. obj.MaxDistance)
         ReturnToPool()
     end
 end
 
 -- Called once when the Actor ends play
 function EndPlay()
-    print("LinearProjectile ending: " .. obj.UUID)
+    --print("LinearProjectile ending: " .. obj.UUID)
 end
 
 -- ==============================================================================
@@ -93,44 +97,44 @@ end
 -- Called when overlap starts with another Actor
 -- @param OtherActor: The Actor that began overlapping with this one
 function OnBeginOverlap(OtherActor)
-    print("[LinearProjectile] OnBeginOverlap called")
+    --print("[LinearProjectile] OnBeginOverlap called")
 
     if not obj.IsInitialized then
-        print("[LinearProjectile] Not initialized, ignoring overlap")
+        --print("[LinearProjectile] Not initialized, ignoring overlap")
         return
     end
 
     -- 자신과의 충돌 무시
     if OtherActor.UUID == obj.UUID then
-        print("[LinearProjectile] Self-collision, ignoring")
+       --print("[LinearProjectile] Self-collision, ignoring")
         return
     end
 
-    print("[LinearProjectile] Hit: " .. OtherActor:GetName() .. " (UUID: " .. OtherActor.UUID .. ")")
+   -- print("[LinearProjectile] Hit: " .. OtherActor:GetName() .. " (UUID: " .. OtherActor.UUID .. ")")
 
     -- Enemy와 충돌 체크
     local ScriptComp = OtherActor:GetScriptComponent()
     if ScriptComp then
-        print("[LinearProjectile] ScriptComponent found on target")
+        --print("[LinearProjectile] ScriptComponent found on target")
         local Env = ScriptComp:GetEnv()
 
         -- TakeDamage 함수가 있으면 호출 (Enemy 판별)
         if Env["TakeDamage"] ~= nil then
             -- 죽은 Enemy는 무시 (Homing Projectile이 처리할 것)
             if Env["obj"] and Env["obj"].IsDead then
-                print("[LinearProjectile] Target is dead, ignoring collision")
+                --print("[LinearProjectile] Target is dead, ignoring collision")
                 return
             end
 
-            print("[LinearProjectile] TakeDamage function found, dealing " .. obj.Damage .. " damage")
+            --print("[LinearProjectile] TakeDamage function found, dealing " .. obj.Damage .. " damage")
             Env["TakeDamage"](obj.Damage)
-            print("[LinearProjectile] Returning to pool")
+            --print("[LinearProjectile] Returning to pool")
             ReturnToPool()
         else
-            print("[LinearProjectile] No TakeDamage function on target")
+            --print("[LinearProjectile] No TakeDamage function on target")
         end
     else
-        print("[LinearProjectile] No ScriptComponent on target")
+        --print("[LinearProjectile] No ScriptComponent on target")
     end
 end
 
@@ -148,7 +152,7 @@ end
 -- ActorPool에 투사체 반납
 ---
 function ReturnToPool()
-    print("[LinearProjectile] Returning to pool: " .. obj.UUID)
+    --print("[LinearProjectile] Returning to pool: " .. obj.UUID)
 
     -- 초기화 플래그 리셋
     obj.IsInitialized = false

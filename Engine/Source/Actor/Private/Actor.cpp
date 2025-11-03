@@ -622,7 +622,6 @@ void AActor::SetActorEnableCollision(bool bInActorEnableCollision)
 			if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Component))
 			{
 				PrimitiveComponent->SetGenerateOverlapEvents(bInActorEnableCollision);
-				PrimitiveComponent->SetBlockComponent(bInActorEnableCollision);	
 			}
 		}
 	}

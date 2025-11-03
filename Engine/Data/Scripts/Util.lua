@@ -40,5 +40,11 @@ function Util.MakeDamageText(InDamage, InWorldPos)
 table.insert(_G.UIData.DamageTextList, DamageText)
 end
 
+function Util.IsActiveMode()
+    if _G.GameData.GameState == EGameState.Playing or _G.GameData.GameState == EGameState.EndSequence then
+        return true
+    end
+    return false
+end
 
 return Util

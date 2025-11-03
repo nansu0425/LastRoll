@@ -134,7 +134,11 @@ end
 
 function Tick(dt)
     -- 게임 상태 체크
-    if _G.GameData and _G.GameData.GameState ~= EGameState.Playing then
+    if _G.GameData.GameState == EGameState.End then
+        ReturnToPool()
+        return
+    end
+    if Util.IsActiveMode() == false then
         return
     end
 
