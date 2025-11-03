@@ -5,28 +5,47 @@ if _G.GameData == nil then
 _G.GameData = {}
 end
 
-local Time = 0
+local LoadingText = ""
+local EndSeuenceText = ""
+local EnemySpawner = nil
 
-function StartSequence()
-Time = 3
-coroutine.yield(WaitForSeconds(1.0))
-Time = 2
-coroutine.yield(WaitForSeconds(1.0))
-Time = 1
-coroutine.yield(WaitForSeconds(1.0))
-Time = 0
-ChangeGameState(EGameState.Playing)
+
+function PlayerDead()
+ChangeGameState(EGameState.EndSequence)
 end
 
+
+function StartSequence()
+LoadingText = "3"
+coroutine.yield(WaitForSeconds(1.0))
+LoadingText = "2"
+coroutine.yield(WaitForSeconds(1.0))
+LoadingText = "1"
+coroutine.yield(WaitForSeconds(1.0))
+LoadingText = "0"
+EnemySpawner:GetEnv().InitSpawner()
+ChangeGameState(EGameState.Playing)
+_G.GameData.Score = 0
+end
+
+function EndSequence()
+EndSeuenceText = "죽었습니다.\n Score" .._G.GameData.Score
+coroutine.yield(WaitForSeconds(3.0))
+ChangeGameState(EGameState.End)
+end
 
 function ChangeGameState(InGameState)
 if InGameState == EGameState.Lobby then
     --모든 오브젝트 제거  
 elseif InGameState == EGameState.Loading then
+    StartCoroutine("StartSequence")
 
 elseif InGameState == EGameState.Playing then
     --캐릭터 생성
     --레벨매니저 스타트 해줘야함
+elseif InGameState == EGameState.EndSequence then
+    StartCoroutine("EndSequence")
+
 elseif InGameState == EGameState.End then
     --레벨매니저 스탑
 else
@@ -39,29 +58,37 @@ end
 
 function BeginPlay()
 _G.GameData.GameState = EGameState.Lobby
-print(_G.GameData.GameState)
+local ScriptComp = Owner:GetScriptComponentByName("EnemySpawner.lua")
+if ScriptComp ~= nil then
+EnemySpawner = ScriptComp
+end
 end
 
 -- Called every frame
 -- @param dt: Delta time in seconds
 function Tick(dt)
-
-if _G.GameData.GameState == EGameState.Lobby then
     local Rect = GetViewportRect()
     local ScreenCenter = Vector2(Rect.x + Rect.z * 0.5, Rect.y + Rect.w * 0.5)
+if _G.GameData.GameState == EGameState.Lobby then
     DrawText("To Start Press W", ScreenCenter, Vector2(500,100), 50, Vector4(0.5,1,1,1))
+    if IsKeyDown(EKeyInput.W) then
+    ChangeGameState(EGameState.Loading)
+    end
+
+elseif _G.GameData.GameState == EGameState.Loading then
+    DrawText(LoadingText, ScreenCenter, Vector2(200,200), 70, Vector4(0.5,1,1,1))
+
+elseif _G.GameData.GameState == EGameState.Playing then
+    -- 캐릭터 생성
+elseif _G.GameData.GameState == EGameState.EndSequence then
+    DrawText(EndSeuenceText, ScreenCenter, Vector2(700,300), 50, Vector4(0.5,1,1,1))
+
+elseif _G.GameData.GameState == EGameState.End then
+    DrawText("Restart Press W", ScreenCenter, Vector2(500,100), 50, Vector4(0.5,1,1,1))
     if IsKeyDown(EKeyInput.W) then
     ChangeGameState(EGameState.Loading)
     StartCoroutine("StartSequence")
     end
-elseif _G.GameData.GameState == EGameState.Loading then
-local Rect = GetViewportRect()
-local ScreenCenter = Vector2(Rect.x + Rect.z * 0.5, Rect.y + Rect.w * 0.5)
-DrawText(tostring(Time), ScreenCenter, Vector2(200,200), 70, Vector4(0.5,1,1,1))
-elseif _G.GameData.GameState == EGameState.Playing then
-    -- 캐릭터 생성
-elseif _G.GameData.GameState == EGameState.End then
-    -- 레벨매니저 스탑
 end
 
 end

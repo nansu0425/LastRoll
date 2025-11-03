@@ -8,7 +8,8 @@ EGameState = {
 	Lobby = 1,
     Loading = 2,
 	Playing = 3,
-	End = 4
+    EndSequence = 4
+	End = 5
 }
 
 function Util.Clamp(value, min, max)

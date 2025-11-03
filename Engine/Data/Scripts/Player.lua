@@ -103,6 +103,9 @@ function Move(dt)
     end
     if IsKeyDown(EKeyInput.D) then
         MoveDir.y = MoveDir.y + 1
+        local ManagerActor = FindActorByName("Managers")
+        local GM = ManagerActor:GetScriptComponentByName("GameManager.lua")
+        GM:GetEnv().PlayerDead()
     end
 
     MoveDir:Normalize()
