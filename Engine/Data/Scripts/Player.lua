@@ -17,13 +17,22 @@ local ProjectileRange = 50.0
 local AutoTargetCooldown = 1.0  -- 자동 타겟 발사 주기 (초)
 local AutoTargetRange = 20.0  -- Detection Collider 반지름과 동일
 
+-- Orbit Projectile 설정
+local OrbitRadius = 10.0        -- 회전 반경
+local OrbitSpeed = 160.0        -- 회전 속도 (degree/s)
+local OrbitCount = 3           -- 회전하는 투사체 개수
+local OrbitDamage = 5          -- 충돌 데미지
+
 -- Enemy 탐지 리스트
 local DetectedEnemies = {}
+
+-- Orbit Projectile 관리
+local OrbitProjectiles = {}
 
 
 
 function BeginPlay()
-   
+
     -- DetectionCollider의 Overlap 이벤트 바인딩
     local DetectionCollider = Owner:GetComponent("USphereComponent")
     if DetectionCollider then
@@ -33,12 +42,17 @@ function BeginPlay()
     else
         print("[Player] WARNING: No Detection Collider found!")
     end
+
+    -- Init 호출 (외부에서 호출되지 않는 경우를 위해)
+    if not obj.Speed then
+        Init()
+    end
 end
 
 function Init()
  -- Initialize custom properties
     obj.OverlapCount = 0
-    obj.Speed = 15 
+    obj.Speed = 15
     obj.MaxHP = 100.0
     obj.HP = 100.0
     obj.Dmg = 10
@@ -47,6 +61,9 @@ function Init()
     obj.Location = Vector(0,0,1)
     _G.PlayerData.PlayerEnv =  Owner:GetScriptComponentByName("Player.lua"):GetEnv()
     _G.PlayerData.bPlayerAlive = true
+
+    -- Orbit Projectile 생성
+    SpawnOrbitProjectiles()
 
     TopCamera()
     print("[Player] Actor Init: " .. obj.UUID)
@@ -132,6 +149,10 @@ end
 function Die()
     _G.PlayerData.bPlayerAlive = false
     _G.PlayerData.PlayerEnv = nil
+
+    -- Orbit Projectile 제거
+    ClearOrbitProjectiles()
+
     ActorPool:Return(Owner)
     _G.GameData.GMEnv.PlayerDead()
 end
@@ -319,5 +340,114 @@ function ShootHomingProjectile(TargetActor)
         end
     else
         --print("[Player] Failed to get homing projectile from pool")
+    end
+end
+
+-- ==============================================================================
+-- Orbit Projectile Functions
+-- ==============================================================================
+
+---
+-- Orbit Projectile 생성
+---
+function SpawnOrbitProjectiles()
+    -- 기존 Orbit Projectile 제거
+    ClearOrbitProjectiles()
+
+    -- OrbitCount만큼 생성
+    for i = 1, OrbitCount do
+        local Projectile = ActorPool:Get("AOrbitProjectile")
+
+        if Projectile then
+            -- 초기 각도 균등 분배: 360도 / OrbitCount
+            local InitialAngle = (360.0 / OrbitCount) * (i - 1)
+
+            -- 투사체 ScriptComponent 가져오기
+            local ProjScript = Projectile:GetScriptComponent()
+            if ProjScript then
+                -- Setup 함수 호출 (OrbitProjectile.lua의 Setup 함수)
+                local Env = ProjScript:GetEnv()
+                if Env["Setup"] then
+                    Env["Setup"](Owner, InitialAngle, OrbitRadius, OrbitSpeed, OrbitDamage)
+                    table.insert(OrbitProjectiles, Projectile)
+                    print("[Player] Orbit projectile #" .. i .. " spawned at angle " .. InitialAngle)
+                else
+                    print("[Player] ERROR: Setup function not found in OrbitProjectile!")
+                end
+            else
+                print("[Player] ERROR: ScriptComponent not found in OrbitProjectile!")
+            end
+        else
+            print("[Player] Failed to get orbit projectile from pool")
+        end
+    end
+
+    print("[Player] Total orbit projectiles spawned: " .. #OrbitProjectiles)
+end
+
+---
+-- 모든 Orbit Projectile 제거
+---
+function ClearOrbitProjectiles()
+    for _, Projectile in ipairs(OrbitProjectiles) do
+        if Projectile then
+            -- ActorPool에 반납
+            ActorPool:Return(Projectile)
+        end
+    end
+
+    -- 배열 초기화
+    OrbitProjectiles = {}
+    print("[Player] All orbit projectiles cleared")
+end
+
+---
+-- Orbit Projectile 개수 변경 (동적 업데이트)
+-- @param NewCount: 새로운 Orbit Projectile 개수
+---
+function SetOrbitCount(NewCount)
+    OrbitCount = NewCount
+    SpawnOrbitProjectiles()
+end
+
+---
+-- Orbit Projectile 반경 변경 (동적 업데이트)
+-- @param NewRadius: 새로운 회전 반경
+---
+function SetOrbitRadius(NewRadius)
+    OrbitRadius = NewRadius
+
+    -- 기존 Orbit Projectile의 반경 업데이트
+    for _, Projectile in ipairs(OrbitProjectiles) do
+        if Projectile then
+            local ProjScript = Projectile:GetScriptComponent()
+            if ProjScript then
+                local Env = ProjScript:GetEnv()
+                if Env["obj"] then
+                    Env["obj"].Radius = NewRadius
+                end
+            end
+        end
+    end
+end
+
+---
+-- Orbit Projectile 회전 속도 변경 (동적 업데이트)
+-- @param NewSpeed: 새로운 회전 속도 (degree/s)
+---
+function SetOrbitSpeed(NewSpeed)
+    OrbitSpeed = NewSpeed
+
+    -- 기존 Orbit Projectile의 속도 업데이트
+    for _, Projectile in ipairs(OrbitProjectiles) do
+        if Projectile then
+            local ProjScript = Projectile:GetScriptComponent()
+            if ProjScript then
+                local Env = ProjScript:GetEnv()
+                if Env["obj"] then
+                    Env["obj"].RotationSpeed = NewSpeed
+                end
+            end
+        end
     end
 end
