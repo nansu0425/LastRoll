@@ -577,7 +577,9 @@ void UScriptManager::RegisterCoreTypes()
 			);
 
 			PrimitiveComponent->OnComponentBeginOverlap.AddLambda(
-				[](const FOverlapInfo& Info) { UE_LOG("Hello World!"); }
+				[](const FOverlapInfo& Info) { 
+					//UE_LOG("Hello World!"); 
+				}
 			);
 
 			UE_LOG_DEBUG("BindBeginOverlap: Lua 함수가 C++ 델리게이트에 바인딩되었습니다.");

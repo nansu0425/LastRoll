@@ -23,16 +23,7 @@ local DetectedEnemies = {}
 
 
 function BeginPlay()
-    -- Initialize custom properties
-    obj.OverlapCount = 0
-    obj.Speed = 9
-    obj.MaxHP = 100.0
-    obj.HP = 100.0
-    obj.Dmg = 10
-    obj.AttackTimer = 0.0  -- 발사 타이머
-    obj.AutoTargetTimer = 0.0  -- 자동 타겟 타이머
-    print("[Player] Actor started: " .. obj.UUID)
-
+   
     -- DetectionCollider의 Overlap 이벤트 바인딩
     local DetectionCollider = Owner:GetComponent("USphereComponent")
     if DetectionCollider then
@@ -42,6 +33,20 @@ function BeginPlay()
     else
         print("[Player] WARNING: No Detection Collider found!")
     end
+end
+
+function Init()
+ -- Initialize custom properties
+    obj.OverlapCount = 0
+    obj.Speed = 9
+    obj.MaxHP = 100.0
+    obj.HP = 100.0
+    obj.Dmg = 10
+    obj.AttackTimer = 0.0  -- 발사 타이머
+    obj.AutoTargetTimer = 0.0  -- 자동 타겟 타이머
+    obj.Location = Vector(0,0,0)
+    TopCamera()
+    print("[Player] Actor Init: " .. obj.UUID)
 end
 
 -- Called every frame
@@ -61,8 +66,8 @@ end
 
 -- Called once when the Actor ends play
 function EndPlay()
-    print("Actor ending: " .. obj.UUID)
-    print("Total overlaps detected: " .. obj.OverlapCount)
+    --print("Actor ending: " .. obj.UUID)
+    --print("Total overlaps detected: " .. obj.OverlapCount)
 end
 
 -- ==============================================================================
@@ -73,7 +78,7 @@ end
 -- Detection Collider에 Enemy 진입
 ---
 function OnDetectionBeginOverlap(OtherActor)
-    print("[Player] Detection overlap started: " .. OtherActor:GetName())
+    --print("[Player] Detection overlap started: " .. OtherActor:GetName())
 
     -- Enemy인지 확인 (ScriptComponent의 TakeDamage 함수로 판별)
     local ScriptComp = OtherActor:GetScriptComponent()
@@ -82,7 +87,7 @@ function OnDetectionBeginOverlap(OtherActor)
         if Env["TakeDamage"] then
             -- Enemy로 판별됨
             table.insert(DetectedEnemies, OtherActor)
-            print("[Player] Enemy detected! Total enemies: " .. #DetectedEnemies)
+            --print("[Player] Enemy detected! Total enemies: " .. #DetectedEnemies)
         end
     end
 end
@@ -91,21 +96,40 @@ end
 -- Detection Collider에서 Enemy 이탈
 ---
 function OnDetectionEndOverlap(OtherActor)
-    print("[Player] Detection overlap ended: " .. OtherActor:GetName())
+    --print("[Player] Detection overlap ended: " .. OtherActor:GetName())
 
     -- 리스트에서 제거
     for i, Enemy in ipairs(DetectedEnemies) do
         if Enemy.UUID == OtherActor.UUID then
             table.remove(DetectedEnemies, i)
-            print("[Player] Enemy removed from detection. Remaining: " .. #DetectedEnemies)
+            --print("[Player] Enemy removed from detection. Remaining: " .. #DetectedEnemies)
             break
         end
     end
 end
 
 
+---
+-- 투사체가 호출할 데미지 받기 함수
+-- @param InDamage: 받을 데미지
+---
+function TakeDamagePlayer(InDamage)
+    obj.HP = obj.HP - InDamage
+    Util.MakeDamageText(InDamage, obj.Location)
+    -- 사망 처리
+    if obj.HP <= 0 then
+        Die()
+    end
+end
 
 
+---
+-- 사망 처리
+---
+function Die()
+    ActorPool:Return(Owner)
+    _G.GameData.GMEnv.PlayerDead()
+end
 
 
 function TopCamera()
@@ -127,7 +151,7 @@ function Move(dt)
     end
     if IsKeyDown(EKeyInput.D) then
         MoveDir.y = MoveDir.y + 1
-        --_G.GameData.GMEnv.PlayerDead()
+        TakeDamagePlayer(1)
     end
 
     MoveDir:Normalize()
@@ -189,13 +213,13 @@ function ShootProjectile()
             if Env["Setup"] then
                 Env["Setup"](ShootDirection, ProjectileSpeed, ProjectileDamage, ProjectileRange)
             else
-                print("[Player] ERROR: Setup function not found in Projectile!")
+                --print("[Player] ERROR: Setup function not found in Projectile!")
             end
         else
-            print("[Player] ERROR: ScriptComponent not found!")
+            --print("[Player] ERROR: ScriptComponent not found!")
         end
     else
-        print("[Player] Failed to get projectile from pool")
+        --print("[Player] Failed to get projectile from pool")
     end
 end
 
@@ -240,7 +264,7 @@ function FindNearestEnemy()
             local Env = ScriptComp:GetEnv()
             if Env["obj"] and Env["obj"].IsDead then
                 -- 죽은 Enemy 무시
-                print("[Player] Skipping dead enemy: " .. Enemy:GetName())
+                --print("[Player] Skipping dead enemy: " .. Enemy:GetName())
                 goto continue
             end
         end
@@ -276,14 +300,14 @@ function ShootHomingProjectile(TargetActor)
             local Env = ProjScript:GetEnv()
             if Env["Setup"] then
                 Env["Setup"](TargetActor, ProjectileSpeed, ProjectileDamage, ProjectileRange)
-                print("[Player] Homing projectile launched at target: " .. TargetActor:GetName())
+                --print("[Player] Homing projectile launched at target: " .. TargetActor:GetName())
             else
-                print("[Player] ERROR: Setup function not found in HomingProjectile!")
+                --print("[Player] ERROR: Setup function not found in HomingProjectile!")
             end
         else
-            print("[Player] ERROR: ScriptComponent not found!")
+            --print("[Player] ERROR: ScriptComponent not found!")
         end
     else
-        print("[Player] Failed to get homing projectile from pool")
+        --print("[Player] Failed to get homing projectile from pool")
     end
 end

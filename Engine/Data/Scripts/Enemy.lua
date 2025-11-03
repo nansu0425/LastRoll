@@ -6,7 +6,7 @@ AttackDis = 1
 AttackDelay = 2
 
 function Attack()
-    print("Attack")
+    --print("Attack")
 end
 
 function BeginPlay()
@@ -21,11 +21,11 @@ function BeginPlay()
     -- Overlap 델리게이트 바인딩 - SphereComponent만 찾아서 바인딩
     local SphereComp = Owner:GetComponent("USphereComponent")
     if SphereComp then
-        print("[Enemy] Binding overlap to SphereComponent")
+        --print("[Enemy] Binding overlap to SphereComponent")
         SphereComp:BindBeginOverlap(self, OnBeginOverlap)
         SphereComp:BindEndOverlap(self, OnEndOverlap)
     else
-        print("[Enemy] WARNING: No SphereComponent found!")
+        --print("[Enemy] WARNING: No SphereComponent found!")
     end
 end
 
@@ -40,7 +40,7 @@ function TakeDamage(InDamage)
     -- 데미지 텍스트 표시
     Util.MakeDamageText(InDamage, obj.Location)
 
-    print("Enemy HP: " .. obj.HP .. " / " .. obj.MaxHP)
+    --print("Enemy HP: " .. obj.HP .. " / " .. obj.MaxHP)
 
     -- 사망 처리
     if obj.HP <= 0 then
@@ -52,8 +52,8 @@ end
 -- 사망 처리
 ---
 function Die()
-    print("[Enemy] Enemy died! Entering dead state, waiting for homing projectiles...")
-    print("[Enemy] Targeting projectiles count: " .. #obj.TargetingProjectiles)
+   -- print("[Enemy] Enemy died! Entering dead state, waiting for homing projectiles...")
+    --print("[Enemy] Targeting projectiles count: " .. #obj.TargetingProjectiles)
 
     -- 죽은 상태로 전환 (즉시 삭제하지 않음)
     obj.IsDead = true
@@ -61,7 +61,7 @@ function Die()
 
     -- 타겟팅하는 Projectile이 없으면 즉시 삭제
     if #obj.TargetingProjectiles == 0 then
-        print("[Enemy] No targeting projectiles, returning to pool immediately")
+        --print("[Enemy] No targeting projectiles, returning to pool immediately")
         ReturnToPool()
     end
 end
@@ -72,7 +72,7 @@ end
 ---
 function RegisterProjectile(ProjectileUUID)
     table.insert(obj.TargetingProjectiles, ProjectileUUID)
-    print("[Enemy] Projectile registered: " .. ProjectileUUID .. " (Total: " .. #obj.TargetingProjectiles .. ")")
+    --print("[Enemy] Projectile registered: " .. ProjectileUUID .. " (Total: " .. #obj.TargetingProjectiles .. ")")
 end
 
 ---
@@ -83,11 +83,11 @@ function UnregisterProjectile(ProjectileUUID)
     for i, UUID in ipairs(obj.TargetingProjectiles) do
         if UUID == ProjectileUUID then
             table.remove(obj.TargetingProjectiles, i)
-            print("[Enemy] Projectile unregistered: " .. ProjectileUUID .. " (Remaining: " .. #obj.TargetingProjectiles .. ")")
+            --print("[Enemy] Projectile unregistered: " .. ProjectileUUID .. " (Remaining: " .. #obj.TargetingProjectiles .. ")")
 
             -- 죽은 상태에서 모든 Projectile이 사라지면 ActorPool에 반납
             if obj.IsDead and #obj.TargetingProjectiles == 0 then
-                print("[Enemy] All targeting projectiles removed, returning to pool")
+                --print("[Enemy] All targeting projectiles removed, returning to pool")
                 ReturnToPool()
             end
             return
@@ -99,7 +99,7 @@ end
 -- ActorPool에 반납 (모든 Homing Projectile이 충돌했을 때 호출)
 ---
 function ReturnToPool()
-    print("[Enemy] Returning to pool: " .. obj.UUID)
+    --print("[Enemy] Returning to pool: " .. obj.UUID)
 
     -- 상태 초기화
     obj.IsDead = false
@@ -156,15 +156,15 @@ end
 -- Called when overlap starts with another Actor
 -- @param OtherActor: The Actor that began overlapping with this one
 function OnBeginOverlap(OtherActor)
-    print("[Enemy] OnBeginOverlap called")
-    print("[Enemy] Overlapped with: " .. OtherActor:GetName() .. " (UUID: " .. OtherActor.UUID .. ")")
+    --print("[Enemy] OnBeginOverlap called")
+    --print("[Enemy] Overlapped with: " .. OtherActor:GetName() .. " (UUID: " .. OtherActor.UUID .. ")")
 end
 
 -- Called when overlap ends with another Actor
 -- @param OtherActor: The Actor that stopped overlapping with this one
 function OnEndOverlap(OtherActor)
-    print("[Enemy] OnEndOverlap called")
-    print("[Enemy] Overlap ended with: " .. OtherActor:GetName())
+    --print("[Enemy] OnEndOverlap called")
+    --print("[Enemy] Overlap ended with: " .. OtherActor:GetName())
 end
 
 
