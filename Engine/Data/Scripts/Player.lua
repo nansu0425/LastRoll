@@ -148,8 +148,8 @@ function ShootProjectile()
     )
     ShootDirection:Normalize()
 
-    -- ActorPool에서 투사체 가져오기 (AProjectileActor 사용)
-    local Projectile = ActorPool:Get("AProjectileActor")
+    -- ActorPool에서 투사체 가져오기 (ALinearProjectile 사용)
+    local Projectile = ActorPool:Get("ALinearProjectile")
 
     if Projectile then
         -- 투사체 위치 설정 (플레이어 위치에서 약간 앞)
