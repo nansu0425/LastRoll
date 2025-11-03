@@ -8,7 +8,8 @@ EGameState = {
 	Lobby = 1,
     Loading = 2,
 	Playing = 3,
-	End = 4
+    EndSequence = 4,
+	End = 5
 }
 
 function Util.Clamp(value, min, max)
@@ -26,7 +27,7 @@ print("test")
 end
 
 function Util.RenderHPBar(WorldPos, Size, HPPer)
-DrawHPBar(WorldToScreenPos(WorldPos + Vector(1,0,0)), Size, HPPer)
+DrawGaugeBar(WorldToScreenPos(WorldPos + Vector(1,0,0)), Size, HPPer, Vector4(0.2,0.2,0.2,1.0), Vector4(1.0, 0.2, 0.2, 1.0))
 end
 
 function Util.MakeDamageText(InDamage, InWorldPos)
@@ -39,8 +40,5 @@ function Util.MakeDamageText(InDamage, InWorldPos)
 table.insert(_G.UIData.DamageTextList, DamageText)
 end
 
---function Util.RenderHPBar(WorldPos, Size, HPPer)
---DrawHPBar(WorldToScreenPos(WorldPos), Size, HPPer)
---end
 
 return Util

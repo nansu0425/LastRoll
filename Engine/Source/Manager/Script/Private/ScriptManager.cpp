@@ -27,7 +27,8 @@
 #include "Render/UI/Viewport/Public/ViewportClient.h"
 #include "Source/Editor/Public/Camera.h"
 #include "Render/UI/GameUI/Public/GameUI.h"
-
+#include "Editor/Public/Editor.h"
+#include "Level/Public/Level.h"
 IMPLEMENT_SINGLETON_CLASS(UScriptManager, UObject)
 
 UScriptManager::UScriptManager()
@@ -471,6 +472,21 @@ void UScriptManager::RegisterCoreTypes()
 		"GetScriptComponent", [](AActor* self) -> UScriptComponent* {
 			UActorComponent* Component = self->GetComponentByClass(UScriptComponent::StaticClass());
 			return Cast<UScriptComponent>(Component);
+		},
+
+		// ScriptComponent 전용 접근 메서드 (타입 안전)
+		"GetScriptComponentByName", [](AActor* self, const std::string& ScriptName) -> UScriptComponent* {
+			for (UActorComponent* ActorComp : self->GetOwnedComponents())
+			{
+				if(UScriptComponent* ScriptComp = Cast<UScriptComponent>(ActorComp))
+				{
+					if (ScriptComp->GetScriptPath() == ScriptName)
+					{
+						return ScriptComp;
+					}
+				}
+			}
+			return nullptr;
 		}
 	);
 
@@ -934,7 +950,19 @@ void UScriptManager::RegisterCoreTypes()
 		return FVector4(static_cast<float>(Rect.Left), static_cast<float>(Rect.Top),
 		                static_cast<float>(Rect.Width), static_cast<float>(Rect.Height));
 	};
-
+	LuaState["FindActorByName"] = [](const std::string& InName)->AActor*
+		{
+			FName Name = FName(InName);
+			const TArray<AActor*>& Actors = GWorld->GetLevel()->GetLevelActors();
+			for (AActor* Actor : Actors)
+			{
+				if (Actor->GetName() == Name)
+				{
+					return Actor;
+				}
+			}
+			return nullptr;
+		};
 
 
 	UE_LOG_INFO("Lua core types registered (Vector, Quaternion, Actor, OverlapInfo, PrimitiveComponent)");
@@ -1048,9 +1076,9 @@ void UScriptManager::RegisterGlobalFunctions()
 	{
 		UGameUI::GetInstance().TextUI(Text, ScreenPos, RectSize, Size, Color);
 	};
-	lua["DrawHPBar"] = [](const FVector2& ScreenPos, const FVector2& Size, float HPPer)
+	lua["DrawGaugeBar"] = [](const FVector2& ScreenPos, const FVector2& Size, float GaugePercent, const FVector4& BGColor, const FVector4& GaugeColor)
 	{
-		UGameUI::GetInstance().HPBar(ScreenPos, Size, HPPer);
+		UGameUI::GetInstance().GaugeBar(ScreenPos, Size, GaugePercent, BGColor, GaugeColor);
 	};
 
 

@@ -53,6 +53,8 @@ function Die()
     print("Enemy died!")
 
     -- ActorPool에 반납 (재사용)
+    _G.GameData.GMEnv.AddScore(1)
+    _G.GameData.GMEnv.AddEXP(1)
     ActorPool:Return(Owner)
 end
 

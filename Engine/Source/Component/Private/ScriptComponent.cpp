@@ -530,12 +530,12 @@ bool UScriptComponent::ResumeCoroutine(CoroutineData& InData)
 		if (YieldResult.return_count() > 0)
 		{
 			InData.WaitCondition = YieldResult[0];
-			UE_LOG("Coroutine Resume : %s", InData.FuncName.ToString().c_str());
+			//UE_LOG("Coroutine Resume : %s", InData.FuncName.ToString().c_str());
 		}
 	}
 	else if (Status == sol::call_status::ok)
 	{
-		UE_LOG("Coroutine End : %s", InData.FuncName.ToString().c_str());
+		//UE_LOG("Coroutine End : %s", InData.FuncName.ToString().c_str());
 
 		return true;
 	}
