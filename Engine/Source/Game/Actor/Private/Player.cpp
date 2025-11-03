@@ -16,6 +16,8 @@ APlayer::APlayer()
     // DetectionCollider 생성 (Enemy 탐지용)
     DetectionCollider = CreateDefaultSubobject<USphereComponent>();
 
+    PhysicsCollider = CreateDefaultSubobject<USphereComponent>();
+
 	bCanEverTick = true; // Tick 활성화
 }
 
@@ -34,11 +36,16 @@ void APlayer::InitializeComponents()
 
     // DetectionCollider를 RootComponent에 부착
     DetectionCollider->AttachToComponent(StaticMeshComponent);
+    PhysicsCollider->AttachToComponent(StaticMeshComponent);
 
     // DetectionCollider 설정
     DetectionCollider->SetSphereRadius(20.0f);  // Enemy 탐지 범위 20 유닛
     DetectionCollider->SetGenerateOverlapEvents(true);  // Overlap 이벤트 활성화
     DetectionCollider->SetBlockComponent(false);  // Block 비활성화 (Overlap만 사용)
+    
+    PhysicsCollider->SetSphereRadius(1.15f);
+    PhysicsCollider->SetGenerateOverlapEvents(false);
+    PhysicsCollider->SetBlockComponent(true);
 
     PlayerScriptComponent->SetScriptPath("Player.lua");
 }

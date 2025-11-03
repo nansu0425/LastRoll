@@ -310,13 +310,13 @@ end
 -- Called when overlap starts with another Actor
 -- @param OtherActor: The Actor that began overlapping with this one
 function OnBeginOverlap(OtherActor)
-    print("[Enemy] OnBeginOverlap called")
-    print("[Enemy] Overlapped with: " .. OtherActor:GetName() .. " (UUID: " .. OtherActor.UUID .. ")")
+    --print("[Enemy] OnBeginOverlap called")
+    --print("[Enemy] Overlapped with: " .. OtherActor:GetName() .. " (UUID: " .. OtherActor.UUID .. ")")
 end
 
 -- Called when overlap ends with another Actor
 -- @param OtherActor: The Actor that stopped overlapping with this one
 function OnEndOverlap(OtherActor)
-    print("[Enemy] OnEndOverlap called")
-    print("[Enemy] Overlap ended with: " .. OtherActor:GetName())
+    --print("[Enemy] OnEndOverlap called")
+    --print("[Enemy] Overlap ended with: " .. OtherActor:GetName())
 end
