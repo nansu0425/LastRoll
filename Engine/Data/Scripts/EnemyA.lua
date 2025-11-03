@@ -28,15 +28,18 @@ function BeginPlay()
     obj.TargetingProjectiles = {}
     obj.KnockbackDir = Vector(0,0,0)
     obj.KnockbackDis = 0
+    obj.Rotation = Quaternion(0, 0, 0, 1)
+    obj.CurRotZ = 90
+    obj.ToPlayerDirXY = Vector2(0,0)
 
     -- ========== 체스 말 이동 로직용 변수 추가 ==========
-    obj.StepDistance = 10.0          -- 한 번의 "홉(hop)"으로 이동할 거리
+    obj.StepDistance = 14.0          -- 한 번의 "홉(hop)"으로 이동할 거리
     obj.MoveState = "Idle"           -- 현재 상태: "Idle", "Lifting", "Moving", "Landing"
     obj.MoveInterval = 1.0           -- 이동 사이의 대기 시간 (초)
     obj.MoveTimer = obj.MoveInterval -- 다음 이동까지 남은 시간
 
     obj.LiftHeight = 5.0            -- "홉" 할 때 떠오르는 높이 (Z축)
-    obj.MoveAnimDuration = 1.0       -- "홉" 애니메이션(상승-이동-하강)에 걸리는 총 시간
+    obj.MoveAnimDuration = 0.7       -- "홉" 애니메이션(상승-이동-하강)에 걸리는 총 시간
     obj.MoveAnimTimer = 0.0          -- "홉" 애니메이션 타이머
 
     obj.StartMovePos = nil           -- 이동 시작 위치
@@ -89,7 +92,7 @@ function TakeDamage(InDamage)
     obj.HP = obj.HP - InDamage
 
     -- 데미지 텍스트 표시
-    Util.MakeDamageText(InDamage, obj.Location)
+    Util.MakeDamageText(InDamage, obj.Location, Vector4(0.8,0.8,0.8,1))
 
     Dir = obj.Location - _G.PlayerData.PlayerPos
     Dir:Normalize()
@@ -201,6 +204,7 @@ function ReturnToPool()
     obj.DeathFlightVelocity = Vector(0, 0, 0)
     obj.DeathSpinAxis = Vector(1, 0, 0)
     obj.Rotation = Quaternion(0, 0, 0, 1)
+    obj.CurRotZ = 90
     -- ========================================
 
     -- ActorPool에 반납 (재사용)
@@ -272,6 +276,11 @@ function Tick(dt)
             end
             obj.TargetMovePos = Vector(TargetXY.x, TargetXY.y, obj.GroundZ)
             obj.StartMovePos.z = obj.GroundZ
+
+            local ToPlayer = _G.PlayerData.PlayerPos - obj.Location
+            local ToPlayerDirXY = Vector2(ToPlayer.x, ToPlayer.y)
+            ToPlayerDirXY:Normalize()
+            obj.ToPlayerDirXY = ToPlayerDirXY
         end
 
     elseif obj.MoveState == "Lifting" then
@@ -284,7 +293,7 @@ function Tick(dt)
 
         if Alpha >= 1.0 then
             newZ = obj.GroundZ + obj.LiftHeight -- 정확히 최고 높이로
-            obj.MoveState = "Moving"
+            obj.MoveState = "Rotate"
             obj.MoveAnimTimer = 0.0          -- 다음 상태를 위해 타이머 리셋
         else
             -- 부드러운 시작 (EaseOutQuad)
@@ -293,6 +302,24 @@ function Tick(dt)
         end
         
         obj.Location = Vector(obj.StartMovePos.x, obj.StartMovePos.y, newZ)
+    
+    elseif obj.MoveState == "Rotate" then
+        
+        CurForwardXY = Util.GetForwardFromDegreeZ(obj.CurRotZ)
+        --플레이어를 바라보기 위한 회전 값
+        ToPlayerDegree = Util.Rotate2DDegree(CurForwardXY, obj.ToPlayerDirXY)
+        --현재 회전 가능한 최대값
+        CurRotDegree = math.random(500, 1000) * dt * Util.Sign(ToPlayerDegree)
+        --print(CurForwardXY.x.." "..CurForwardXY.y.." "..obj.ToPlayerDirXY.x.." "..obj.ToPlayerDirXY.y.." "..ToPlayerDegree)
+        if math.abs(ToPlayerDegree) <= math.abs(CurRotDegree) then
+            Owner:AxisRotation(Vector(0,0,1), ToPlayerDegree)
+            obj.CurRotZ = obj.CurRotZ + ToPlayerDegree
+            obj.MoveState = "Moving"
+        else
+            Owner:AxisRotation(Vector(0,0,1), CurRotDegree)
+            obj.CurRotZ = obj.CurRotZ + CurRotDegree
+        end
+        
 
     elseif obj.MoveState == "Moving" then
         -- Moving 상태: 수평 이동 (애니메이션 시간의 40%)
