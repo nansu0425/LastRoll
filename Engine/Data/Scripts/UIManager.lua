@@ -3,6 +3,7 @@ _G.UIData = {}
 end
 
 _G.UIData.DamageTextList = {}
+_G.UIData.TrailTextList = {}
 
 local Util = require("Data\\Scripts\\Util")
 
@@ -18,6 +19,20 @@ function DamageTextUIUpdate(dt)
         end
     end
 end
+
+function TrailTextUIUpdate(dt)
+    for i = #_G.UIData.TrailTextList, 1, -1 do
+        local TrailText = _G.UIData.TrailTextList[i]
+        TrailText.LifeTime = TrailText.LifeTime - dt
+        if TrailText.LifeTime <= 0 then
+            table.remove(_G.UIData.TrailTextList, i)
+        else
+            local Alpha = TrailText.LifeTime
+            DrawText("o", WorldToScreenPos(TrailText.WorldPos), Vector2(50,30), 20, Vector4(TrailText.Color.x,TrailText.Color.y,TrailText.Color.z,Alpha))
+        end
+    end
+end
+
 function BeginPlay()
 
 end
@@ -26,6 +41,7 @@ end
 -- @param dt: Delta time in seconds
 function Tick(dt)
 DamageTextUIUpdate(dt)
+TrailTextUIUpdate(dt)
 end
 
 -- Called once when the Actor ends play

@@ -114,7 +114,7 @@ end
 ---
 function TakeDamage(InDamage)
     obj.HP = obj.HP - InDamage
-    Util.MakeDamageText(InDamage, obj.Location)
+    Util.MakeDamageText(InDamage, obj.Location, Vector4(0.8,0.8,0.8,1))
 
     local Dir = obj.Location - _G.PlayerData.PlayerPos
     Dir:Normalize()
