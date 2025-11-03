@@ -4,6 +4,7 @@
 class USphereComponent;
 class UScriptComponent;
 class UStaticMeshComponent;
+class UPointLightComponent;
 
 UCLASS()
 class AOrbitProjectile : public AActor
@@ -21,4 +22,5 @@ public:
 private:
 	USphereComponent* SphereCollider = nullptr;
 	UScriptComponent* ScriptComponent = nullptr;
+	UPointLightComponent* PointLight = nullptr;
 };

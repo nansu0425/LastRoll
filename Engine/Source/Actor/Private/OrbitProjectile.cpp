@@ -4,6 +4,7 @@
 #include "Component/Mesh/Public/StaticMesh.h"
 #include "Component/Shape/Public/SphereComponent.h"
 #include "Component/Public/ScriptComponent.h"
+#include "Component/Public/PointLightComponent.h"
 #include "Texture/Public/Material.h"
 
 IMPLEMENT_CLASS(AOrbitProjectile, AActor)
@@ -18,6 +19,9 @@ AOrbitProjectile::AOrbitProjectile()
 
 	// 2. ScriptComponent 생성 (Lua 스크립트용)
 	ScriptComponent = CreateDefaultSubobject<UScriptComponent>();
+
+	// 3. PointLightComponent 생성 (중심 조명)
+	PointLight = CreateDefaultSubobject<UPointLightComponent>();
 }
 
 UClass* AOrbitProjectile::GetDefaultRootComponent()
@@ -75,6 +79,13 @@ void AOrbitProjectile::InitializeComponents()
 		}
 	}
 
-	// 6. ScriptComponent 스크립트 경로 설정
+	// 6. PointLightComponent 설정 (중심 조명)
+	PointLight->AttachToComponent(MeshComponent);
+	PointLight->SetLightColor(FVector(1.0f, 0.8f, 0.3f));  // 주황색 (Emissive와 동일)
+	PointLight->SetIntensity(2.0f);                // 조명 강도
+	PointLight->SetAttenuationRadius(100.0f);      // 조명 범위
+	PointLight->SetCastShadows(false);             // 그림자 비활성화 (성능)
+
+	// 7. ScriptComponent 스크립트 경로 설정
 	ScriptComponent->SetScriptPath("OrbitProjectile.lua");
 }
