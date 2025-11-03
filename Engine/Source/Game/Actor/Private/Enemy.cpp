@@ -15,6 +15,8 @@ AEnemy::AEnemy()
 
     // SphereComponent 생성 (충돌 감지용)
     SphereCollider = CreateDefaultSubobject<USphereComponent>();
+
+	bCanEverTick = true; // Tick 활성화
 }
 
 UClass* AEnemy::GetDefaultRootComponent()

@@ -7,6 +7,7 @@
 #include "Utility/Public/JsonSerializer.h"
 #include "Manager/Config/Public/ConfigManager.h"
 #include "Manager/Path/Public/PathManager.h"
+#include "Editor/Public/Editor.h"
 
 IMPLEMENT_CLASS(UWorld, UObject)
 
