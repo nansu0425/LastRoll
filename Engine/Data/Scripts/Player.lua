@@ -9,13 +9,14 @@ _G.PlayerData.PlayerPos = Vector(0,0,0)
 
 -- 발사 설정
 local AttackCooldown = 0.3  -- 발사 주기 (초)
-local ProjectileSpeed = 30.0
+local LinearProjectileSpeed = 50.0  -- Linear Projectile 속도
+local HomingProjectileSpeed = 30.0  -- Homing Projectile 속도
 local ProjectileDamage = 10
 local ProjectileRange = 50.0
 
 -- 자동 타겟 설정
 local AutoTargetCooldown = 1.0  -- 자동 타겟 발사 주기 (초)
-local AutoTargetRange = 20.0  -- Detection Collider 반지름과 동일
+local AutoTargetRange = 30.0  -- Detection Collider 반지름 (Homing Projectile 감지 범위)
 
 -- Orbit Projectile 설정
 local OrbitRadius = 10.0        -- 회전 반경
@@ -61,12 +62,13 @@ function Init()
     obj.Location = Vector(0,0,1)
 
     AttackCooldown = 0.3  -- 발사 주기 (초)
-    ProjectileSpeed = 30.0
+    LinearProjectileSpeed = 50.0
+    HomingProjectileSpeed = 30.0
     ProjectileDamage = 10
     ProjectileRange = 50.0
 
     AutoTargetCooldown = 1.0  -- 자동 타겟 발사 주기 (초)
-    AutoTargetRange = 20.0  -- Detection Collider 반지름과 동일
+    AutoTargetRange = 30.0  -- Detection Collider 반지름 (Homing Projectile 감지 범위)
 
     SetOrbitRadius(10.0)       -- 회전 반경
     SetOrbitSpeed(160)      -- 회전 속도 (degree/s)
@@ -92,12 +94,13 @@ ProjectileDamage = ProjectileDamage + 2
 AttackCooldown = AttackCooldown - 0.02
 if CurLevel == 3 then
 SetOrbitCount(4)
-ProjectileSpeed = 35
+LinearProjectileSpeed = 55
 elseif CurLevel == 5 then
+SetOrbitCount(5)
 SetOrbitSpeed(220)
 SetOrbitRadius(12.0)
-OrbitDamage = 8
-ProjectileSpeed = 40
+SetOrbitDamage(8)
+LinearProjectileSpeed = 60
 end
 end
 
@@ -273,7 +276,7 @@ function ShootProjectile()
             -- Setup 함수 호출 (Projectile.lua의 Setup 함수)
             local Env = ProjScript:GetEnv()
             if Env["Setup"] then
-                Env["Setup"](ShootDirection, ProjectileSpeed, ProjectileDamage, ProjectileRange)
+                Env["Setup"](ShootDirection, LinearProjectileSpeed, ProjectileDamage, ProjectileRange)
             else
                 --print("[Player] ERROR: Setup function not found in Projectile!")
             end
@@ -361,7 +364,7 @@ function ShootHomingProjectile(TargetActor)
             -- Setup 함수 호출 (HomingProjectile.lua의 Setup 함수)
             local Env = ProjScript:GetEnv()
             if Env["Setup"] then
-                Env["Setup"](TargetActor, ProjectileSpeed, ProjectileDamage, ProjectileRange)
+                Env["Setup"](TargetActor, HomingProjectileSpeed, ProjectileDamage, ProjectileRange)
                 --print("[Player] Homing projectile launched at target: " .. TargetActor:GetName())
             else
                 --print("[Player] ERROR: Setup function not found in HomingProjectile!")
@@ -477,6 +480,27 @@ function SetOrbitSpeed(NewSpeed)
                 local Env = ProjScript:GetEnv()
                 if Env["obj"] then
                     Env["obj"].RotationSpeed = NewSpeed
+                end
+            end
+        end
+    end
+end
+
+---
+-- Orbit Projectile 데미지 변경 (동적 업데이트)
+-- @param NewDamage: 새로운 충돌 데미지
+---
+function SetOrbitDamage(NewDamage)
+    OrbitDamage = NewDamage
+
+    -- 기존 Orbit Projectile의 데미지 업데이트
+    for _, Projectile in ipairs(OrbitProjectiles) do
+        if Projectile then
+            local ProjScript = Projectile:GetScriptComponent()
+            if ProjScript then
+                local Env = ProjScript:GetEnv()
+                if Env["obj"] then
+                    Env["obj"].Damage = NewDamage
                 end
             end
         end

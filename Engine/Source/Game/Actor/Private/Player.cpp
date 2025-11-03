@@ -39,7 +39,7 @@ void APlayer::InitializeComponents()
     PhysicsCollider->AttachToComponent(StaticMeshComponent);
 
     // DetectionCollider 설정
-    DetectionCollider->SetSphereRadius(20.0f);  // Enemy 탐지 범위 20 유닛
+    DetectionCollider->SetSphereRadius(30.0f);  // Enemy 탐지 범위 30 유닛 (Homing Projectile 감지 범위)
     DetectionCollider->SetGenerateOverlapEvents(true);  // Overlap 이벤트 활성화
     DetectionCollider->SetBlockComponent(false);  // Block 비활성화 (Overlap만 사용)
     

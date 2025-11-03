@@ -9,7 +9,7 @@ local ActorPool = require("Data/Scripts/ActorPool")
 local Util = require("Data\\Scripts\\Util")
 
 -- 투사체 기본 설정
-local DefaultSpeed = 30.0
+local DefaultSpeed = 50.0
 local DefaultDamage = 10
 local DefaultMaxDistance = 50.0
 
