@@ -126,7 +126,6 @@ function TakeDamagePlayer(InDamage)
     end
 end
 
-
 ---
 -- 사망 처리
 ---
@@ -136,7 +135,6 @@ function Die()
     ActorPool:Return(Owner)
     _G.GameData.GMEnv.PlayerDead()
 end
-
 
 function TopCamera()
 TargetPos = obj.Location

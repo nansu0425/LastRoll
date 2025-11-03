@@ -50,6 +50,8 @@ function BeginPlay()
     obj.DeathInitialFlySpeed = 45.0             -- 초기 상승 속도
     obj.DeathGravity = 98.0                     -- 중력 계수
     obj.DeathFlightVelocity = Vector(0, 0, 0)   -- 죽음 애니메이션 중 현재 속도
+    obj.DeathSpinSpeed = 720.0                  -- 회전 속도
+    obj.DepthSpinAxis = Vector(1, 0, 0)         -- 회전 축
     -- ================================================
 
     -- Overlap 델리게이트 바인딩 - SphereComponent만 찾아서 바인딩
@@ -119,6 +121,14 @@ function Die()
     
     local OutwardForce = obj.KnockbackDir * (obj.DeathInitialFlySpeed * 0.5)
     obj.DeathFlightVelocity = UpwardForce + OutwardForce
+    
+    obj.DeathSpinSpeed = Random(360, 720)
+    obj.DeathSpinAxis = Vector(Random(-1, 1), Random(-1, 1), Random(-1, 1))
+    if obj.DeathSpinAxis:Length() < 0.01 then
+        obj.DeathSpinAxis = Vector(1, 0, 0)
+    else 
+        obj.DeathSpinAxis:Normalize()    
+    end
 end
 
 ---
@@ -189,6 +199,8 @@ function ReturnToPool()
     -- ========== 죽음 상태 변수 초기화 ==========
     obj.IsDying = false
     obj.DeathFlightVelocity = Vector(0, 0, 0)
+    obj.DeathSpinAxis = Vector(1, 0, 0)
+    obj.Rotation = Quaternion(0, 0, 0, 1)
     -- ========================================
 
     -- ActorPool에 반납 (재사용)
@@ -210,6 +222,9 @@ function Tick(dt)
     if obj.IsDying then 
         obj.DeathFlightVelocity.z = obj.DeathFlightVelocity.z - obj.DeathGravity * dt
         obj.Location = obj.Location + obj.DeathFlightVelocity * dt
+        
+        local SpinAngleDelta = obj.DeathSpinSpeed * dt
+        Owner:AxisRotation(obj.DeathSpinAxis, SpinAngleDelta)
         
         CheckCanReturnToPool()
         
