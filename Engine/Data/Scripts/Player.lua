@@ -38,7 +38,7 @@ end
 function Init()
  -- Initialize custom properties
     obj.OverlapCount = 0
-    obj.Speed = 9
+    obj.Speed = 15 
     obj.MaxHP = 100.0
     obj.HP = 100.0
     obj.Dmg = 10
@@ -139,7 +139,7 @@ end
 
 function TopCamera()
 TargetPos = obj.Location
-GetCamera().Location = TargetPos + Vector(-2,0,10)
+GetCamera().Location = TargetPos + Vector(-2,0,25)
 GetCamera().Rotation = Vector(0,-70,0)
 end
 

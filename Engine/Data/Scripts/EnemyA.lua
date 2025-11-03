@@ -44,6 +44,13 @@ function BeginPlay()
     obj.GroundZ = 0.0                -- 지면의 Z 레벨 (Tick에서 자동으로 설정됨)
     obj.HasSetGroundZ = false        -- GroundZ를 설정했는지 여부
     -- ================================================
+    
+    -- ========== 체스 말 죽음 로직용 변수 추가 ============
+    obj.IsDying = false                         -- 죽음 애니메이션 재생 여부
+    obj.DeathInitialFlySpeed = 45.0             -- 초기 상승 속도
+    obj.DeathGravity = 98.0                     -- 중력 계수
+    obj.DeathFlightVelocity = Vector(0, 0, 0)   -- 죽음 애니메이션 중 현재 속도
+    -- ================================================
 
     -- Overlap 델리게이트 바인딩 - SphereComponent만 찾아서 바인딩
     local SphereComp = Owner:GetComponent("USphereComponent")
@@ -68,8 +75,7 @@ CurKnockbackDis = obj.KnockbackDis * 0.01
     else 
         obj.Location = obj.Location + obj.KnockbackDir * CurKnockbackDis
         obj.KnockbackDis  = obj.KnockbackDis - CurKnockbackDis
-        end
-
+    end
 end
 
 
@@ -104,13 +110,15 @@ function Die()
 
     -- 죽은 상태로 전환 (즉시 삭제하지 않음)
     obj.IsDead = true
-    obj.Speed = 0  -- 움직임 정지 (혹시 모를 상황 대비)
-
-    -- 타겟팅하는 Projectile이 없으면 즉시 삭제
-    if #obj.TargetingProjectiles == 0 then
-        --print("[Enemy] No targeting projectiles, returning to pool immediately")
-        ReturnToPool()
-    end
+    obj.IsDying = true
+    
+    obj.MoveState = "Idle"
+    obj.MoveTimer = 0
+    
+    local UpwardForce = Vector(0, 0, obj.DeathInitialFlySpeed)
+    
+    local OutwardForce = obj.KnockbackDir * (obj.DeathInitialFlySpeed * 0.5)
+    obj.DeathFlightVelocity = UpwardForce + OutwardForce
 end
 
 ---
@@ -132,13 +140,26 @@ function UnregisterProjectile(ProjectileUUID)
             table.remove(obj.TargetingProjectiles, i)
             --print("[Enemy] Projectile unregistered: " .. ProjectileUUID .. " (Remaining: " .. #obj.TargetingProjectiles .. ")")
 
-            -- 죽은 상태에서 모든 Projectile이 사라지면 ActorPool에 반납
-            if obj.IsDead and #obj.TargetingProjectiles == 0 then
-                --print("[Enemy] All targeting projectiles removed, returning to pool")
-                ReturnToPool()
-            end
+            CheckCanReturnToPool()
             return
         end
+    end
+end
+
+---
+-- 액터 풀에 반환할 수 있는지 확인
+---
+function CheckCanReturnToPool()
+    if not obj.IsDead or not obj.IsDying then
+        return
+    end
+
+    if #obj.TargetingProjectiles > 0 then 
+        return
+    end
+
+    if obj.HasSetGroundZ and obj.Location.z < (obj.GroundZ - 200.0) then
+        ReturnToPool()
     end
 end
 
@@ -164,6 +185,11 @@ function ReturnToPool()
     obj.StartMovePos = nil
     obj.TargetMovePos = nil
     -- ========================================
+    
+    -- ========== 죽음 상태 변수 초기화 ==========
+    obj.IsDying = false
+    obj.DeathFlightVelocity = Vector(0, 0, 0)
+    -- ========================================
 
     -- ActorPool에 반납 (재사용)
     _G.GameData.GMEnv.AddScore(1)
@@ -179,19 +205,24 @@ function Tick(dt)
     if Util.IsActiveMode() == false then
         return
     end
-    Knockback(dt)
     
-
-
-    -- HP 바 렌더링 (죽은 상태에서도 표시)
-    local HPPer = obj.HP / obj.MaxHP
-    Util.RenderHPBar(obj.Location, Vector2(50, 15), HPPer)
-
-    -- 죽은 상태면 로직 중단
-    if obj.IsDead then
+    -- ========== 죽음 상태 처리 ==========
+    if obj.IsDying then 
+        obj.DeathFlightVelocity.z = obj.DeathFlightVelocity.z - obj.DeathGravity * dt
+        obj.Location = obj.Location + obj.DeathFlightVelocity * dt
+        
+        CheckCanReturnToPool()
+        
         return
     end
+    -- ========================================
 
+    Knockback(dt)
+    
+    -- HP 바 렌더링 
+    local HPPer = obj.HP / obj.MaxHP
+    Util.RenderHPBar(obj.Location, Vector2(50, 15), HPPer)
+    
     -- 처음 Tick이 돌 때 현재 Z 위치를 "지면"으로 저장
     if not obj.HasSetGroundZ then
         obj.GroundZ = obj.Location.z

@@ -30,7 +30,7 @@
 --   obj.Location = obj.Location + obj.Velocity * dt
 -- ==============================================================================
 
-local TILE_SIDE_LENGTH = 100.0
+local TILE_SIDE_LENGTH = 300.0
 
 -- Called once when the Actor begins play
 function BeginPlay()
