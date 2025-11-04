@@ -30,37 +30,37 @@ FFXAAPass::~FFXAAPass()
 
 void FFXAAPass::Execute(FRenderingContext& Context)
 {
-    ID3D11ShaderResourceView* SceneSRV = DeviceResources->GetSceneColorShaderResourceView(); // 오프스크린 컬러입력
-    if (!SceneSRV)
-    {
-        return;
-    }
+    //ID3D11ShaderResourceView* SceneSRV = DeviceResources->GetSceneColorShaderResourceView(); // 오프스크린 컬러입력
+    //if (!SceneSRV)
+    //{
+    //    return;
+    //}
 
-    UpdateConstants();
-    SetRenderTargets();
+    //UpdateConstants();
+    //SetRenderTargets();
 
-    FPipelineInfo PipelineInfo = {};
-    PipelineInfo.InputLayout = InputLayout;
-    PipelineInfo.VertexShader = VertexShader;
-    PipelineInfo.PixelShader = PixelShader;
-    PipelineInfo.DepthStencilState = nullptr;
-    PipelineInfo.BlendState = nullptr;
-    PipelineInfo.Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+    //FPipelineInfo PipelineInfo = {};
+    //PipelineInfo.InputLayout = InputLayout;
+    //PipelineInfo.VertexShader = VertexShader;
+    //PipelineInfo.PixelShader = PixelShader;
+    //PipelineInfo.DepthStencilState = nullptr;
+    //PipelineInfo.BlendState = nullptr;
+    //PipelineInfo.Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
-    Pipeline->UpdatePipeline(PipelineInfo);
+    //Pipeline->UpdatePipeline(PipelineInfo);
 
-    UINT offset = 0;
-    Pipeline->SetVertexBuffer(FullscreenVB, FullscreenStride);
-    Pipeline->SetIndexBuffer(FullscreenIB, 0);
+    //UINT offset = 0;
+    //Pipeline->SetVertexBuffer(FullscreenVB, FullscreenStride);
+    //Pipeline->SetIndexBuffer(FullscreenIB, 0);
 
-    Pipeline->SetConstantBuffer(0, EShaderType::PS, FXAAConstantBuffer);
-    Pipeline->SetShaderResourceView(0, EShaderType::PS, SceneSRV);
-    Pipeline->SetSamplerState(0, EShaderType::PS, SamplerState);
+    //Pipeline->SetConstantBuffer(0, EShaderType::PS, FXAAConstantBuffer);
+    //Pipeline->SetShaderResourceView(0, EShaderType::PS, SceneSRV);
+    //Pipeline->SetSamplerState(0, EShaderType::PS, SamplerState);
 
-    Pipeline->DrawIndexed(FullscreenIndexCount, 0, 0);
+    //Pipeline->DrawIndexed(FullscreenIndexCount, 0, 0);
 
-    // 정리
-    Pipeline->SetShaderResourceView(0, EShaderType::PS, nullptr);
+    //// 정리
+    //Pipeline->SetShaderResourceView(0, EShaderType::PS, nullptr);
 }
 
 void FFXAAPass::Release()
@@ -121,9 +121,9 @@ void FFXAAPass::UpdateConstants()
 
 void FFXAAPass::SetRenderTargets()
 {
-    ID3D11RenderTargetView* RTV = DeviceResources->GetRenderTargetView(); // 스왑체인 RTV
-    DeviceResources->GetDeviceContext()->OMSetRenderTargets(1, &RTV, nullptr);
+    //ID3D11RenderTargetView* RTV = DeviceResources->GetRenderTargetView(); // 스왑체인 RTV
+    //DeviceResources->GetDeviceContext()->OMSetRenderTargets(1, &RTV, nullptr);
 
-    const D3D11_VIEWPORT& VP = DeviceResources->GetViewportInfo();
-    DeviceResources->GetDeviceContext()->RSSetViewports(1, &VP);
+    //const D3D11_VIEWPORT& VP = DeviceResources->GetViewportInfo();
+    //DeviceResources->GetDeviceContext()->RSSetViewports(1, &VP);
 }

@@ -29,7 +29,6 @@ enum class ShaderUsage
 	FOG,
 	FXAA,
 	STATICMESH,
-	GIZMO,
 	CLUSTERED_RENDERING_GRID,
 	SHADOWMAP,
 	HITPROXY
@@ -59,7 +58,6 @@ public:
 	void CreateConstantBuffers();
 	void CreateFXAAShader();
 	void CreateStaticMeshShader();
-	void CreateGizmoShader();
 	void CreateClusteredRenderingGrid();
 	void CreateDepthOnlyShader();
 	void CreatePointLightShadowShader();
@@ -99,14 +97,12 @@ public:
 	ID3D11SamplerState* GetPointShadowSampler() const { return PointShadowSampler; }
 	ID3D11ShaderResourceView* GetDepthSRV() const { return DeviceResources->GetDepthStencilSRV(); }
 	
-	ID3D11RenderTargetView* GetRenderTargetView() const { return DeviceResources->GetRenderTargetView(); }
-	ID3D11RenderTargetView* GetSceneColorRenderTargetView()const {return DeviceResources->GetSceneColorRenderTargetView(); }
+	ID3D11RenderTargetView* GetFrameRenderTargetView(const bool bFrame = true) const { return DeviceResources->GetFrameRenderTargetView(bFrame); }
 	
 	UDeviceResources* GetDeviceResources() const { return DeviceResources; }
 	FViewport* GetViewportClient() const { return ViewportClient; }
 	UPipeline* GetPipeline() const { return Pipeline; }
 	bool GetIsResizing() const { return bIsResizing; }
-	bool GetFXAA() const { return bFXAAEnabled; }
 
 	ID3D11DepthStencilState* GetDefaultDepthStencilState() const { return DefaultDepthStencilState; }
 	ID3D11DepthStencilState* GetDisabledDepthStencilState() const { return DisabledDepthStencilState; }
@@ -168,11 +164,6 @@ private:
 	ID3D11PixelShader* UberLitPixelShaderBlinnPhong = nullptr;
 	ID3D11PixelShader* UberLitPixelShaderWorldNormal = nullptr;
 	ID3D11InputLayout* UberLitInputLayout = nullptr;
-	
-	//Gizmo Shaders
-	ID3D11InputLayout* GizmoInputLayout = nullptr;
-	ID3D11VertexShader* GizmoVS = nullptr;
-	ID3D11PixelShader* GizmoPS = nullptr;
 
 	//ClusteredRenderingGrid
 	ID3D11InputLayout* ClusteredRenderingGridInputLayout = nullptr;
@@ -224,6 +215,7 @@ private:
 	FRenderingContext RenderingContext{};
 
 	TArray<class FRenderPass*> RenderPasses;
+	TArray<class FPostProcessPass*> PostProcessingPasses;
 
 	FFXAAPass* FXAAPass = nullptr;
 	FLightPass* LightPass = nullptr;

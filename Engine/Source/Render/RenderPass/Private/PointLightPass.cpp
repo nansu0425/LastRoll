@@ -30,31 +30,16 @@ void FPointLightPass::Execute(FRenderingContext& Context)
     
 	const auto& Renderer = URenderer::GetInstance();
     const auto& DeviceResources = Renderer.GetDeviceResources();
-    ID3D11RenderTargetView* RTV = nullptr;
-    if (Renderer.GetFXAA())
-    {
-        RTV = DeviceResources->GetSceneColorRenderTargetView();	
-    }
-    else
-    {
-        RTV = DeviceResources->GetRenderTargetView();	
-    }
-    ID3D11RenderTargetView* RTVs[1] = { RTV };
-    Pipeline->SetRenderTargets(1, RTVs, nullptr);
+    ID3D11RenderTargetView* RTV = Renderer.GetFrameRenderTargetView();
+    Pipeline->SetRenderTargets(1, &RTV, nullptr);
     auto RS = FRenderResourceFactory::GetRasterizerState( { ECullMode::None, EFillMode::Solid }); 
 
     FPipelineInfo PipelineInfo = { InputLayout, VS, RS, DS, PS, BS };
     Pipeline->UpdatePipeline(PipelineInfo);
     Pipeline->SetVertexBuffer(VertexBuffer, sizeof(FNormalVertex));
 
-    if (Renderer.GetFXAA())
-    {
-        Pipeline->SetShaderResourceView(0, EShaderType::PS, DeviceResources->GetSceneColorShaderResourceView());
-    }
-    else
-    {
-        Pipeline->SetShaderResourceView(0, EShaderType::PS, DeviceResources->GetSceneColorSRV());
-    }
+
+    Pipeline->SetShaderResourceView(0, EShaderType::PS, DeviceResources->GetFrameShaderResourceView());
     Pipeline->SetShaderResourceView(1, EShaderType::PS, DeviceResources->GetNormalSRV());
     Pipeline->SetShaderResourceView(2, EShaderType::PS, DeviceResources->GetDepthSRV());
     Pipeline->SetSamplerState(0, EShaderType::PS, PointLightSampler);
@@ -92,7 +77,7 @@ void FPointLightPass::Execute(FRenderingContext& Context)
         Pipeline->Draw(3, 0);
     }
     ID3D11DepthStencilView* DSV = DeviceResources->GetDepthStencilView();
-    Pipeline->SetRenderTargets(1, RTVs, DSV);
+    Pipeline->SetRenderTargets(1, &RTV, DSV);
 }
 
 void FPointLightPass::Release()

@@ -22,7 +22,7 @@ void UDeviceResources::Create(HWND InWindowHandle)
 	CreateFrameBuffer();
 	CreateNormalBuffer();
 	CreateDepthBuffer();
-	CreateSceneColorTarget();
+	CreatePingPongBuffer();
 	CreateHitProxyTarget();
 	CreateFactories();
 }
@@ -31,7 +31,7 @@ void UDeviceResources::Release()
 {
 	ReleaseFactories();
 	ReleaseHitProxyTarget();
-	ReleaseSceneColorTarget();
+	ReleasePingPongBuffer();
 	ReleaseFrameBuffer();
 	ReleaseNormalBuffer();
 	ReleaseDepthBuffer();
@@ -200,9 +200,9 @@ void UDeviceResources::ReleaseNormalBuffer()
 /**
  * @brief Scene Color Texture, SRV, RTV 생성 함수
  */
-void UDeviceResources::CreateSceneColorTarget()
+void UDeviceResources::CreatePingPongBuffer()
 {
-	ReleaseSceneColorTarget();
+	ReleasePingPongBuffer();
 
 	if (!Device || Width == 0 || Height == 0)
 	{
@@ -223,19 +223,19 @@ void UDeviceResources::CreateSceneColorTarget()
 	SceneDesc.MiscFlags = 0;
 
 
-	HRESULT Result = Device->CreateTexture2D(&SceneDesc, nullptr, &SceneColorTexture);
+	HRESULT Result = Device->CreateTexture2D(&SceneDesc, nullptr, &PingPongFrameBuffer);
 	if (FAILED(Result))
 	{
-		UE_LOG_ERROR("DeviceResources: SceneColor Texture 생성 실패");
-		ReleaseSceneColorTarget();
+		UE_LOG_ERROR("DeviceResources: PingPong Texture 생성 실패");
+		ReleasePingPongBuffer();
 		return;
 	}
 
-	Result = Device->CreateRenderTargetView(SceneColorTexture, nullptr, &SceneColorTextureRTV);
+	Result = Device->CreateRenderTargetView(PingPongFrameBuffer, nullptr, &PingPongFrameBufferRTV);
 	if (FAILED(Result))
 	{
-		UE_LOG_ERROR("DeviceResources: SceneColor RTV 생성 실패");
-		ReleaseSceneColorTarget();
+		UE_LOG_ERROR("DeviceResources: PingPong RTV 생성 실패");
+		ReleasePingPongBuffer();
 		return;
 	}
 
@@ -245,22 +245,22 @@ void UDeviceResources::CreateSceneColorTarget()
 	SRVDesc.Texture2D.MostDetailedMip = 0;
 	SRVDesc.Texture2D.MipLevels = 1;
 
-	Result = Device->CreateShaderResourceView(SceneColorTexture, &SRVDesc, &SceneColorTextureSRV);
+	Result = Device->CreateShaderResourceView(PingPongFrameBuffer, &SRVDesc, &PingPongFrameBufferSRV);
 	if (FAILED(Result))
 	{
-		UE_LOG_ERROR("DeviceResources: SceneColor SRV 생성 실패");
-		ReleaseSceneColorTarget();
+		UE_LOG_ERROR("DeviceResources: PingPong SRV 생성 실패");
+		ReleasePingPongBuffer();
 	}
 }
 
 /**
  * @brief Scene Color Texture, SRV, RTV를 해제하는 함수
  */
-void UDeviceResources::ReleaseSceneColorTarget()
+void UDeviceResources::ReleasePingPongBuffer()
 {
-	SafeRelease(SceneColorTextureSRV);
-	SafeRelease(SceneColorTextureRTV);
-	SafeRelease(SceneColorTexture);
+	SafeRelease(PingPongFrameBufferSRV);
+	SafeRelease(PingPongFrameBufferRTV);
+	SafeRelease(PingPongFrameBuffer);
 }
 
 void UDeviceResources::CreateHitProxyTarget()
@@ -414,7 +414,7 @@ uint64 UDeviceResources::GetTotalRenderTargetMemory() const
 	}
 
 	// SceneColorTexture: RGBA16F (8 bytes per pixel)
-	if (SceneColorTexture)
+	if (PingPongFrameBuffer)
 	{
 		TotalBytes += PixelCount * 8;
 	}

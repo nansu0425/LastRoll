@@ -23,10 +23,9 @@ void FSceneDepthPass::Execute(FRenderingContext& Context)
     
 	const auto& Renderer = URenderer::GetInstance();
     const auto& DeviceResources = Renderer.GetDeviceResources();
-    ID3D11RenderTargetView* RTV = Renderer.GetFXAA() ? DeviceResources->GetSceneColorRenderTargetView() : DeviceResources->GetRenderTargetView();
+    ID3D11RenderTargetView* RTV = DeviceResources->GetFrameRenderTargetView();
     
-    ID3D11RenderTargetView* RTVs[] = { RTV };
-    Pipeline->SetRenderTargets(1, RTVs, nullptr);
+    Pipeline->SetRenderTargets(1, &RTV, nullptr);
     auto RS = FRenderResourceFactory::GetRasterizerState( { ECullMode::None, EFillMode::Solid }); 
 
     FPipelineInfo PipelineInfo = { nullptr, VertexShader, RS, DS, PixelShader, nullptr, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
@@ -44,7 +43,7 @@ void FSceneDepthPass::Execute(FRenderingContext& Context)
     Pipeline->Draw(3, 0);
 
     ID3D11DepthStencilView* DSV = DeviceResources->GetDepthStencilView();
-    Pipeline->SetRenderTargets(1, RTVs, DSV);
+    Pipeline->SetRenderTargets(1, &RTV, DSV);
 }
 
 void FSceneDepthPass::Release()

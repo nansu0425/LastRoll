@@ -106,15 +106,6 @@ void UFPSWidget::RenderWidget()
 	}
 
 	FLightPass* LightPass = URenderer::GetInstance().GetLightPass();
-	if (ImGui::Button("ClusterGizmoUpdate"))
-	{
-		LightPass->ClusterGizmoUpdate();
-	}
-	bool bRenderClusterGizmo = LightPass->GetClusterGizmoRender();
-	if (ImGui::Checkbox("RenderClusterGizmo", &bRenderClusterGizmo))
-	{
-		LightPass->SetClusterGizmoRender(bRenderClusterGizmo);
-	}
 	bool bSpotIntersectOpti = LightPass->GetSpotIntersectType();
 	if (ImGui::Checkbox("SpotIntersectOpti", &bSpotIntersectOpti))
 	{

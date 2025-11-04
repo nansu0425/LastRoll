@@ -37,32 +37,15 @@ struct FGizmoVertex
 class FLightPass : public FRenderPass
 {
 public:
-	FLightPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferCamera, 
-		ID3D11InputLayout* InGizmoInputLayout, ID3D11VertexShader* InGizmoVS, ID3D11PixelShader* InGizmoPS,
-		ID3D11DepthStencilState* InGizmoDSS);
+	FLightPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferCamera);
 	void Execute(FRenderingContext& Context) override;
 	void Release() override;
 
-	void ClusterGizmoUpdate()
-	{
-		bClusterGizmoSet = false;
-	}
-
-	bool GetClusterGizmoRender() const { return bRenderClusterGizmo; }
-	void SetClusterGizmoRender(bool b)
-	{
-		bRenderClusterGizmo = b;
-	}
 	bool GetSpotIntersectType() const { return bSpotIntersectOpti; }
 	void SetSpotIntersectType(bool b)
 	{
 		bSpotIntersectOpti = b;
 	}
-
-	void SetVertexShader(ID3D11VertexShader* InGizmoVS) { GizmoVS = InGizmoVS; }
-	void SetPixelShader(ID3D11PixelShader* InGizmoPS) { GizmoPS = InGizmoPS; }
-	void SetInputLayout(ID3D11InputLayout* InGizmoInputLayout) { GizmoInputLayout = InGizmoInputLayout; }
-
 	uint32 GetClusterSliceNumX() const { return ClusterSliceNumX; }
 	uint32 GetClusterSliceNumY() const { return ClusterSliceNumY; }
 	uint32 GetClusterSliceNumZ() const { return ClusterSliceNumZ; }
@@ -78,7 +61,6 @@ public:
 private:
 	ID3D11ComputeShader* ViewClusterCS = nullptr;
 	ID3D11ComputeShader* ClusteredLightCullingCS = nullptr;
-	ID3D11ComputeShader* ClusterGizmoSetCS = nullptr;
 
 	ID3D11Buffer* ViewClusterInfoConstantBuffer = nullptr;
 	ID3D11Buffer* ClusterSliceInfoConstantBuffer = nullptr;
@@ -106,20 +88,9 @@ private:
 	uint32 ClusterSliceNumZ = 32;
 	uint32 LightMaxCountPerCluster = 32;
 
-
-	ID3D11Buffer* ClusterGizmoVertexRWStructuredBuffer = nullptr;
-	ID3D11UnorderedAccessView* ClusterGizmoVertexRWStructuredBufferUAV = nullptr;
-	ID3D11ShaderResourceView* ClusterGizmoVertexRWStructuredBufferSRV = nullptr;
-
 	//Renderer에서 참조해오고 Renderer에서 해제되므로 Release함수에서 해제x
 	ID3D11Buffer* CameraConstantBuffer = nullptr;
-	ID3D11InputLayout* GizmoInputLayout = nullptr;
-	ID3D11VertexShader* GizmoVS = nullptr;
-	ID3D11PixelShader* GizmoPS = nullptr;
-	ID3D11DepthStencilState* GizmoDSS = nullptr;
 
-	bool bRenderClusterGizmo = false;
-	bool bClusterGizmoSet = false;
 	bool bSpotIntersectOpti = true;
 
 

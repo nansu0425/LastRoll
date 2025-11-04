@@ -19,8 +19,8 @@ public:
 	void ReleaseDepthBuffer();
 
 	// Scene Color Texture, rtv, srv
-	void CreateSceneColorTarget();
-	void ReleaseSceneColorTarget();
+	void CreatePingPongBuffer();
+	void ReleasePingPongBuffer();
 
 	// HitProxy Texture, rtv, srv
 	void CreateHitProxyTarget();
@@ -33,18 +33,21 @@ public:
 	ID3D11Device* GetDevice() const { return Device; }
 	ID3D11DeviceContext* GetDeviceContext() const { return DeviceContext; }
 	IDXGISwapChain* GetSwapChain() const { return SwapChain; }
-	ID3D11RenderTargetView* GetRenderTargetView() const { return FrameBufferRTV; }
 	ID3D11RenderTargetView* GetNormalRenderTargetView() const { return NormalBufferRTV; }
 	ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView; }
 
-	ID3D11ShaderResourceView* GetSceneColorSRV() const { return FrameBufferSRV; }
+	ID3D11ShaderResourceView* GetFrameShaderResourceView(const bool bMain = true) const 
+	{
+		return bMain ? FrameBufferSRV : PingPongFrameBufferSRV;
+	}
+	ID3D11RenderTargetView* GetFrameRenderTargetView(const bool bMain = true) const
+	{
+		return bMain ? FrameBufferRTV : PingPongFrameBufferRTV;
+	}
+
 	ID3D11ShaderResourceView* GetNormalSRV() const { return NormalBufferSRV; }
 	ID3D11ShaderResourceView* GetDepthSRV() const { return DepthBufferSRV; }
 	ID3D11ShaderResourceView* GetDepthStencilSRV() const { return DepthStencilSRV; }
-
-	ID3D11RenderTargetView* GetSceneColorRenderTargetView() const {return SceneColorTextureRTV; }
-	ID3D11ShaderResourceView* GetSceneColorShaderResourceView() const{return SceneColorTextureSRV; }
-	ID3D11Texture2D* GetSceneColorTexture() const {return SceneColorTexture; }
 
 	ID3D11RenderTargetView* GetHitProxyRenderTargetView() const {return HitProxyTextureRTV; }
 	ID3D11ShaderResourceView* GetHitProxyShaderResourceView() const {return HitProxyTextureSRV; }
@@ -74,6 +77,11 @@ private:
 	ID3D11Texture2D* FrameBuffer = nullptr;
 	ID3D11RenderTargetView* FrameBufferRTV = nullptr;
 	ID3D11ShaderResourceView* FrameBufferSRV = nullptr;
+
+	ID3D11Texture2D* PingPongFrameBuffer = nullptr; //왜 RGBA16F인가? 몰루몰루
+	ID3D11RenderTargetView* PingPongFrameBufferRTV = nullptr;
+	ID3D11ShaderResourceView* PingPongFrameBufferSRV = nullptr;
+
 	
 	/** 
 	 * This is introduced to support post-process point light effects
@@ -82,7 +90,7 @@ private:
 	 * @note This variable is temporary and intended to be removed 
 	 * once a full deferred lighting system is implemented.
 	 */
-	ID3D11Texture2D* NormalBuffer = nullptr;
+	ID3D11Texture2D* NormalBuffer = nullptr; //왜 RGBA16F인가? 몰루몰루
 	ID3D11RenderTargetView* NormalBufferRTV = nullptr;
 	ID3D11ShaderResourceView* NormalBufferSRV = nullptr;
 
@@ -90,10 +98,6 @@ private:
 	ID3D11DepthStencilView* DepthStencilView = nullptr;
 	ID3D11ShaderResourceView* DepthBufferSRV = nullptr;
 	ID3D11ShaderResourceView* DepthStencilSRV = nullptr;
-
-	ID3D11Texture2D* SceneColorTexture = nullptr;
-	ID3D11RenderTargetView* SceneColorTextureRTV = nullptr;
-	ID3D11ShaderResourceView* SceneColorTextureSRV = nullptr;
 
 	ID3D11Texture2D* HitProxyTexture = nullptr;
 	ID3D11RenderTargetView* HitProxyTextureRTV = nullptr;
