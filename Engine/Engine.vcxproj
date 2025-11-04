@@ -467,6 +467,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClInclude Include="Source\Render\RenderPass\Public\PointLightPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\FogPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\FXAAPass.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\PostProcessPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\RenderingContext.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\RenderPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\SceneDepthPass.h" />
@@ -474,6 +475,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClInclude Include="Source\Render\RenderPass\Public\ShadowMapPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\StaticMeshPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\TextPass.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\VignettePass.h" />
     <ClInclude Include="Source\Render\Shadow\Public\PSMBounding.h" />
     <ClInclude Include="Source\Render\Shadow\Public\PSMCalculator.h" />
     <ClInclude Include="Source\Render\UI\GameUI\Public\GameUI.h" />
@@ -772,6 +774,8 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClCompile Include="Source\Render\RenderPass\Private\StaticMeshPass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\TextPass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\ShadowMapFilterPass.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Private\VignettePass.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Public\PostProcessPass.cpp" />
     <ClCompile Include="Source\Render\Shadow\Private\PSMBounding.cpp" />
     <ClCompile Include="Source\Render\Shadow\Private\PSMCalculator.cpp" />
     <ClCompile Include="Source\Render\UI\GameUI\Private\GameUI.cpp" />

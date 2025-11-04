@@ -40,6 +40,8 @@
 #include "Render/HitProxy/Public/HitProxy.h"
 #include "Render/Renderer/Public/RenderResourceFactory.h"
 #include "Render/Renderer/Public/Renderer.h"
+
+#include "Render/RenderPass/Public/VignettePass.h"
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
 #include "Render/UI/Overlay/Public/StatOverlay.h"
 #include "Render/UI/Viewport/Public/Viewport.h"
@@ -119,6 +121,9 @@ void URenderer::Init(HWND InWindowHandle)
 
 	FSceneDepthPass* SceneDepthPass = new FSceneDepthPass(Pipeline, ConstantBufferViewProj, DisabledDepthStencilState);
 	RenderPasses.push_back(SceneDepthPass);
+
+	FVignettePass* VignettePass = new FVignettePass(Pipeline, DeviceResources);
+	RenderPasses.push_back(VignettePass);
 
 	// UPipeline* InPipeline, UDeviceResources* InDeviceResources, ID3D11VertexShader* InVS,
 	// ID3D11PixelShader* InPS, ID3D11InputLayout* InLayout, ID3D11SamplerState* InSampler
