@@ -36,6 +36,7 @@ void FPostProcessPass::ExecutePP(FRenderingContext& Context, const uint32 PPIdx)
     Pipeline->UpdatePipeline(PipelineInfo);
 
     Pipeline->Draw(3, 0);
+    Pipeline->SetShaderResourceView(0, EShaderType::PS, nullptr);
 }
 
 void FPostProcessPass::Release()

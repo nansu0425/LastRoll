@@ -1133,6 +1133,7 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 		{
 			ColorCopyPass->ExecutePP(RenderingContext, PPIdx);
 		}
+
 		Pipeline->SetShaderResourceView(0, EShaderType::PS, nullptr);
 	}
 }
