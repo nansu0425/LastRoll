@@ -14,16 +14,15 @@
 #include "Editor/Public/Camera.h"
 #include "Editor/Public/Editor.h"
 #include "Global/Octree.h"
-#include "Global/Octree.h"
 #include "Level/Public/Level.h"
+#include "Level/Public/World.h"
+#include "Actor/Public/PlayerCameraManager.h"
 #include "Manager/Script/Public/ScriptManager.h"
 #include "Manager/UI/Public/UIManager.h"
-#include "Manager/UI/Public/ViewportManager.h"
 #include "Manager/UI/Public/ViewportManager.h"
 #include "Optimization/Public/OcclusionCuller.h"
 #include "Render/RenderPass/Public/BillboardPass.h"
 #include "Render/RenderPass/Public/EditorIconPass.h"
-#include "Render/RenderPass/Public/ClusteredRenderingGridPass.h"
 #include "Render/RenderPass/Public/ClusteredRenderingGridPass.h"
 #include "Render/RenderPass/Public/DecalPass.h"
 #include "Render/RenderPass/Public/FXAAPass.h"
@@ -992,7 +991,26 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 	const ULevel* CurrentLevel = WorldToRender->GetLevel();
 	if (!CurrentLevel) { return; }
 
-	const FCameraConstants& ViewProj = InViewport->GetViewportClient()->GetCamera()->GetFViewProjConstants();
+	// ===== Camera Selection: Use CameraManager in PIE/Game, Editor Camera otherwise =====
+	FCameraConstants ViewProj;
+	UCamera* EditorCamera = nullptr;
+
+	if ((WorldToRender->GetWorldType() == EWorldType::Game ||
+	     WorldToRender->GetWorldType() == EWorldType::PIE) &&
+	    WorldToRender->GetCameraManager() != nullptr)
+	{
+		// Use game camera manager
+		ViewProj = WorldToRender->GetCameraManager()->GetCameraConstants();
+		UE_LOG_DEBUG("Using PlayerCameraManager for rendering (PIE/Game mode)");
+	}
+	else
+	{
+		// Use editor camera (existing behavior)
+		EditorCamera = InViewport->GetViewportClient()->GetCamera();
+		ViewProj = EditorCamera->GetFViewProjConstants();
+	}
+	// ===== End Camera Selection =====
+
 	static bool bCullingEnabled = false; // 임시 토글(초기값: 컬링 비활성)
 	TArray<UPrimitiveComponent*> FinalVisiblePrims;
 	if (!bCullingEnabled)
@@ -1022,13 +1040,19 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 	}
 	else
 	{
-		FinalVisiblePrims = InViewport->GetViewportClient()->GetCamera()->GetViewVolumeCuller().GetRenderableObjects();
+		// Frustum culling (only available with editor camera)
+		if (EditorCamera)
+		{
+			FinalVisiblePrims = EditorCamera->GetViewVolumeCuller().GetRenderableObjects();
+		}
+		// TODO: Implement game camera frustum culling
+		// For now, game camera renders all components (handled above in bCullingEnabled == false)
 	}
 
 	RenderingContext = FRenderingContext(
 
 		&ViewProj,
-		InViewport->GetViewportClient()->GetCamera(),
+		EditorCamera,  // Can be nullptr in PIE/Game mode (when using CameraManager)
 		InViewport->GetViewportClient()->GetViewMode(),
 		CurrentLevel->GetShowFlags(),
 		InViewport->GetRenderRect(),

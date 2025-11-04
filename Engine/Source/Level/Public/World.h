@@ -7,6 +7,7 @@ class UEditor;
 class ULevel;
 class AActor;
 class UClass;
+class APlayerCameraManager;  // Forward declaration for game camera
 
 namespace json { class JSON; }
 using JSON = json::JSON;
@@ -63,11 +64,18 @@ public:
 	EWorldType GetWorldType() const;
 	void SetWorldType(EWorldType InWorldType);
 
+	// Camera Manager Access (for Game/PIE modes)
+	APlayerCameraManager* GetCameraManager() const { return CameraManager; }
+	void SetCameraManager(APlayerCameraManager* InManager) { CameraManager = InManager; }
+
 private:
 	EWorldType WorldType;
 	ULevel* Level = nullptr; // Persistance Level. Sublevels are not considered in Engine.
 	bool bBegunPlay = false;
 	TArray<AActor*> PendingDestroyActors;
+
+	// Camera Manager (for Game/PIE modes)
+	APlayerCameraManager* CameraManager = nullptr;
 
 	void FlushPendingDestroy(); // Destroy marking 된 액터들을 실제 삭제
 	void UpdateCollisions(); // 모든 PrimitiveComponent의 충돌 업데이트

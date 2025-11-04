@@ -1,6 +1,7 @@
 #pragma once
 #include "Global/Vector.h"
 #include "Global/Matrix.h"
+#include "Global/Quaternion.h"
 #include "Global/Types.h"
 #include "Core/Public/Name.h"
 #include <Texture/Public/Material.h>
@@ -23,9 +24,99 @@ struct FCameraConstants
 
 	FMatrix View;
 	FMatrix Projection;
-	FVector ViewWorldLocation;    
+	FVector ViewWorldLocation;
 	float NearClip;
 	float FarClip;
+};
+
+/**
+ * @brief Camera POV information (used by camera modifier chain)
+ */
+struct FMinimalViewInfo
+{
+	// Transform
+	FVector Location;
+	FQuaternion Rotation;
+
+	// Projection Parameters
+	float FOV;                      // Vertical field of view (degrees)
+	float AspectRatio;              // Width / Height
+	float NearClipPlane;
+	float FarClipPlane;
+	float OrthoWidth;               // For orthographic projection
+	bool bUsePerspectiveProjection; // true: perspective, false: ortho
+
+	// Default Constructor
+	FMinimalViewInfo()
+		: Location(FVector::ZeroVector())
+		, Rotation(FQuaternion::Identity())
+		, FOV(90.0f)
+		, AspectRatio(16.0f / 9.0f)
+		, NearClipPlane(1.0f)
+		, FarClipPlane(10000.0f)
+		, OrthoWidth(1000.0f)
+		, bUsePerspectiveProjection(true)
+	{
+	}
+
+	// Convert to FCameraConstants
+	FCameraConstants ToCameraConstants() const
+	{
+		FCameraConstants Result;
+
+		// Build View matrix (world → view space)
+		FMatrix Translation = FMatrix::TranslationMatrixInverse(Location);
+
+		// Get basis vectors from rotation quaternion
+		// World space axes (engine coordinate system: X-forward, Y-right, Z-up)
+		FVector WorldForward(1, 0, 0);
+		FVector WorldRight(0, 1, 0);
+		FVector WorldUp(0, 0, 1);
+
+		// Rotate world axes by camera rotation to get camera axes
+		FVector Forward = Rotation.RotateVector(WorldForward);
+		FVector Right = Rotation.RotateVector(WorldRight);
+		FVector Up = Rotation.RotateVector(WorldUp);
+
+		// Build rotation matrix from basis vectors
+		FMatrix RotationMatrix(Right, Up, Forward);
+		RotationMatrix = RotationMatrix.Transpose();
+
+		Result.View = Translation * RotationMatrix;
+
+		// Build Projection matrix
+		if (bUsePerspectiveProjection)
+		{
+			// Perspective projection (manual calculation, left-handed)
+			float FovYRad = FOV * (PI / 180.0f);
+			float f = 1.0f / tan(FovYRad / 2.0f);
+
+			Result.Projection = FMatrix::Identity();
+			Result.Projection.Data[0][0] = f / AspectRatio;
+			Result.Projection.Data[1][1] = f;
+			Result.Projection.Data[2][2] = FarClipPlane / (FarClipPlane - NearClipPlane);
+			Result.Projection.Data[2][3] = 1.0f;
+			Result.Projection.Data[3][2] = (-NearClipPlane * FarClipPlane) / (FarClipPlane - NearClipPlane);
+			Result.Projection.Data[3][3] = 0.0f;
+		}
+		else
+		{
+			// Orthographic projection
+			float Width = OrthoWidth;
+			float Height = OrthoWidth / AspectRatio;
+			Result.Projection = FMatrix::CreateOrthoLH(
+				-Width / 2.0f, Width / 2.0f,
+				-Height / 2.0f, Height / 2.0f,
+				NearClipPlane, FarClipPlane
+			);
+		}
+
+		Result.ViewWorldLocation = Location;
+		Result.NearClip = NearClipPlane;
+		Result.FarClip = FarClipPlane;
+
+		return Result;
+	}
 };
 
 #define HAS_DIFFUSE_MAP	 (1 << 0)

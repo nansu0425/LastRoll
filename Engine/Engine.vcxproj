@@ -341,6 +341,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     </ClInclude>
     <ClInclude Include="Source\Actor\Public\TextActor.h" />
     <ClInclude Include="Source\Actor\Public\TriangleActor.h" />
+    <ClInclude Include="Source\Actor\Public\PlayerCameraManager.h" />
     <ClInclude Include="Source\Component\Mesh\Public\MeshComponent.h">
       <DeploymentContent>false</DeploymentContent>
     </ClInclude>
@@ -349,6 +350,8 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
       <DeploymentContent>false</DeploymentContent>
     </ClInclude>
     <ClInclude Include="Source\Component\Public\ActorComponent.h" />
+    <ClInclude Include="Source\Component\Camera\Public\CameraComponent.h" />
+    <ClInclude Include="Source\Component\Camera\Public\CameraModifier.h" />
     <ClInclude Include="Source\Component\Public\AmbientLightComponent.h" />
     <ClInclude Include="Source\Component\Public\BillBoardComponent.h" />
     <ClInclude Include="Source\Component\Public\DecalComponent.h" />
@@ -653,6 +656,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     </ClCompile>
     <ClCompile Include="Source\Actor\Private\TextActor.cpp" />
     <ClCompile Include="Source\Actor\Private\TriangleActor.cpp" />
+    <ClCompile Include="Source\Actor\Private\PlayerCameraManager.cpp" />
     <ClCompile Include="Source\Component\Mesh\Private\MeshComponent.cpp">
       <DeploymentContent>false</DeploymentContent>
     </ClCompile>
@@ -663,6 +667,8 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
       <DeploymentContent>false</DeploymentContent>
     </ClCompile>
     <ClCompile Include="Source\Component\Private\ActorComponent.cpp" />
+    <ClCompile Include="Source\Component\Camera\Private\CameraComponent.cpp" />
+    <ClCompile Include="Source\Component\Camera\Private\CameraModifier.cpp" />
     <ClCompile Include="Source\Component\Private\AmbientLightComponent.cpp" />
     <ClCompile Include="Source\Component\Private\BillBoardComponent.cpp" />
     <ClCompile Include="Source\Component\Private\DecalComponent.cpp" />
