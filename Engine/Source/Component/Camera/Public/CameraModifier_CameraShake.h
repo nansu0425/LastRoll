@@ -1,33 +1,33 @@
-#pragma once
+﻿#pragma once
 #include "Component/Camera/Public/CameraModifier.h"
 
 /**
- * @brief Camera shake pattern type
+ * @brief 카메라 흔들림 패턴 타입
  */
 UENUM()
 enum class ECameraShakePattern : uint8
 {
-	Sine,           // Smooth sinusoidal oscillation
-	Perlin,         // Perlin noise for organic shake
-	Random,         // Random jitter
+	Sine,           // 부드러운 정현파 진동
+	Perlin,         // 유기적인 흔들림을 위한 펄린 노이즈
+	Random,         // 랜덤 지터
 	End
 };
 DECLARE_UINT8_ENUM_REFLECTION(ECameraShakePattern)
 
 /**
- * @brief Camera shake modifier - adds procedural shake to camera
+ * @brief 카메라 흔들림 모디파이어 - 카메라에 절차적 흔들림 추가
  *
- * Provides earthquake/explosion/impact effects by applying random or procedural
- * offsets to camera location and rotation. Shake intensity decays over time.
+ * 지진/폭발/충격 등의 효과를 구현하기 위해 카메라 위치와 회전에
+ * 랜덤 또는 절차적 오프셋을 적용합니다. 흔들림 강도는 시간에 따라 감쇠됩니다.
  *
- * Usage Example:
+ * 사용 예시:
  * ```cpp
  * UCameraModifier_CameraShake* Shake = Cast<UCameraModifier_CameraShake>(
  *     CameraManager->AddCameraModifier(UCameraModifier_CameraShake::StaticClass())
  * );
  * if (Shake)
  * {
- *     Shake->StartShake(2.0f, 10.0f, 5.0f); // duration=2s, locationAmp=10, rotationAmp=5
+ *     Shake->StartShake(2.0f, 10.0f, 5.0f); // 지속시간=2초, 위치진폭=10, 회전진폭=5도
  * }
  * ```
  */
@@ -38,35 +38,35 @@ class UCameraModifier_CameraShake : public UCameraModifier
 	DECLARE_CLASS(UCameraModifier_CameraShake, UCameraModifier)
 
 private:
-	// Shake Parameters
-	float ShakeDuration;          // Total shake duration (seconds)
-	float ShakeTimeRemaining;     // Time remaining for current shake
-	float LocationAmplitude;      // Max location offset magnitude (world units)
-	float RotationAmplitude;      // Max rotation offset magnitude (degrees)
-	ECameraShakePattern Pattern;  // Shake pattern type
+	// 흔들림 파라미터
+	float ShakeDuration;          // 총 흔들림 지속 시간 (초)
+	float ShakeTimeRemaining;     // 현재 흔들림의 남은 시간
+	float LocationAmplitude;      // 최대 위치 오프셋 크기 (월드 단위)
+	float RotationAmplitude;      // 최대 회전 오프셋 크기 (도)
+	ECameraShakePattern Pattern;  // 흔들림 패턴 타입
 
-	// Shake State
-	bool bIsShaking;              // Whether shake is currently active
-	float ShakeTime;              // Accumulated time for pattern evaluation
+	// 흔들림 상태
+	bool bIsShaking;              // 현재 흔들림이 활성화되어 있는지
+	float ShakeTime;              // 패턴 평가를 위한 누적 시간
 
-	// Pattern Parameters
-	float Frequency;              // Oscillation frequency (Hz)
-	FVector PerlinOffset;         // Perlin noise offset seed
-	FVector LastLocationOffset;   // Previous frame location offset (for smoothing)
-	FVector LastRotationOffset;   // Previous frame rotation offset (for smoothing)
+	// 패턴 파라미터
+	float Frequency;              // 진동 주파수 (Hz)
+	FVector PerlinOffset;         // 펄린 노이즈 오프셋 시드
+	FVector LastLocationOffset;   // 이전 프레임 위치 오프셋 (스무딩용)
+	FVector LastRotationOffset;   // 이전 프레임 회전 오프셋 (스무딩용)
 
 public:
 	UCameraModifier_CameraShake();
 	virtual ~UCameraModifier_CameraShake() override;
 
 	/**
-	 * @brief Start camera shake effect
+	 * @brief 카메라 흔들림 효과 시작
 	 *
-	 * @param InDuration Shake duration (seconds). If 0, uses default (1.0s)
-	 * @param InLocationAmplitude Location shake intensity (world units). 0 = no location shake
-	 * @param InRotationAmplitude Rotation shake intensity (degrees). 0 = no rotation shake
-	 * @param InPattern Shake pattern type. Default: Perlin
-	 * @param InFrequency Shake frequency (Hz). Only used for Sine pattern. Default: 10.0
+	 * @param InDuration 흔들림 지속 시간 (초). 0이면 기본값 사용 (1.0초)
+	 * @param InLocationAmplitude 위치 흔들림 강도 (월드 단위). 0 = 위치 흔들림 없음
+	 * @param InRotationAmplitude 회전 흔들림 강도 (도). 0 = 회전 흔들림 없음
+	 * @param InPattern 흔들림 패턴 타입. 기본값: Perlin
+	 * @param InFrequency 흔들림 주파수 (Hz). Sine 패턴에만 사용됨. 기본값: 10.0
 	 */
 	void StartShake(
 		float InDuration = 1.0f,
@@ -77,27 +77,27 @@ public:
 	);
 
 	/**
-	 * @brief Stop shake immediately
+	 * @brief 흔들림 즉시 중지
 	 */
 	void StopShake();
 
 	/**
-	 * @brief Check if shake is currently active
+	 * @brief 현재 흔들림이 활성화되어 있는지 확인
 	 */
 	bool IsShaking() const { return bIsShaking; }
 
-	// Overridden from UCameraModifier
+	// UCameraModifier에서 오버라이드
 	virtual void Initialize(APlayerCameraManager* InOwner) override;
 	virtual bool ModifyCamera(float DeltaTime, FMinimalViewInfo& InOutPOV) override;
 
 private:
 	/**
-	 * @brief Evaluate shake offset for current frame
+	 * @brief 현재 프레임의 흔들림 오프셋 평가
 	 *
-	 * @param OutLocationOffset Output location offset (world space)
-	 * @param OutRotationOffset Output rotation offset (degrees)
-	 * @param CurrentTime Current shake time
-	 * @param DecayAlpha Decay multiplier [0.0, 1.0]
+	 * @param OutLocationOffset 출력 위치 오프셋 (월드 공간)
+	 * @param OutRotationOffset 출력 회전 오프셋 (도)
+	 * @param CurrentTime 현재 흔들림 시간
+	 * @param DecayAlpha 감쇠 배율 [0.0, 1.0]
 	 */
 	void EvaluateShake(
 		FVector& OutLocationOffset,
@@ -107,15 +107,15 @@ private:
 	);
 
 	/**
-	 * @brief Generate Perlin noise value
+	 * @brief 펄린 노이즈 값 생성
 	 *
-	 * @param X Input coordinate
-	 * @return Noise value in range [-1.0, 1.0]
+	 * @param X 입력 좌표
+	 * @return [-1.0, 1.0] 범위의 노이즈 값
 	 */
 	float PerlinNoise1D(float X) const;
 
 	/**
-	 * @brief Smooth interpolation function (smoothstep)
+	 * @brief 부드러운 보간 함수 (smoothstep)
 	 */
 	float SmoothStep(float t) const;
 };

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Global/Vector.h"
 #include "Global/Matrix.h"
 #include "Global/Quaternion.h"
@@ -30,23 +30,23 @@ struct FCameraConstants
 };
 
 /**
- * @brief Camera POV information (used by camera modifier chain)
+ * @brief 카메라 POV 정보 (카메라 모디파이어 체인에서 사용)
  */
 struct FMinimalViewInfo
 {
-	// Transform
+	// 변환
 	FVector Location;
 	FQuaternion Rotation;
 
-	// Projection Parameters
-	float FOV;                      // Vertical field of view (degrees)
-	float AspectRatio;              // Width / Height
+	// 투영 파라미터
+	float FOV;                      // 수직 시야각 (도 단위)
+	float AspectRatio;              // 너비 / 높이
 	float NearClipPlane;
 	float FarClipPlane;
-	float OrthoWidth;               // For orthographic projection
-	bool bUsePerspectiveProjection; // true: perspective, false: ortho
+	float OrthoWidth;               // 직교 투영용
+	bool bUsePerspectiveProjection; // true: 원근 투영, false: 직교 투영
 
-	// Default Constructor
+	// 기본 생성자
 	FMinimalViewInfo()
 		: Location(FVector::ZeroVector())
 		, Rotation(FQuaternion::Identity())
@@ -59,35 +59,35 @@ struct FMinimalViewInfo
 	{
 	}
 
-	// Convert to FCameraConstants
+	// FCameraConstants로 변환
 	FCameraConstants ToCameraConstants() const
 	{
 		FCameraConstants Result;
 
-		// Build View matrix (world → view space)
+		// View 행렬 구성 (월드 → 뷰 공간)
 		FMatrix Translation = FMatrix::TranslationMatrixInverse(Location);
 
-		// Get basis vectors from rotation quaternion
-		// World space axes (engine coordinate system: X-forward, Y-right, Z-up)
+		// 회전 쿼터니언에서 기저 벡터 얻기
+		// 월드 공간 축 (엔진 좌표계: X-전방, Y-우측, Z-상단)
 		FVector WorldForward(1, 0, 0);
 		FVector WorldRight(0, 1, 0);
 		FVector WorldUp(0, 0, 1);
 
-		// Rotate world axes by camera rotation to get camera axes
+		// 카메라 회전으로 월드 축을 회전하여 카메라 축 얻기
 		FVector Forward = Rotation.RotateVector(WorldForward);
 		FVector Right = Rotation.RotateVector(WorldRight);
 		FVector Up = Rotation.RotateVector(WorldUp);
 
-		// Build rotation matrix from basis vectors
+		// 기저 벡터로 회전 행렬 구성
 		FMatrix RotationMatrix(Right, Up, Forward);
 		RotationMatrix = RotationMatrix.Transpose();
 
 		Result.View = Translation * RotationMatrix;
 
-		// Build Projection matrix
+		// Projection 행렬 구성
 		if (bUsePerspectiveProjection)
 		{
-			// Perspective projection (manual calculation, left-handed)
+			// 원근 투영 (수동 계산, 왼손 좌표계)
 			float FovYRad = FOV * (PI / 180.0f);
 			float f = 1.0f / tan(FovYRad / 2.0f);
 
@@ -101,7 +101,7 @@ struct FMinimalViewInfo
 		}
 		else
 		{
-			// Orthographic projection
+			// 직교 투영
 			float Width = OrthoWidth;
 			float Height = OrthoWidth / AspectRatio;
 			Result.Projection = FMatrix::CreateOrthoLH(

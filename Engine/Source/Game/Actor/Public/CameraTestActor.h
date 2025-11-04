@@ -1,14 +1,14 @@
-#pragma once
+﻿#pragma once
 #include "Actor/Public/Actor.h"
 
 /**
- * @brief Camera system test actor for PIE mode
+ * @brief PIE 모드용 카메라 시스템 테스트 액터
  * 
- * This actor is used to test PlayerCameraManager features:
- * - UCameraComponent integration
- * - Camera modifiers (CameraShake)
- * - ViewTarget switching
- * - Modifier priority system
+ * 이 액터는 PlayerCameraManager 기능을 테스트하는 데 사용됩니다:
+ * - UCameraComponent 통합
+ * - 카메라 모디파이어 (CameraShake)
+ * - ViewTarget 전환
+ * - 모디파이어 우선순위 시스템
  */
 UCLASS()
 class ACameraTestActor : public AActor
@@ -19,7 +19,7 @@ class ACameraTestActor : public AActor
 private:
 	class UCameraComponent* CameraComponent;
 	
-	// Test state
+	// 테스트 상태
 	float TestTimer;
 	int32 CurrentTestPhase;
 
@@ -33,7 +33,7 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
-	// Manual test triggers (called via console or input)
+	// 수동 테스트 트리거 (콘솔 또는 입력을 통해 호출)
 	void TestCameraShake_Explosion();
 	void TestCameraShake_Hit();
 	void TestCameraShake_Earthquake();
@@ -42,7 +42,7 @@ public:
 	UCameraComponent* GetCameraComponent() const { return CameraComponent; }
 
 private:
-	// Automated test sequence
+	// 자동화 테스트 시퀀스
 	void RunAutomatedTests(float DeltaTime);
 	void LogTestResult(const char* TestName, bool bPassed);
 };

@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "Component/Camera/Public/CameraModifier.h"
 #include "Global/CoreTypes.h"
 
@@ -11,7 +11,7 @@ UCameraModifier::UCameraModifier()
 	, Alpha(0.0f)
 	, BlendMode(ECameraModifierBlendMode::Disabled)
 	, bDisabled(true)
-	, Priority(127)  // Default priority (middle value)
+	, Priority(127)  // 기본 우선순위 (중간 값)
 {
 }
 
@@ -36,7 +36,7 @@ void UCameraModifier::UpdateAlpha(float DeltaTime)
 	{
 		if (AlphaInTime > 0.0f)
 		{
-			// Blend in over time
+			// 시간에 걸쳐 블렌드 인
 			Alpha += DeltaTime / AlphaInTime;
 			if (Alpha >= 1.0f)
 			{
@@ -46,7 +46,7 @@ void UCameraModifier::UpdateAlpha(float DeltaTime)
 		}
 		else
 		{
-			// Instant blend in
+			// 즉시 블렌드 인
 			Alpha = 1.0f;
 			BlendMode = ECameraModifierBlendMode::Active;
 		}
@@ -55,7 +55,7 @@ void UCameraModifier::UpdateAlpha(float DeltaTime)
 	{
 		if (AlphaOutTime > 0.0f)
 		{
-			// Blend out over time
+			// 시간에 걸쳐 블렌드 아웃
 			Alpha -= DeltaTime / AlphaOutTime;
 			if (Alpha <= 0.0f)
 			{
@@ -66,18 +66,18 @@ void UCameraModifier::UpdateAlpha(float DeltaTime)
 		}
 		else
 		{
-			// Instant blend out
+			// 즉시 블렌드 아웃
 			Alpha = 0.0f;
 			BlendMode = ECameraModifierBlendMode::Disabled;
 			bDisabled = true;
 		}
 	}
-	// ECameraModifierBlendMode::Active: Alpha stays at 1.0
+	// ECameraModifierBlendMode::Active: Alpha는 1.0 유지
 }
 
 bool UCameraModifier::ModifyCamera(float DeltaTime, FMinimalViewInfo& InOutPOV)
 {
-	// Base implementation: no modification
+	// 베이스 구현: 수정 없음
 	return false;
 }
 
@@ -87,30 +87,30 @@ void UCameraModifier::EnableModifier()
 
 	if (BlendMode == ECameraModifierBlendMode::Disabled)
 	{
-		// Start blending in
+		// 블렌드 인 시작
 		BlendMode = ECameraModifierBlendMode::BlendingIn;
 		Alpha = 0.0f;
 	}
 	else if (BlendMode == ECameraModifierBlendMode::BlendingOut)
 	{
-		// Reverse direction: start blending in from current alpha
+		// 방향 반전: 현재 알파에서 블렌드 인 시작
 		BlendMode = ECameraModifierBlendMode::BlendingIn;
 	}
-	// If already BlendingIn or Active, do nothing
+	// 이미 BlendingIn 또는 Active면 아무것도 하지 않음
 }
 
 void UCameraModifier::DisableModifier(bool bImmediate)
 {
 	if (bImmediate)
 	{
-		// Immediate disable
+		// 즉시 비활성화
 		bDisabled = true;
 		Alpha = 0.0f;
 		BlendMode = ECameraModifierBlendMode::Disabled;
 	}
 	else
 	{
-		// Blend out over time
+		// 시간에 걸쳐 블렌드 아웃
 		if (BlendMode != ECameraModifierBlendMode::Disabled)
 		{
 			BlendMode = ECameraModifierBlendMode::BlendingOut;

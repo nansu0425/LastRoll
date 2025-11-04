@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include <algorithm>
 #include "Component/Mesh/Public/StaticMesh.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
@@ -991,30 +991,30 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 	const ULevel* CurrentLevel = WorldToRender->GetLevel();
 	if (!CurrentLevel) { return; }
 
-	// ===== Camera Selection: Use CameraManager in PIE/Game, Editor Camera otherwise =====
+	// ===== 카메라 선택: PIE/Game에서는 CameraManager 사용, 그 외에는 Editor Camera 사용 =====
 	FCameraConstants ViewProj;
 	UCamera* EditorCamera = InViewport->GetViewportClient()->GetCamera();
 
-	// Select camera source based on world type
+	// 월드 타입에 따라 카메라 소스 선택
 	EWorldType WorldType = WorldToRender->GetWorldType();
 	APlayerCameraManager* CameraManager = WorldToRender->GetCameraManager();
 
 	if ((WorldType == EWorldType::Game || WorldType == EWorldType::PIE) && CameraManager != nullptr)
 	{
-		// PIE/Game Mode: Use PlayerCameraManager
+		// PIE/Game 모드: PlayerCameraManager 사용
 		ViewProj = CameraManager->GetCameraConstants();
 	}
 	else
 	{
-		// Editor Mode: Use EditorCamera
+		// Editor 모드: EditorCamera 사용
 		ViewProj = EditorCamera->GetFViewProjConstants();
 	}
-	// NOTE: EditorCamera is always passed to RenderingContext for RenderPass compatibility
-	// (Many RenderPasses directly reference Camera for billboard rotation, fog calculations, etc.)
-	// ===== End Camera Selection =====
+	// 참고: EditorCamera는 RenderPass 호환성을 위해 항상 RenderingContext에 전달됩니다
+	// (많은 RenderPass가 빌보드 회전, 안개 계산 등을 위해 Camera를 직접 참조합니다)
+	// ===== 카메라 선택 종료 =====
 
-	// ===== CRITICAL: Upload ViewProj to GPU Constant Buffer =====
-	// This must happen AFTER camera selection above
+	// ===== 중요: ViewProj를 GPU 상수 버퍼에 업로드 =====
+	// 이는 위의 카메라 선택 이후에 수행되어야 합니다
 	FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferViewProj, ViewProj);
 	Pipeline->SetConstantBuffer(1, EShaderType::VS, ConstantBufferViewProj);
 
@@ -1054,14 +1054,14 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 	RenderingContext = FRenderingContext(
 
 		&ViewProj,
-		EditorCamera,  // Always valid (from ViewportClient)
+		EditorCamera,  // 항상 유효함 (ViewportClient에서 가져옴)
 		InViewport->GetViewportClient()->GetViewMode(),
 		CurrentLevel->GetShowFlags(),
 		InViewport->GetRenderRect(),
 		{DeviceResources->GetViewportInfo().Width, DeviceResources->GetViewportInfo().Height}
 		);
 
-	// 1. Sort visible primitive components
+	// 1. 보이는 프리미티브 컴포넌트 정렬
 	RenderingContext.AllPrimitives = FinalVisiblePrims;
 	for (auto& Prim : FinalVisiblePrims)
 	{
@@ -1140,7 +1140,7 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 		}
 	}
 
-	// 2. Collect HeightFogComponents from all actors in the level
+	// 2. 레벨의 모든 액터에서 HeightFogComponent 수집
 	for (const auto& Actor : CurrentLevel->GetLevelActors())
 	{
 		for (const auto& Component : Actor->GetOwnedComponents())

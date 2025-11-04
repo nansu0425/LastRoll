@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "Actor/Public/PlayerCameraManager.h"
 #include "Component/Camera/Public/CameraComponent.h"
 #include "Component/Camera/Public/CameraModifier.h"
@@ -19,12 +19,12 @@ APlayerCameraManager::APlayerCameraManager()
 	, CameraStyle(FName("Default"))
 {
 	bCanEverTick = true;
-	bTickInEditor = false; // Only tick in game/PIE modes
+	bTickInEditor = false; // 게임/PIE 모드에서만 틱
 }
 
 APlayerCameraManager::~APlayerCameraManager()
 {
-	// Clean up modifiers
+	// 모디파이어 정리
 	for (UCameraModifier* Modifier : ModifierList)
 	{
 		if (Modifier)
@@ -39,10 +39,10 @@ void APlayerCameraManager::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Initialize default camera
+	// 기본 카메라 초기화
 	if (!ViewTarget.Target)
 	{
-		// Use default camera position
+		// 기본 카메라 위치 사용
 		ViewTarget.POV.Location = FVector(0, 0, 500);
 		ViewTarget.POV.Rotation = FQuaternion::Identity();
 	}
@@ -52,28 +52,28 @@ void APlayerCameraManager::SetViewTarget(AActor* NewTarget, float InBlendTime)
 {
 	if (!NewTarget)
 	{
-		UE_LOG_WARNING("APlayerCameraManager::SetViewTarget - NewTarget is null");
+		UE_LOG_WARNING("APlayerCameraManager::SetViewTarget - NewTarget이 null입니다");
 		return;
 	}
 
 	if (InBlendTime > 0.0f)
 	{
-		// Start blending to new target
+		// 새 타겟으로 블렌딩 시작
 		PendingViewTarget.Target = NewTarget;
 
-		// Find camera component on new target
+		// 새 타겟에서 카메라 컴포넌트 찾기
 		PendingViewTarget.CameraComponent = Cast<UCameraComponent>(
 			NewTarget->GetComponentByClass(UCameraComponent::StaticClass())
 		);
 
-		// Get initial POV from pending target
+		// 대기 중인 타겟에서 초기 POV 가져오기
 		if (PendingViewTarget.CameraComponent)
 		{
 			PendingViewTarget.CameraComponent->GetCameraView(PendingViewTarget.POV);
 		}
 		else
 		{
-			// No camera component: use actor transform
+			// 카메라 컴포넌트 없음: 액터 변환 사용
 			PendingViewTarget.POV.Location = NewTarget->GetActorLocation();
 			PendingViewTarget.POV.Rotation = NewTarget->GetActorRotation();
 		}
@@ -82,11 +82,11 @@ void APlayerCameraManager::SetViewTarget(AActor* NewTarget, float InBlendTime)
 		BlendTimeRemaining = InBlendTime;
 		bIsBlending = true;
 
-		UE_LOG_DEBUG("APlayerCameraManager: Starting blend to new view target (%.2f seconds)", InBlendTime);
+		UE_LOG_DEBUG("APlayerCameraManager: 새 뷰 타겟으로 블렌드 시작 (%.2f초)", InBlendTime);
 	}
 	else
 	{
-		// Instant switch to new target
+		// 새 타겟으로 즉시 전환
 		ViewTarget.Target = NewTarget;
 		ViewTarget.CameraComponent = Cast<UCameraComponent>(
 			NewTarget->GetComponentByClass(UCameraComponent::StaticClass())
@@ -104,7 +104,7 @@ void APlayerCameraManager::SetViewTarget(AActor* NewTarget, float InBlendTime)
 
 		bIsBlending = false;
 
-		UE_LOG_DEBUG("APlayerCameraManager: Instant switch to new view target");
+		UE_LOG_DEBUG("APlayerCameraManager: 새 뷰 타겟으로 즉시 전환");
 	}
 }
 
@@ -112,34 +112,34 @@ UCameraModifier* APlayerCameraManager::AddCameraModifier(UClass* ModifierClass)
 {
 	if (!ModifierClass)
 	{
-		UE_LOG_ERROR("APlayerCameraManager::AddCameraModifier - ModifierClass is null");
+		UE_LOG_ERROR("APlayerCameraManager::AddCameraModifier - ModifierClass가 null입니다");
 		return nullptr;
 	}
 
-	// Verify that ModifierClass is a subclass of UCameraModifier
+	// ModifierClass가 UCameraModifier의 서브클래스인지 확인
 	if (!ModifierClass->IsChildOf(UCameraModifier::StaticClass()))
 	{
-		UE_LOG_ERROR("APlayerCameraManager::AddCameraModifier - %s is not a subclass of UCameraModifier", 
+		UE_LOG_ERROR("APlayerCameraManager::AddCameraModifier - %s는 UCameraModifier의 서브클래스가 아닙니다", 
 			ModifierClass->GetName().ToString().c_str());
 		return nullptr;
 	}
 
-	// Create new modifier instance using NewObject
+	// NewObject를 사용하여 새 모디파이어 인스턴스 생성
 	UCameraModifier* NewModifier = Cast<UCameraModifier>(NewObject(ModifierClass, this));
 	
 	if (!NewModifier)
 	{
-		UE_LOG_ERROR("APlayerCameraManager::AddCameraModifier - Failed to create modifier instance");
+		UE_LOG_ERROR("APlayerCameraManager::AddCameraModifier - 모디파이어 인스턴스 생성 실패");
 		return nullptr;
 	}
 
-	// Initialize modifier
+	// 모디파이어 초기화
 	NewModifier->Initialize(this);
 
-	// Add to list
+	// 리스트에 추가
 	ModifierList.push_back(NewModifier);
 
-	UE_LOG_DEBUG("APlayerCameraManager: Added camera modifier (Class: %s, Priority: %d)",
+	UE_LOG_DEBUG("APlayerCameraManager: 카메라 모디파이어 추가됨 (클래스: %s, 우선순위: %d)",
 		ModifierClass->GetName().ToString().c_str(), NewModifier->GetPriority());
 
 	return NewModifier;
@@ -150,14 +150,14 @@ bool APlayerCameraManager::RemoveCameraModifier(UCameraModifier* Modifier)
 	if (!Modifier)
 		return false;
 
-	// Find and remove
+	// 찾아서 제거
 	for (auto It = ModifierList.begin(); It != ModifierList.end(); ++It)
 	{
 		if (*It == Modifier)
 		{
 			delete Modifier;
 			ModifierList.erase(It);
-			UE_LOG_DEBUG("APlayerCameraManager: Removed camera modifier");
+			UE_LOG_DEBUG("APlayerCameraManager: 카메라 모디파이어 제거됨");
 			return true;
 		}
 	}
@@ -192,20 +192,19 @@ void APlayerCameraManager::ClearAllCameraModifiers()
 	}
 	ModifierList.clear();
 
-	UE_LOG_DEBUG("APlayerCameraManager: Cleared all camera modifiers");
+	UE_LOG_DEBUG("APlayerCameraManager: 모든 카메라 모디파이어 제거됨");
 }
 
 void APlayerCameraManager::StartCameraFade(float FromAlpha, float ToAlpha, float Duration, FVector4 Color)
 {
 	FadeColor = Color;
 	FadeAmount = FromAlpha;
-	FadeAlpha.X = FromAlpha;
-	FadeAlpha.Y = ToAlpha;
+	FadeAlpha = FVector2(FromAlpha, ToAlpha);
 	FadeTime = Duration;
 	FadeTimeRemaining = Duration;
 	bIsFading = true;
 
-	UE_LOG_DEBUG("APlayerCameraManager: Started camera fade (%.2f → %.2f over %.2f seconds)",
+	UE_LOG_DEBUG("APlayerCameraManager: 카메라 페이드 시작 (%.2f→%.2f, %.2f초)", 
 		FromAlpha, ToAlpha, Duration);
 }
 
@@ -213,58 +212,56 @@ void APlayerCameraManager::StopCameraFade()
 {
 	bIsFading = false;
 	FadeTimeRemaining = 0.0f;
-	FadeAlpha.X = 0.0f;
-	FadeAlpha.Y = 0.0f;
+	FadeAlpha = FVector2(0.0f, 0.0f);
 
-	UE_LOG_DEBUG("APlayerCameraManager: Stopped camera fade");
+	UE_LOG_DEBUG("APlayerCameraManager: 카메라 페이드 중지");
 }
 
 void APlayerCameraManager::UpdateCamera(float DeltaTime)
 {
-	// ===== Step 1: Get base POV from ViewTarget =====
+	// 1단계: 현재 ViewTarget에서 POV 업데이트
 	UpdateViewTarget(DeltaTime);
 
-	// ===== Step 2: Blend between ViewTargets if transitioning =====
+	// 2단계: 블렌딩 중이면 ViewTarget 간 보간
 	if (bIsBlending)
 	{
 		UpdateBlending(DeltaTime);
 	}
 
-	// ===== Step 3: Apply camera modifier chain =====
+	// 3단계: 카메라 모디파이어 체인 적용
 	ApplyCameraModifiers(DeltaTime);
 
-	// ===== Step 4: Update screen fade =====
+	// 4단계: 페이딩 업데이트
 	if (bIsFading)
 	{
 		UpdateFading(DeltaTime);
 	}
 
-	// ===== Step 5: Convert final POV to View/Projection matrices =====
+	// 5단계: 최종 POV를 카메라 상수(View/Projection 행렬)로 변환
 	UpdateCameraConstants();
 }
 
 void APlayerCameraManager::UpdateViewTarget(float DeltaTime)
 {
-	if (ViewTarget.CameraComponent)
+	if (ViewTarget.Target && ViewTarget.CameraComponent)
 	{
-		// Get POV from camera component
+		// ViewTarget에 카메라 컴포넌트가 있으면: POV 가져오기
 		ViewTarget.CameraComponent->GetCameraView(ViewTarget.POV);
 	}
 	else if (ViewTarget.Target)
 	{
-		// No camera component: use actor transform with default projection
+		// 카메라 컴포넌트 없으면: 액터 변환 사용
 		ViewTarget.POV.Location = ViewTarget.Target->GetActorLocation();
 		ViewTarget.POV.Rotation = ViewTarget.Target->GetActorRotation();
-		// Keep existing FOV, aspect, etc.
 	}
 	else
 	{
-		// No view target: use default camera
+		// 뷰 타겟 없음: 기본 카메라 사용
 		ViewTarget.POV.Location = FVector(0, 0, 500);
 		ViewTarget.POV.Rotation = FQuaternion::Identity();
 	}
 
-	// Store in cached POV
+	// 캐시된 POV에 저장
 	CachedPOV = ViewTarget.POV;
 }
 
@@ -274,19 +271,19 @@ void APlayerCameraManager::UpdateBlending(float DeltaTime)
 
 	if (BlendTimeRemaining <= 0.0f)
 	{
-		// Blend complete
+		// 블렌드 완료
 		ViewTarget = PendingViewTarget;
 		bIsBlending = false;
 		BlendTimeRemaining = 0.0f;
 
-		UE_LOG_DEBUG("APlayerCameraManager: Blend complete");
+		UE_LOG_DEBUG("APlayerCameraManager: 블렌드 완료");
 	}
 	else
 	{
-		// Lerp between current and pending
+		// 현재와 대기 중인 것 사이에서 선형 보간
 		float BlendAlpha = 1.0f - (BlendTimeRemaining / BlendTime);
 
-		// Update pending target POV
+		// 대기 중인 타겟 POV 업데이트
 		if (PendingViewTarget.CameraComponent)
 		{
 			PendingViewTarget.CameraComponent->GetCameraView(PendingViewTarget.POV);
@@ -297,10 +294,10 @@ void APlayerCameraManager::UpdateBlending(float DeltaTime)
 			PendingViewTarget.POV.Rotation = PendingViewTarget.Target->GetActorRotation();
 		}
 
-		// Interpolate POV
+		// POV 보간
 		CachedPOV.Location = Lerp(ViewTarget.POV.Location, PendingViewTarget.POV.Location, BlendAlpha);
-		// TODO: Implement proper quaternion slerp for smooth rotation blending
-		// For now, use simple linear interpolation
+		// TODO: 부드러운 회전 블렌딩을 위한 적절한 쿼터니언 slerp 구현
+		// 현재는 단순 선형 보간 사용
 		CachedPOV.Rotation.X = Lerp(ViewTarget.POV.Rotation.X, PendingViewTarget.POV.Rotation.X, BlendAlpha);
 		CachedPOV.Rotation.Y = Lerp(ViewTarget.POV.Rotation.Y, PendingViewTarget.POV.Rotation.Y, BlendAlpha);
 		CachedPOV.Rotation.Z = Lerp(ViewTarget.POV.Rotation.Z, PendingViewTarget.POV.Rotation.Z, BlendAlpha);
@@ -319,21 +316,21 @@ void APlayerCameraManager::ApplyCameraModifiers(float DeltaTime)
 	if (ModifierList.empty())
 		return;
 
-	// Sort modifiers by priority (ascending: low priority first)
+	// 우선순위로 모디파이어 정렬 (오름차순: 낮은 우선순위 먼저)
 	std::sort(ModifierList.begin(), ModifierList.end(),
 		[](const UCameraModifier* A, const UCameraModifier* B) {
 			return A->GetPriority() < B->GetPriority();
 		});
 
-	// Apply each modifier in order
+	// 각 모디파이어를 순서대로 적용
 	for (UCameraModifier* Modifier : ModifierList)
 	{
 		if (Modifier && !Modifier->IsDisabled())
 		{
-			// Update blend alpha
+			// 블렌드 알파 업데이트
 			Modifier->UpdateAlpha(DeltaTime);
 
-			// Apply modifier to POV
+			// POV에 모디파이어 적용
 			if (Modifier->GetAlpha() > 0.0f)
 			{
 				Modifier->ModifyCamera(DeltaTime, CachedPOV);
@@ -348,25 +345,25 @@ void APlayerCameraManager::UpdateFading(float DeltaTime)
 
 	if (FadeTimeRemaining <= 0.0f)
 	{
-		// Fade complete
+		// 페이드 완료
 		FadeAlpha.X = FadeAlpha.Y;
 		FadeTimeRemaining = 0.0f;
 		bIsFading = false;
 	}
 	else
 	{
-		// Interpolate fade alpha
+		// 페이드 알파 보간
 		float FadeBlendAlpha = 1.0f - (FadeTimeRemaining / FadeTime);
 		FadeAlpha.X = Lerp(FadeAmount, FadeAlpha.Y, FadeBlendAlpha);
 	}
 
-	// TODO: Integrate with URenderer for post-process fade overlay
-	// For now, fade data is available via GetFadeAlpha() for renderer to use
+	// TODO: 후처리 페이드 오버레이를 위해 URenderer와 통합
+	// 현재는 렌더러가 사용할 수 있도록 페이드 데이터를 GetFadeAlpha()로 제공
 }
 
 void APlayerCameraManager::UpdateCameraConstants()
 {
-	// Convert final POV to camera constants (View/Projection matrices)
+	// 최종 POV를 카메라 상수로 변환 (View/Projection 행렬)
 	CachedCameraConstants = CachedPOV.ToCameraConstants();
 }
 
@@ -374,7 +371,7 @@ void APlayerCameraManager::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 {
 	Super::Serialize(bInIsLoading, InOutHandle);
 
-	// TODO: Implement JSON serialization for camera manager
-	// ViewTarget, modifiers, and fade state are runtime state
-	// that should be set up in BeginPlay or gameplay code
+	// TODO: 카메라 매니저에 대한 JSON 직렬화 구현
+	// ViewTarget, 모디파이어, 페이드 상태는 런타임 상태이므로
+	// BeginPlay 또는 게임플레이 코드에서 설정되어야 합니다
 }

@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "Component/Camera/Public/CameraComponent.h"
 #include "Global/CoreTypes.h"
 
@@ -20,11 +20,11 @@ UCameraComponent::~UCameraComponent()
 
 void UCameraComponent::GetCameraView(FMinimalViewInfo& OutPOV) const
 {
-	// Get world transform from scene component hierarchy
+	// 씬 컴포넌트 계층에서 월드 변환 가져오기
 	OutPOV.Location = GetWorldLocation();
 	OutPOV.Rotation = GetWorldRotationAsQuaternion();
 
-	// Copy projection settings
+	// 투영 설정 복사
 	OutPOV.FOV = FieldOfView;
 	OutPOV.AspectRatio = AspectRatio;
 	OutPOV.NearClipPlane = NearClipPlane;
@@ -37,7 +37,7 @@ void UCameraComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 {
 	Super::Serialize(bInIsLoading, InOutHandle);
 
-	// TODO: Implement JSON serialization for camera properties
-	// For now, use default values
-	// This will be completed when JSON serialization is needed
+	// TODO: 카메라 속성에 대한 JSON 직렬화 구현
+	// 현재는 기본값 사용
+	// JSON 직렬화가 필요할 때 완성될 예정
 }
