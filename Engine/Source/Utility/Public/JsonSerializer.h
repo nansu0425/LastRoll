@@ -27,6 +27,24 @@ public:
 	//====================================================================================
 	// Reading from JSON
 	//====================================================================================
+	static bool ReadBool(const JSON& InJson, const FString& InKey, bool& OutValue, bool InDefaultValue = false, bool bInUseLog = true)
+	{
+		if (InJson.hasKey(InKey))
+		{
+			const JSON& Value = InJson.at(InKey);
+			if (Value.JSONType() == JSON::Class::Boolean)
+			{
+				OutValue = Value.ToBool();
+				return true;
+			}
+		}
+
+		if (bInUseLog)
+			UE_LOG_ERROR("[JsonSerializer] %s bool 파싱에 실패했습니다 (기본값 사용)", InKey.c_str());
+
+		OutValue = InDefaultValue;
+		return false;
+	}
 
 	/**
 	 * @brief JSON 객체에서 키를 찾아 64비트 정수(int64) 값을 안전하게 읽어옵니다.
