@@ -880,8 +880,8 @@ void URenderer::Update()
 
         CurrentCamera->Update(LocalViewport);
 
-        FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferViewProj, CurrentCamera->GetFViewProjConstants());
-        Pipeline->SetConstantBuffer(1, EShaderType::VS, ConstantBufferViewProj);
+        // Camera constant buffer update moved to RenderLevel()
+        // (Allows PIE mode to use PlayerCameraManager instead of EditorCamera)
         {
             TIME_PROFILE(RenderLevel)
             RenderLevel(Viewport, ViewportIndex);
@@ -993,23 +993,30 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 
 	// ===== Camera Selection: Use CameraManager in PIE/Game, Editor Camera otherwise =====
 	FCameraConstants ViewProj;
-	UCamera* EditorCamera = nullptr;
+	UCamera* EditorCamera = InViewport->GetViewportClient()->GetCamera();
 
-	if ((WorldToRender->GetWorldType() == EWorldType::Game ||
-	     WorldToRender->GetWorldType() == EWorldType::PIE) &&
-	    WorldToRender->GetCameraManager() != nullptr)
+	// Select camera source based on world type
+	EWorldType WorldType = WorldToRender->GetWorldType();
+	APlayerCameraManager* CameraManager = WorldToRender->GetCameraManager();
+
+	if ((WorldType == EWorldType::Game || WorldType == EWorldType::PIE) && CameraManager != nullptr)
 	{
-		// Use game camera manager
-		ViewProj = WorldToRender->GetCameraManager()->GetCameraConstants();
-		UE_LOG_DEBUG("Using PlayerCameraManager for rendering (PIE/Game mode)");
+		// PIE/Game Mode: Use PlayerCameraManager
+		ViewProj = CameraManager->GetCameraConstants();
 	}
 	else
 	{
-		// Use editor camera (existing behavior)
-		EditorCamera = InViewport->GetViewportClient()->GetCamera();
+		// Editor Mode: Use EditorCamera
 		ViewProj = EditorCamera->GetFViewProjConstants();
 	}
+	// NOTE: EditorCamera is always passed to RenderingContext for RenderPass compatibility
+	// (Many RenderPasses directly reference Camera for billboard rotation, fog calculations, etc.)
 	// ===== End Camera Selection =====
+
+	// ===== CRITICAL: Upload ViewProj to GPU Constant Buffer =====
+	// This must happen AFTER camera selection above
+	FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferViewProj, ViewProj);
+	Pipeline->SetConstantBuffer(1, EShaderType::VS, ConstantBufferViewProj);
 
 	static bool bCullingEnabled = false; // 임시 토글(초기값: 컬링 비활성)
 	TArray<UPrimitiveComponent*> FinalVisiblePrims;
@@ -1040,19 +1047,14 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 	}
 	else
 	{
-		// Frustum culling (only available with editor camera)
-		if (EditorCamera)
-		{
-			FinalVisiblePrims = EditorCamera->GetViewVolumeCuller().GetRenderableObjects();
-		}
-		// TODO: Implement game camera frustum culling
-		// For now, game camera renders all components (handled above in bCullingEnabled == false)
+		// Frustum culling enabled
+		FinalVisiblePrims = EditorCamera->GetViewVolumeCuller().GetRenderableObjects();
 	}
 
 	RenderingContext = FRenderingContext(
 
 		&ViewProj,
-		EditorCamera,  // Can be nullptr in PIE/Game mode (when using CameraManager)
+		EditorCamera,  // Always valid (from ViewportClient)
 		InViewport->GetViewportClient()->GetViewMode(),
 		CurrentLevel->GetShowFlags(),
 		InViewport->GetRenderRect(),
