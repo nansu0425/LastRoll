@@ -31,19 +31,19 @@ void ALinearProjectile::InitializeComponents()
 	// RootComponent는 이미 UStaticMeshComponent로 생성되어 있음
 	UStaticMeshComponent* MeshComponent = Cast<UStaticMeshComponent>(GetRootComponent());
 
-	// 1. 구형 메시 설정
-	MeshComponent->SetStaticMesh("Data/Shapes/Sphere.obj");
+	// 1. 메시 설정
+	MeshComponent->SetStaticMesh("Data/spiked-ball/spiked-ball.obj");
 
 	// 2. SphereCollider를 RootComponent에 부착
 	SphereCollider->AttachToComponent(MeshComponent);
 
 	// 3. SphereCollider 설정
-	SphereCollider->SetSphereRadius(1.0f);  // 투사체 충돌 반지름
+	SphereCollider->SetSphereRadius(28.2f);  // 투사체 충돌 반지름
 	SphereCollider->SetGenerateOverlapEvents(true);  // Overlap 이벤트 활성화
 	SphereCollider->SetBlockComponent(false);  // Block 비활성화 (Overlap만 사용)
 
 	// 4 RootComponent의 스케일 설정
-	MeshComponent->SetRelativeScale3D(FVector(0.5f, 0.5f, 0.5f));
+	MeshComponent->SetRelativeScale3D(FVector(0.05f, 0.05f, 0.05f));
 
 	// 4. ScriptComponent 스크립트 경로 설정
 	ScriptComponent->SetScriptPath("LinearProjectile.lua");

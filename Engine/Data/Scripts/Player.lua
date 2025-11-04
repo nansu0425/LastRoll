@@ -7,6 +7,11 @@ end
 
 _G.PlayerData.PlayerPos = Vector(0,0,0)
 
+-- Projectile 활성화/비활성화 플래그
+local bLinearProjectileEnabled = true   -- Linear Projectile 활성화 여부
+local bHomingProjectileEnabled = true   -- Homing Projectile 활성화 여부
+local bOrbitProjectileEnabled = true    -- Orbit Projectile 활성화 여부
+
 -- 발사 설정
 local AttackCooldown = 0.3  -- 발사 주기 (초)
 local LinearProjectileSpeed = 50.0  -- Linear Projectile 속도
@@ -79,8 +84,10 @@ function Init()
     _G.PlayerData.PlayerEnv =  Owner:GetScriptComponentByName("Player.lua"):GetEnv()
     _G.PlayerData.bPlayerAlive = true
 
-    -- Orbit Projectile 생성
-    SpawnOrbitProjectiles()
+    -- Orbit Projectile 생성 (활성화 상태인 경우만)
+    if bOrbitProjectileEnabled then
+        SpawnOrbitProjectiles()
+    end
 
     TopCamera()
     print("[Player] Actor Init: " .. obj.UUID)
@@ -249,6 +256,11 @@ end
 -- 투사체 발사
 ---
 function ShootProjectile()
+    -- Linear Projectile이 비활성화된 경우 발사하지 않음
+    if not bLinearProjectileEnabled then
+        return
+    end
+
     -- 마우스 위치 가져오기
     local MouseScreenPos = GetMousePosition()
     -- 3D 레이캐스팅으로 마우스 커서의 월드 위치 계산
@@ -296,6 +308,11 @@ end
 -- 자동 타겟 발사 처리
 ---
 function HandleAutoTarget(dt)
+    -- Homing Projectile이 비활성화된 경우 처리하지 않음
+    if not bHomingProjectileEnabled then
+        return
+    end
+
     -- 쿨타임 감소
     if obj.AutoTargetTimer > 0 then
         obj.AutoTargetTimer = obj.AutoTargetTimer - dt
@@ -385,6 +402,12 @@ end
 -- Orbit Projectile 생성
 ---
 function SpawnOrbitProjectiles()
+    -- Orbit Projectile이 비활성화된 경우 생성하지 않음
+    if not bOrbitProjectileEnabled then
+        print("[Player] Orbit Projectile is disabled. Not spawning.")
+        return
+    end
+
     -- 기존 Orbit Projectile 제거
     ClearOrbitProjectiles()
 
@@ -441,7 +464,11 @@ end
 ---
 function SetOrbitCount(NewCount)
     OrbitCount = NewCount
-    SpawnOrbitProjectiles()
+
+    -- Orbit Projectile이 활성화된 경우에만 재생성
+    if bOrbitProjectileEnabled then
+        SpawnOrbitProjectiles()
+    end
 end
 
 ---
@@ -505,4 +532,99 @@ function SetOrbitDamage(NewDamage)
             end
         end
     end
+end
+
+-- ==============================================================================
+-- Projectile Enable/Disable Functions
+-- ==============================================================================
+
+---
+-- Linear Projectile 활성화
+---
+function EnableLinearProjectile()
+    bLinearProjectileEnabled = true
+    print("[Player] Linear Projectile ENABLED")
+end
+
+---
+-- Linear Projectile 비활성화
+---
+function DisableLinearProjectile()
+    bLinearProjectileEnabled = false
+    print("[Player] Linear Projectile DISABLED")
+end
+
+---
+-- Homing Projectile 활성화
+---
+function EnableHomingProjectile()
+    bHomingProjectileEnabled = true
+    print("[Player] Homing Projectile ENABLED")
+end
+
+---
+-- Homing Projectile 비활성화
+---
+function DisableHomingProjectile()
+    bHomingProjectileEnabled = false
+    print("[Player] Homing Projectile DISABLED")
+end
+
+---
+-- Orbit Projectile 활성화
+---
+function EnableOrbitProjectile()
+    if bOrbitProjectileEnabled then
+        print("[Player] Orbit Projectile is already ENABLED")
+        return
+    end
+
+    bOrbitProjectileEnabled = true
+    SpawnOrbitProjectiles()
+    print("[Player] Orbit Projectile ENABLED")
+end
+
+---
+-- Orbit Projectile 비활성화
+---
+function DisableOrbitProjectile()
+    if not bOrbitProjectileEnabled then
+        print("[Player] Orbit Projectile is already DISABLED")
+        return
+    end
+
+    bOrbitProjectileEnabled = false
+    ClearOrbitProjectiles()
+    print("[Player] Orbit Projectile DISABLED")
+end
+
+---
+-- 모든 Projectile 활성화
+---
+function EnableAllProjectiles()
+    EnableLinearProjectile()
+    EnableHomingProjectile()
+    EnableOrbitProjectile()
+    print("[Player] All Projectiles ENABLED")
+end
+
+---
+-- 모든 Projectile 비활성화
+---
+function DisableAllProjectiles()
+    DisableLinearProjectile()
+    DisableHomingProjectile()
+    DisableOrbitProjectile()
+    print("[Player] All Projectiles DISABLED")
+end
+
+---
+-- Projectile 활성화 상태 출력
+---
+function PrintProjectileStatus()
+    print("=== Projectile Status ===")
+    print("Linear Projectile: " .. (bLinearProjectileEnabled and "ENABLED" or "DISABLED"))
+    print("Homing Projectile: " .. (bHomingProjectileEnabled and "ENABLED" or "DISABLED"))
+    print("Orbit Projectile: " .. (bOrbitProjectileEnabled and "ENABLED" or "DISABLED"))
+    print("========================")
 end
