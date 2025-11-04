@@ -48,14 +48,6 @@ void APlayerCameraManager::BeginPlay()
 	}
 }
 
-void APlayerCameraManager::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	// Main camera update
-	UpdateCamera(DeltaTime);
-}
-
 void APlayerCameraManager::SetViewTarget(AActor* NewTarget, float InBlendTime)
 {
 	if (!NewTarget)
@@ -124,21 +116,23 @@ UCameraModifier* APlayerCameraManager::AddCameraModifier(UClass* ModifierClass)
 		return nullptr;
 	}
 
-	// Create new modifier instance
-	// TODO: Implement proper object creation system
-	// For now, return nullptr as camera modifier creation needs proper factory
-	UE_LOG_WARNING("APlayerCameraManager::AddCameraModifier - Modifier creation not yet implemented");
-	return nullptr;
+	// Verify that ModifierClass is a subclass of UCameraModifier
+	if (!ModifierClass->IsChildOf(UCameraModifier::StaticClass()))
+	{
+		UE_LOG_ERROR("APlayerCameraManager::AddCameraModifier - %s is not a subclass of UCameraModifier", 
+			ModifierClass->GetName().ToString().c_str());
+		return nullptr;
+	}
 
-	/*
-	UCameraModifier* NewModifier = nullptr;  // TODO: Create using proper factory
+	// Create new modifier instance using NewObject
+	UCameraModifier* NewModifier = Cast<UCameraModifier>(NewObject(ModifierClass, this));
+	
 	if (!NewModifier)
 	{
 		UE_LOG_ERROR("APlayerCameraManager::AddCameraModifier - Failed to create modifier instance");
 		return nullptr;
-	}*/
+	}
 
-	/*
 	// Initialize modifier
 	NewModifier->Initialize(this);
 
@@ -149,7 +143,6 @@ UCameraModifier* APlayerCameraManager::AddCameraModifier(UClass* ModifierClass)
 		ModifierClass->GetName().ToString().c_str(), NewModifier->GetPriority());
 
 	return NewModifier;
-	*/
 }
 
 bool APlayerCameraManager::RemoveCameraModifier(UCameraModifier* Modifier)

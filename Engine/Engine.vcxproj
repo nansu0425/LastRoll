@@ -342,6 +342,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClInclude Include="Source\Actor\Public\TextActor.h" />
     <ClInclude Include="Source\Actor\Public\TriangleActor.h" />
     <ClInclude Include="Source\Actor\Public\PlayerCameraManager.h" />
+    <ClInclude Include="Source\Component\Camera\Public\CameraModifier_CameraShake.h" />
     <ClInclude Include="Source\Component\Mesh\Public\MeshComponent.h">
       <DeploymentContent>false</DeploymentContent>
     </ClInclude>
@@ -387,6 +388,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClInclude Include="Source\Core\Public\WindowsBinReader.h" />
     <ClInclude Include="Source\Core\Public\WindowsBinWriter.h" />
     <ClInclude Include="Source\Editor\Public\EditorEngine.h" />
+    <ClInclude Include="Source\Game\Actor\Public\CameraTestActor.h" />
     <ClInclude Include="Source\Game\Actor\Public\EightBallEnemy.h" />
     <ClInclude Include="Source\Game\Actor\Public\Enemy.h" />
     <ClInclude Include="Source\Game\Actor\Public\Player.h" />
@@ -657,6 +659,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClCompile Include="Source\Actor\Private\TextActor.cpp" />
     <ClCompile Include="Source\Actor\Private\TriangleActor.cpp" />
     <ClCompile Include="Source\Actor\Private\PlayerCameraManager.cpp" />
+    <ClCompile Include="Source\Component\Camera\Private\CameraModifier_CameraShake.cpp" />
     <ClCompile Include="Source\Component\Mesh\Private\MeshComponent.cpp">
       <DeploymentContent>false</DeploymentContent>
     </ClCompile>
@@ -704,6 +707,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClCompile Include="Source\Editor\Private\GizmoGeometry.cpp" />
     <ClCompile Include="Source\Editor\Private\GizmoMath.cpp" />
     <ClCompile Include="Source\Editor\Private\GizmoRenderer.cpp" />
+    <ClCompile Include="Source\Game\Actor\Private\CameraTestActor.cpp" />
     <ClCompile Include="Source\Game\Actor\Private\EightBallEnemy.cpp" />
     <ClCompile Include="Source\Game\Actor\Private\Enemy.cpp" />
     <ClCompile Include="Source\Game\Actor\Private\Player.cpp" />
