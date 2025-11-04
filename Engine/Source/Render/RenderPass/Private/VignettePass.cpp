@@ -22,6 +22,9 @@ FVignettePass::~FVignettePass()
 
 void FVignettePass::UpdateConstants()
 {
+    /**
+     * @todo 하드코딩된 값, 추후 컨텍스트에서 값을 가져오는 것으로 변경할 예정
+     */
     FVignetteConstants VignetteConstants = {};
     VignetteConstants.VignetteColor = FVector(0.0f, 1.0f, 1.0f);
     VignetteConstants.VignetteIntensity = 0.5f;

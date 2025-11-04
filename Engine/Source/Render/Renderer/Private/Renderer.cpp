@@ -40,6 +40,7 @@
 #include "Render/Renderer/Public/RenderResourceFactory.h"
 #include "Render/Renderer/Public/Renderer.h"
 
+#include "Render/RenderPass/Public/FadePass.h"
 #include "Render/RenderPass/Public/VignettePass.h"
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
 #include "Render/UI/Overlay/Public/StatOverlay.h"
@@ -123,6 +124,9 @@ void URenderer::Init(HWND InWindowHandle)
 
 	FVignettePass* VignettePass = new FVignettePass(Pipeline, DeviceResources);
 	RenderPasses.push_back(VignettePass);
+
+	FFadePass* FadePass = new FFadePass(Pipeline, DeviceResources);
+	RenderPasses.push_back(FadePass);
 
 	// UPipeline* InPipeline, UDeviceResources* InDeviceResources, ID3D11VertexShader* InVS,
 	// ID3D11PixelShader* InPS, ID3D11InputLayout* InLayout, ID3D11SamplerState* InSampler
