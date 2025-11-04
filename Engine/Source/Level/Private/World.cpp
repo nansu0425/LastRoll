@@ -2,6 +2,7 @@
 #include "Level/Public/World.h"
 #include "Level/Public/Level.h"
 #include "Actor/Public/AmbientLight.h"
+#include "Actor/Public/PlayerCameraManager.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Component/Public/ActorComponent.h"
 #include "Utility/Public/JsonSerializer.h"
@@ -108,6 +109,12 @@ void UWorld::Tick(float DeltaTimes)
 			{
 				DestroyActor(LevelActors[i]);
 			}
+		}
+
+		// Update camera manager (Game/PIE only)
+		if (CameraManager)
+		{
+			CameraManager->UpdateCamera(DeltaTimes);
 		}
 	}
 	// 충돌 감지 업데이트

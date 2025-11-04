@@ -80,6 +80,12 @@
     <ClCompile Include="Source\Component\Private\ActorComponent.cpp">
       <Filter>Source\Component\Private</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Component\Camera\Private\CameraComponent.cpp">
+      <Filter>Source\Component\Camera\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Component\Camera\Private\CameraModifier.cpp">
+      <Filter>Source\Component\Camera\Private</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Component\Private\AmbientLightComponent.cpp">
       <Filter>Source\Component\Private</Filter>
     </ClCompile>
@@ -536,6 +542,9 @@
     <ClCompile Include="Source\Actor\Private\TriangleActor.cpp">
       <Filter>Source\Actor\Private</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Actor\Private\PlayerCameraManager.cpp">
+      <Filter>Source\Actor\Private</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Physics\Private\AABB.cpp">
       <Filter>Source\Physics\Private</Filter>
     </ClCompile>
@@ -625,6 +634,12 @@
     </ClInclude>
     <ClInclude Include="Source\Component\Public\ActorComponent.h">
       <Filter>Source\Component\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Component\Camera\Public\CameraComponent.h">
+      <Filter>Source\Component\Camera\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Component\Camera\Public\CameraModifier.h">
+      <Filter>Source\Component\Camera\Public</Filter>
     </ClInclude>
     <ClInclude Include="Source\Component\Public\AmbientLightComponent.h">
       <Filter>Source\Component\Public</Filter>
@@ -1118,6 +1133,9 @@
     <ClInclude Include="Source\Actor\Public\TriangleActor.h">
       <Filter>Source\Actor\Public</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Actor\Public\PlayerCameraManager.h">
+      <Filter>Source\Actor\Public</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Physics\Public\AABB.h">
       <Filter>Source\Physics\Public</Filter>
     </ClInclude>
@@ -1295,6 +1313,15 @@
     </Filter>
     <Filter Include="Source\Component\Shape\Public">
       <UniqueIdentifier>{4dcb0045-8ac6-47c0-9e33-d68f766b3f51}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Component\Camera">
+      <UniqueIdentifier>{a9c1e5f0-1234-4567-89ab-cdef01234567}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Component\Camera\Private">
+      <UniqueIdentifier>{b9c1e5f0-1234-4567-89ab-cdef01234567}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Component\Camera\Public">
+      <UniqueIdentifier>{c9c1e5f0-1234-4567-89ab-cdef01234567}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Core">
       <UniqueIdentifier>{6d4850fe-5606-43db-bd00-cd53f6c5b159}</UniqueIdentifier>
