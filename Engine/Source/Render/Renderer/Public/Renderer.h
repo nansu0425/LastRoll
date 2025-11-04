@@ -7,6 +7,7 @@
 #include "Editor/Public/EditorPrimitive.h"
 #include "Render/Renderer/Public/Pipeline.h"
 #include "Render/RenderPass/Public/FXAAPass.h"
+#include "Render/RenderPass/Public/ColorCopyPass.h"
 
 class FClusteredRenderingGridPass;
 class FFXAAPass;
@@ -219,6 +220,7 @@ private:
 
 	FFXAAPass* FXAAPass = nullptr;
 	FLightPass* LightPass = nullptr;
+	FColorCopyPass* ColorCopyPass = nullptr;
 	FClusteredRenderingGridPass* ClusteredRenderingGridPass = nullptr;
 	FShadowMapPass* ShadowMapPass = nullptr;
 	FShadowMapFilterPass* ShadowMapFilterPass = nullptr;

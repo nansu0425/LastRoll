@@ -42,6 +42,10 @@ public:
 	}
 	ID3D11RenderTargetView* GetFrameRenderTargetView(const bool bMain = true) const
 	{
+		if (bMain == false)
+		{
+			int a = 0;
+		}
 		return bMain ? FrameBufferRTV : PingPongFrameBufferRTV;
 	}
 

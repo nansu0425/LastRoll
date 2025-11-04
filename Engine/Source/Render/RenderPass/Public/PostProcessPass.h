@@ -34,10 +34,6 @@ protected:
     virtual void SetShaderResourcesViews(const uint32 PPIdx);
     
     virtual void SetRenderTargets(const uint32 PPIdx);
-
-    virtual void ResetShaderResourcesViews();
-
-    virtual void ResetRenderTargets();
     
     UPipeline* Pipeline;
 

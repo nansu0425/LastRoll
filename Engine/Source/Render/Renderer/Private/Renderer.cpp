@@ -130,6 +130,8 @@ void URenderer::Init(HWND InWindowHandle)
 
 	HitProxyPass = new FHitProxyPass(Pipeline, ConstantBufferViewProj, ConstantBufferModels,
 		HitProxyVS, HitProxyPS, HitProxyInputLayout, DefaultDepthStencilState);
+
+	ColorCopyPass = new FColorCopyPass(Pipeline, DeviceResources);
 }
 
 void URenderer::Release()
@@ -145,6 +147,8 @@ void URenderer::Release()
 		RenderPass->Release();
 		SafeDelete(RenderPass);
 	}
+	ColorCopyPass->Release();
+	SafeDelete(ColorCopyPass);
 
 	for (auto& PPPass : PostProcessingPasses)
 	{
@@ -864,6 +868,9 @@ void URenderer::Update()
 			ViewportIndex == UViewportManager::GetInstance().GetPIEActiveViewportIndex();
 		if (!bIsPIEViewport)
 		{
+			auto RTV = GetFrameRenderTargetView();
+			auto DSV = DeviceResources->GetDepthStencilView();
+			GetDeviceContext()->OMSetRenderTargets(1, &RTV, DSV);
 			// Grid, Gizmo 렌더링 (3D, FXAA 적용 대상)
 			GEditor->GetEditorModule()->RenderEditorGeometry();
 			GEditor->GetEditorModule()->RenderGizmo(CurrentCamera, LocalViewport);
@@ -1113,10 +1120,20 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 		RenderPass->Execute(RenderingContext);
 	}
 
-	int PPIdx = 0;
-	for (auto PPPass : PostProcessingPasses)
+	//PP
+	if (PostProcessingPasses.empty() == false) 
 	{
-		PPPass->ExecutePP(RenderingContext, PPIdx++);
+		int PPIdx = 0;
+		for (auto PPPass : PostProcessingPasses)
+		{
+			PPPass->ExecutePP(RenderingContext, PPIdx++);
+		}
+		//마지막 렌더링이 PingPong일때 메인FrameBuffer로 ColorCopy필요
+		if (PPIdx % 2 == 1)
+		{
+			ColorCopyPass->ExecutePP(RenderingContext, PPIdx);
+		}
+		Pipeline->SetShaderResourceView(0, EShaderType::PS, nullptr);
 	}
 }
 
