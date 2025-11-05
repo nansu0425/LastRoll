@@ -3,36 +3,13 @@
 // Based on NVIDIA FXAA 3.11 logic
 // CORRECTED VERSION
 // ============================================================================
-
+#include "PostProcessing.hlsli"
 cbuffer FXAAParams : register(b0)
 {
     float2 InvResolution;   // 1.0 / resolution (ex: (1/1920, 1/1080))
     float FXAASpanMax;      // Max search span
     float FXAAReduceMul;    // reduce multiplier (ex: 1/8)
     float FXAAReduceMin;    // minimum reduce value (ex: 1/128)
-}
-
-Texture2D SceneColor : register(t0);
-SamplerState SceneSampler : register(s0);
-
-struct VSInput
-{
-    float2 Position : POSITION;
-    float2 TexCoord : TEXCOORD0;
-};
-
-struct VSOutput
-{
-    float4 Position : SV_POSITION;
-    float2 TexCoord : TEXCOORD0;
-};
-
-VSOutput mainVS(VSInput input)
-{
-    VSOutput output;
-    output.Position = float4(input.Position, 0.0f, 1.0f);
-    output.TexCoord = input.TexCoord;
-    return output;
 }
 
 //------------------------------------------------------------------------------
@@ -52,18 +29,18 @@ float Luma(float3 color)
 //------------------------------------------------------------------------------
 // Pixel Shader: Corrected Unreal-style FXAA
 //------------------------------------------------------------------------------
-float4 mainPS(VSOutput input) : SV_Target
+float4 mainPS(PS_INPUT input) : SV_Target
 {
-    float2 tex = input.TexCoord;
+    float2 tex = GetSceneColorUV(input.Position.xy);
     float2 inv = InvResolution;
 
     // Fetch 5 samples (center + 4 diagonals)
     // FXAA는 지그재그/사선 엣지에 강하려고 대각 방향의 그라디언트를 
-    float3 rgbNW = SceneColor.Sample(SceneSampler, tex + float2(-inv.x, -inv.y)).rgb;
-    float3 rgbNE = SceneColor.Sample(SceneSampler, tex + float2( inv.x, -inv.y)).rgb;
-    float3 rgbSW = SceneColor.Sample(SceneSampler, tex + float2(-inv.x,  inv.y)).rgb;
-    float3 rgbSE = SceneColor.Sample(SceneSampler, tex + float2( inv.x,  inv.y)).rgb;
-    float3 rgbM  = SceneColor.Sample(SceneSampler, tex).rgb;
+    float3 rgbNW = SceneTexture.Sample(SceneSampler, tex + float2(-inv.x, -inv.y)).rgb;
+    float3 rgbNE = SceneTexture.Sample(SceneSampler, tex + float2(inv.x, -inv.y)).rgb;
+    float3 rgbSW = SceneTexture.Sample(SceneSampler, tex + float2(-inv.x, inv.y)).rgb;
+    float3 rgbSE = SceneTexture.Sample(SceneSampler, tex + float2(inv.x, inv.y)).rgb;
+    float3 rgbM = SceneTexture.Sample(SceneSampler, tex).rgb;
 
     // Convert to luminance
     float lumaNW = Luma(rgbNW);
@@ -126,13 +103,13 @@ float4 mainPS(VSOutput input) : SV_Target
     
     // Sample along the corrected edge direction
     float3 rgbA = 0.5f * (
-        SceneColor.Sample(SceneSampler, tex + dir * (1.0 / 3.0 - 0.5)).rgb +
-        SceneColor.Sample(SceneSampler, tex + dir * (2.0 / 3.0 - 0.5)).rgb
+        SceneTexture.Sample(SceneSampler, tex + dir * (1.0 / 3.0 - 0.5)).rgb +
+        SceneTexture.Sample(SceneSampler, tex + dir * (2.0 / 3.0 - 0.5)).rgb
     );
 
     float3 rgbB = rgbA * 0.5f + 0.25f * (
-        SceneColor.Sample(SceneSampler, tex + dir * -0.5).rgb +
-        SceneColor.Sample(SceneSampler, tex + dir * 0.5).rgb
+        SceneTexture.Sample(SceneSampler, tex + dir * -0.5).rgb +
+        SceneTexture.Sample(SceneSampler, tex + dir * 0.5).rgb
     );
 
     // Compute luminance of blended sample

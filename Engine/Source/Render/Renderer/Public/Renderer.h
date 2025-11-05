@@ -6,11 +6,10 @@
 #include "Component/Public/PrimitiveComponent.h"
 #include "Editor/Public/EditorPrimitive.h"
 #include "Render/Renderer/Public/Pipeline.h"
-#include "Render/RenderPass/Public/FXAAPass.h"
 #include "Render/RenderPass/Public/ColorCopyPass.h"
+#include "Render/RenderPass/Public/PostProcessPass.h"
 
 class FClusteredRenderingGridPass;
-class FFXAAPass;
 class FHitProxyPass;
 class FLightPass;
 class FShadowMapFilterPass;
@@ -28,7 +27,6 @@ enum class ShaderUsage
 	TEXTURE,
 	DECAL,
 	FOG,
-	FXAA,
 	STATICMESH,
 	CLUSTERED_RENDERING_GRID,
 	SHADOWMAP,
@@ -57,7 +55,6 @@ public:
 	void CreateDecalShader();
 	void CreateFogShader();
 	void CreateConstantBuffers();
-	void CreateFXAAShader();
 	void CreateStaticMeshShader();
 	void CreateClusteredRenderingGrid();
 	void CreateDepthOnlyShader();
@@ -151,12 +148,6 @@ private:
 	ID3D11PixelShader* DefaultPixelShader = nullptr;
 	ID3D11InputLayout* DefaultInputLayout = nullptr;
 
-	// FXAA Shaders
-	ID3D11VertexShader* FXAAVertexShader = nullptr;
-	ID3D11PixelShader* FXAAPixelShader = nullptr;
-	ID3D11InputLayout* FXAAInputLayout = nullptr;
-	ID3D11SamplerState* FXAASamplerState = nullptr;
-
 	// StaticMesh Shaders
 	ID3D11VertexShader* UberLitVertexShader = nullptr;
 	ID3D11VertexShader* UberLitVertexShaderGouraud = nullptr;
@@ -218,7 +209,6 @@ private:
 	TArray<class FRenderPass*> RenderPasses;
 	TArray<class FPostProcessPass*> PostProcessingPasses;
 
-	FFXAAPass* FXAAPass = nullptr;
 	FLightPass* LightPass = nullptr;
 	FColorCopyPass* ColorCopyPass = nullptr;
 	FClusteredRenderingGridPass* ClusteredRenderingGridPass = nullptr;
