@@ -416,7 +416,7 @@ uint64 UDeviceResources::GetTotalRenderTargetMemory() const
 	// SceneColorTexture: RGBA16F (8 bytes per pixel)
 	if (PingPongFrameBuffer)
 	{
-		TotalBytes += PixelCount * 8;
+		TotalBytes += PixelCount * 4;
 	}
 
 	// HitProxyTexture: RGBA8 (4 bytes per pixel)
