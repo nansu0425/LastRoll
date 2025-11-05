@@ -127,9 +127,11 @@ void URenderer::Init(HWND InWindowHandle)
 	FVignettePass* VignettePass = new FVignettePass(Pipeline, DeviceResources);
 	PostProcessingPasses.push_back(VignettePass);
 
+	FFadePass* FadePass = new FFadePass(Pipeline, DeviceResources);
+	PostProcessingPasses.push_back(FadePass);
+
 	FFXAAPass* FXAAPass = new FFXAAPass(Pipeline, DeviceResources);
 	PostProcessingPasses.push_back(FXAAPass);
-
 
 	ColorCopyPass = new FColorCopyPass(Pipeline, DeviceResources);
 }

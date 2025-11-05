@@ -9,7 +9,6 @@
 FPostProcessPass::FPostProcessPass(UPipeline* InPipeline, UDeviceResources* InDeviceResources)
     : Pipeline(InPipeline), DeviceResources(InDeviceResources)
 {
-
 }
 
 FPostProcessPass::~FPostProcessPass()
@@ -24,7 +23,6 @@ void FPostProcessPass::ExecutePP(FRenderingContext& Context, const uint32 PPIdx)
 
     SetShaderResourcesViews(PPIdx);
 
-
     FPipelineInfo PipelineInfo = {};
     PipelineInfo.InputLayout = nullptr;
     PipelineInfo.VertexShader = VertexShader.Get();
@@ -36,7 +34,8 @@ void FPostProcessPass::ExecutePP(FRenderingContext& Context, const uint32 PPIdx)
     Pipeline->UpdatePipeline(PipelineInfo);
 
     Pipeline->Draw(3, 0);
-    Pipeline->SetShaderResourceView(0, EShaderType::PS, nullptr);
+
+    ResetShaderResourceViews();
 }
 
 void FPostProcessPass::Release()
@@ -69,4 +68,9 @@ void FPostProcessPass::SetRenderTargets(const uint32 PPIdx)
     ID3D11RenderTargetView* RTV = DeviceResources->GetFrameRenderTargetView(PPIdx % 2 == 1);
 
     DeviceResources->GetDeviceContext()->OMSetRenderTargets(1, &RTV, nullptr);
+}
+
+void FPostProcessPass::ResetShaderResourceViews()
+{
+    Pipeline->SetShaderResourceView(0, EShaderType::PS, nullptr);
 }

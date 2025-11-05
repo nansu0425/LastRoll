@@ -19,7 +19,6 @@ public:
 
     /**
      * @brief 포스트 프로세스 패스의 고정된 실행 알고리즘을 정의한다.
-     * @note final 함수이다. 파생 클래스는 이 함수 대신 UpdateConstants()와 SetRenderTargets()를 재정의해야 한다.
      */
     void ExecutePP(FRenderingContext& Context, const uint32 PPIdx);
 
@@ -34,6 +33,8 @@ protected:
     virtual void SetShaderResourcesViews(const uint32 PPIdx);
     
     virtual void SetRenderTargets(const uint32 PPIdx);
+
+    virtual void ResetShaderResourceViews();
     
     UPipeline* Pipeline;
 

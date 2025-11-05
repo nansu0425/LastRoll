@@ -26,8 +26,8 @@ void FFadePass::UpdateConstants()
      * @todo 하드코딩된 값, 추후 컨텍스트에서 값을 가져오는 것으로 변경할 예정
      */
     FFadeConstants FadeConstants = {};
-    FadeConstants.FadeColor = FVector(0.0f, 0.0f, 1.0f);
-    FadeConstants.FadeAmount = 0.5f;
+    FadeConstants.FadeColor = FVector(1.0f, 0.0f, 0.0f);
+    FadeConstants.FadeAlpha = 0.5f;
 
     FRenderResourceFactory::UpdateConstantBufferData(FadeConstantBuffer.Get(), FadeConstants);
 
