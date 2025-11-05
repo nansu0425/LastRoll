@@ -108,10 +108,10 @@ end
 
 function EndingSequence()
 EndSeuenceText = "죽었습니다.\n Score" .._G.GameData.Score
-coroutine.yield(WaitForSeconds(1.5))
+coroutine.yield(WaitForSeconds(0.15))
 CurLightPos = Vector(10000,10000,10000)
 SetLightPos()
-coroutine.yield(WaitForSeconds(1.5))
+coroutine.yield(WaitForSeconds(0.15))
 ChangeGameState(EGameState.End)
 AudioComponent:Stop()
 end
