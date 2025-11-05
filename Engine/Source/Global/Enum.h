@@ -180,6 +180,7 @@ enum class EEngineShowFlags : uint64
 	SF_Fog = 1 << 6,
 	SF_Octree = 1 << 7,
 	SF_UUID = 1 << 8,
+	SF_Gamma = 1 << 9
 };
 
 inline uint64 operator|(EEngineShowFlags lhs, EEngineShowFlags rhs)

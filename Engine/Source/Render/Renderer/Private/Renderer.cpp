@@ -41,6 +41,7 @@
 #include "Render/Renderer/Public/Renderer.h"
 
 #include "Render/RenderPass/Public/FadePass.h"
+#include "Render/RenderPass/Public/GammaPass.h"
 #include "Render/RenderPass/Public/LetterboxPass.h"
 #include "Render/RenderPass/Public/VignettePass.h"
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
@@ -132,7 +133,10 @@ void URenderer::Init(HWND InWindowHandle)
 	PostProcessingPasses.push_back(FadePass);
 
 	FLetterboxPass* LetterboxPass = new FLetterboxPass(Pipeline, DeviceResources);
-	PostProcessingPasses.push_back(LetterboxPass);	
+	PostProcessingPasses.push_back(LetterboxPass);
+
+	FGammaPass* GammaPass = new FGammaPass(Pipeline, DeviceResources);
+	PostProcessingPasses.push_back(GammaPass);
 
 	FFXAAPass* FXAAPass = new FFXAAPass(Pipeline, DeviceResources);
 	PostProcessingPasses.push_back(FXAAPass);
