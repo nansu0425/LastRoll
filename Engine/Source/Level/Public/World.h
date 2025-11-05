@@ -1,6 +1,8 @@
 #pragma once
 #include <filesystem>
 
+#include "Audio/Public/AudioDevice.h"
+#include "Core/Public/NewObject.h"
 #include "Core/Public/Object.h"
 #include "Global/Types.h"
 
@@ -73,11 +75,15 @@ public:
 	// Player Access
 	APlayer* GetFirstPlayerActor();
 
+	FAudioDevice* GetAudioDevice() { return AudioDevice; }
+
 private:
 	EWorldType WorldType;
 	ULevel* Level = nullptr; // Persistance Level. Sublevels are not considered in Engine.
 	bool bBegunPlay = false;
 	TArray<AActor*> PendingDestroyActors;
+
+	FAudioDevice* AudioDevice = nullptr;
 
 	void FlushPendingDestroy(); // Destroy marking 된 액터들을 실제 삭제
 	void UpdateCollisions(); // 모든 PrimitiveComponent의 충돌 업데이트

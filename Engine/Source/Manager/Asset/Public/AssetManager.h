@@ -3,6 +3,7 @@
 #include "ObjImporter.h"
 #include "TextureManager.h"
 #include "Component/Mesh/Public/StaticMesh.h"
+#include "Audio/Public/SoundWave.h"
 
 struct FAABB;
 
@@ -76,4 +77,15 @@ public:
 
 private:
 	FTextureManager* TextureManager;
+
+// Audio Section
+public:
+	void LoadAllSoundsFromDirectory(const path& InDirectoryPath);
+	
+	USoundWave* LoadSound(const FName& InFilePath);
+
+	const TMap<FName, USoundWave*>& GetSoundCache() const;
+
+private:
+	TMap<FName, USoundWave*> SoundWaves;
 };
