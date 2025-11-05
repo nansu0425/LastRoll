@@ -70,4 +70,7 @@ public:
 
 	// 직렬화
 	virtual void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
+
+	// 복제
+	virtual UObject* Duplicate() override;
 };
