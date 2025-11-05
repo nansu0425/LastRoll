@@ -27,6 +27,9 @@ private:
 	bool bUsePerspectiveProjection;     // true: 원근 투영, false: 직교 투영
 	float OrthoWidth;                   // 직교 투영 너비, 기본값: 1000.0f
 
+	// ===== 후처리 설정 =====
+	FPostProcessSettings PostProcessSettings;
+
 public:
 	UCameraComponent();
 	virtual ~UCameraComponent() override;
@@ -57,6 +60,10 @@ public:
 	float GetFarClipPlane() const { return FarClipPlane; }
 	bool IsUsingPerspectiveProjection() const { return bUsePerspectiveProjection; }
 	float GetOrthoWidth() const { return OrthoWidth; }
+
+	// ===== PostProcessSettings Getter/Setter =====
+	FPostProcessSettings& GetPostProcessSettings() { return PostProcessSettings; }
+	const FPostProcessSettings& GetPostProcessSettings() const { return PostProcessSettings; }
 
 	// 직렬화
 	virtual void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;

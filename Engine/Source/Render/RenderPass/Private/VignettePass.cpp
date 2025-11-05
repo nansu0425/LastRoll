@@ -20,11 +20,31 @@ FVignettePass::~FVignettePass()
 {
 }
 
-void FVignettePass::UpdateConstants()
+void FVignettePass::UpdateConstants(const FRenderingContext& Context)
 {
+    // ===== PostProcessSettings에서 Vignette 설정 읽기 =====
+    const FPostProcessSettings& PPSettings = Context.PostProcessSettings;
+
     FVignetteConstants VignetteConstants = {};
-    VignetteConstants.VignetteColor = FVector(0.0f, 1.0f, 1.0f);
-    VignetteConstants.VignetteIntensity = 0.5f;
+
+    // Override가 활성화된 경우만 설정 적용, 아니면 0(효과 없음)
+    if (PPSettings.bOverride_VignetteColor)
+    {
+        VignetteConstants.VignetteColor = PPSettings.VignetteColor;
+    }
+    else
+    {
+        VignetteConstants.VignetteColor = FVector(0.0f, 0.0f, 0.0f);  // 기본값: 검은색
+    }
+
+    if (PPSettings.bOverride_VignetteIntensity)
+    {
+        VignetteConstants.VignetteIntensity = PPSettings.VignetteIntensity;
+    }
+    else
+    {
+        VignetteConstants.VignetteIntensity = 0.0f;  // 기본값: 효과 없음
+    }
 
     FRenderResourceFactory::UpdateConstantBufferData(VignetteConstantBuffer.Get(), VignetteConstants);
 
