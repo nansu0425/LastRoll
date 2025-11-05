@@ -15,6 +15,8 @@ void UTimeManager::Initialize()
 {
 	GameTime = 0.0f;
 	DeltaTime = 0.0f;
+	UndilatedDeltaTime = 0.0f;
+	TimeDilation = 1.0f;
 	bIsPaused = false;
 }
 

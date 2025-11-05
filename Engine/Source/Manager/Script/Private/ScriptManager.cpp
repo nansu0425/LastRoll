@@ -988,6 +988,11 @@ void UScriptManager::RegisterCoreTypes()
 		}
 		CameraManager->StartCameraFade(FromAlpha, ToAlpha, Duration, Color);
 	};
+
+	LuaState["SetTimeDilation"] = [](float InTimeDilation)
+	{
+		UTimeManager::GetInstance().SetTimeDilation(InTimeDilation);
+	};
 	
 	LuaState["Random"] = [](float MinValue, float MaxValue) -> float
 	{
