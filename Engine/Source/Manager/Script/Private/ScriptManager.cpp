@@ -11,6 +11,8 @@
 #include "Actor/Public/PlayerCameraManager.h"
 #include "Actor/Public/StaticMeshActor.h"
 #include "Component/Camera/Public/CameraComponent.h"
+#include "Component/Camera/Public/CameraModifier_CameraShake.h"
+#include "Global/Public/CameraShakeTypes.h"
 #include "Component/Public/ActorComponent.h"
 #include "Component/Public/AudioComponent.h"
 #include "Component/Public/SceneComponent.h"
@@ -1220,6 +1222,28 @@ void UScriptManager::RegisterGlobalFunctions()
 		UGameUI::GetInstance().GaugeBar(ScreenPos, Size, GaugePercent, BGColor, GaugeColor);
 	};
 
+	// Camera Shake function
+	lua["StartCameraShake"] = [](float Duration, float LocationAmplitude, float RotationAmplitude)
+	{
+		// GWorld에서 PlayerCameraManager 찾기
+		if (GWorld && GWorld->GetCameraManager())
+		{
+			APlayerCameraManager* CameraManager = GWorld->GetCameraManager();
+
+			// CameraModifier_CameraShake 찾기 또는 추가
+			UCameraModifier* Modifier = CameraManager->FindCameraModifierByClass(UCameraModifier_CameraShake::StaticClass());
+			if (!Modifier)
+			{
+				Modifier = CameraManager->AddCameraModifier(UCameraModifier_CameraShake::StaticClass());
+			}
+
+			// CameraShake 시작
+			if (UCameraModifier_CameraShake* Shake = Cast<UCameraModifier_CameraShake>(Modifier))
+			{
+				Shake->StartShake(Duration, LocationAmplitude, RotationAmplitude, ECameraShakePattern::Random);
+			}
+		}
+	};
 
 	UE_LOG_INFO("Lua global functions registered");
 }
