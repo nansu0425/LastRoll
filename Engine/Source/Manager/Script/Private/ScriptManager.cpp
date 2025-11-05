@@ -1100,6 +1100,18 @@ void UScriptManager::RegisterCoreTypes()
 			}
 			return nullptr;
 		};
+	LuaState["SetNameCardActive"] = [](const bool bActive)
+	{
+		const TArray<AActor*>& Actors = GWorld->GetLevel()->GetLevelActors();
+		for (AActor* Actor : Actors)
+		{
+			if (ATopDownCameraActor* TopdownCam = Cast<ATopDownCameraActor>(Actor))
+			{
+				TopdownCam->ActiveNameCard(bActive);
+				return;
+			}
+		}
+	};
 
 
 	UE_LOG_INFO("Lua core types registered (Vector, Quaternion, Actor, OverlapInfo, PrimitiveComponent)");

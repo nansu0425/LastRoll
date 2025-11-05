@@ -3,6 +3,8 @@
 #include "Component/Camera/Public/CameraComponent.h"
 #include "Component/Public/SceneComponent.h"
 #include "Component/Public/SpringArmComponent.h"
+#include "Component/Public/BillboardComponent.h"
+#include "Manager/Asset/Public/AssetManager.h"
 
 IMPLEMENT_CLASS(ATopDownCameraActor, AActor)
 
@@ -16,7 +18,7 @@ ATopDownCameraActor::ATopDownCameraActor()
     SpringArmComponent->SetCanEverTick(true);
     // CameraComponent 생성
     CameraComponent = CreateDefaultSubobject<UCameraComponent>();
-
+    BillboardComponent = CreateDefaultSubobject<UBillBoardComponent>();
     bCanEverTick = true;  // Tick 활성화 (Player 추적용)
 }
 
@@ -39,12 +41,14 @@ void ATopDownCameraActor::InitializeComponents()
         UE_LOG_ERROR("ATopDownCameraActor::InitializeComponents - RootComponent가 null입니다!");
         return;
     }
-
+    BillboardComponent->SetSprite(UAssetManager::GetInstance().LoadTexture("Data/Icons/Team7NameCard.png"));
     // CameraComponent를 루트에 부착
     if (CameraComponent)
     {
         SpringArmComponent->AttachToComponent(RootComp);
         CameraComponent->AttachToComponent(SpringArmComponent);
+        BillboardComponent->AttachToComponent(CameraComponent);
+        BillboardComponent->SetRelativeLocation(FVector(1.4f, 0.0f, 0.7f));
 
         // 카메라 파라미터 설정
         CameraComponent->SetFieldOfView(90.0f);
@@ -68,6 +72,13 @@ void ATopDownCameraActor::BeginPlay()
         CameraComponent = Cast<UCameraComponent>(GetComponentByClass(UCameraComponent::StaticClass()));
     }
 }
+
+void ATopDownCameraActor::ActiveNameCard(const bool bActive)
+{
+    //슈퍼듀퍼하드코딩렛츠고
+    BillboardComponent->SetRelativeLocation(bActive ? FVector(1.4f, 0.0f, 0.7f) : FVector(10000, 10000, 10000));
+}
+
 
 void ATopDownCameraActor::Tick(float DeltaTime)
 {

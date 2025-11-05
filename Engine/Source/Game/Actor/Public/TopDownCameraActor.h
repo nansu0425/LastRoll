@@ -3,6 +3,7 @@
 
 class USpringArmComponent;
 class UCameraComponent;
+class UBillBoardComponent;
 
 /**
  * @brief Top-down view 카메라 액터
@@ -25,6 +26,8 @@ public:
     virtual void InitializeComponents() override;
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
+
+    void ActiveNameCard(const bool bActive);
 
     /**
      * @brief 추적할 타겟 액터 설정
@@ -56,6 +59,7 @@ public:
     FVector GetRotation() const;
 
 private:
+    UBillBoardComponent* BillboardComponent = nullptr;
     USpringArmComponent* SpringArmComponent = nullptr;
     UCameraComponent* CameraComponent = nullptr;
     AActor* FollowTarget = nullptr;  // 추적할 타겟 (Player)

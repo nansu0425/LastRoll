@@ -3,6 +3,8 @@
 #include "Editor/Public/Camera.h"
 #include "Render/Renderer/Public/RenderResourceFactory.h"
 #include "Texture/Public/Texture.h"
+#include "Actor/Public/PlayerCameraManager.h"
+#include "Level/Public/World.h"
 
 FBillboardPass::FBillboardPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferCamera, ID3D11Buffer* InConstantBufferModel,
                                ID3D11VertexShader* InVS, ID3D11PixelShader* InPS, ID3D11InputLayout* InLayout, ID3D11DepthStencilState* InDS, ID3D11BlendState* InBS)
@@ -43,10 +45,21 @@ void FBillboardPass::Execute(FRenderingContext& Context)
 
     std::vector<FDistanceSortedBillboard> SortedBillboards;
     FVector CameraLocation = Context.CurrentCamera->GetLocation();
+    FVector CameraForward = Context.CurrentCamera->GetForward();
+    if (GWorld && (GWorld->GetWorldType() == EWorldType::PIE || GWorld->GetWorldType() == EWorldType::Game))
+    {
+        APlayerCameraManager* CameraManager = GWorld->GetCameraManager();
+        if (CameraManager)
+        {
+            CameraLocation = CameraManager->GetActorLocation();
+            FMatrix View = CameraManager->GetCameraConstants().View;
+            CameraForward = FVector(View.Data[0][2], View.Data[1][2], View.Data[2][2]);
+        }
+    }
 
     for (UBillBoardComponent* BillBoardComp : Context.BillBoards)
     {
-        BillBoardComp->FaceCamera(Context.CurrentCamera->GetForward());
+        BillBoardComp->FaceCamera(CameraForward);
         FVector BillboardLocation = BillBoardComp->GetWorldLocation();
         float DistanceSq = FVector::DistSquared(CameraLocation, BillboardLocation);
         SortedBillboards.push_back({ BillBoardComp, DistanceSq });
