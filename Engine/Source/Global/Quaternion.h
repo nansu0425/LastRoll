@@ -35,4 +35,8 @@ struct FQuaternion
 	FVector GetRight() const;
 	FVector GetUp() const;
 
+	static FQuaternion Slerp(const FQuaternion& Q1, const FQuaternion& Q2, float T);
+	static FQuaternion SlerpFullPath(const FQuaternion& Q1, const FQuaternion& Q2, float T);
+	float Dot(const FQuaternion& Q) const;
+
 };

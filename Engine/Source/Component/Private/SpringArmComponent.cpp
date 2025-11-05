@@ -11,129 +11,86 @@ USpringArmComponent::USpringArmComponent()
 
 void USpringArmComponent::BeginPlay()
 {
-	CurLagLocation = GetWorldLocation();
+	PrevWorldLocation = GetWorldLocation();
 }
-
 
 void USpringArmComponent::TickComponent(float DeltaTime)
 {
 	Super::TickComponent(DeltaTime);
-	MarkAsDirty();
-	if (bLocationLag) 
+	bIsTransformDirty = true;
+	bIsTransformDirtyInverse = true;
+	FVector CurWorldLocation = GetWorldLocation();
+	FVector CurLerpMoveDis = FVector::LinearEXPLerpVt3(LagLocation, CurWorldLocation, LocationLagLinearLerpInterpolation, LocationLagSpeed) - LagLocation;
+	LagLocation += CurLerpMoveDis;
+	UE_LOG("Lerp : %f,%f,%f , Lag : %f, %f, %f " , CurLerpMoveDis.X, CurLerpMoveDis.Y, CurLerpMoveDis.Z,
+		LagLocation.X,LagLocation.Y,LagLocation.Z);
+	for (USceneComponent* Child : AttachChildren)
 	{
-		CurLagLocation = FVector::LinearEXPLerpVt3(CurLagLocation, GetDestination(), LocationLagLinearLerpInterpolation, LocationLagSpeed);
+		//부모가 이동하면 따라오는 자동 이동으로 인해 현재위치에서 빼야함
+		Child->bIsTransformDirty = true;
+		Child->bIsTransformDirtyInverse = true;
+
+		Child->SetWorldLocation(LagLocation + GetSpringArmOffset());
+
 	}
+	PrevWorldLocation = CurWorldLocation;
 }
 
 
+const FMatrix& USpringArmComponent::GetWorldTransformMatrix() const
+{
+	if (bIsTransformDirty)
+	{
+		WorldTransformMatrix = FMatrix::GetModelMatrix(RelativeLocation, RelativeRotation, RelativeScale3D);
+
+		if (AttachParent)
+		{
+			WorldTransformMatrix *= AttachParent->GetWorldTransformMatrix();
+		}
+
+		WorldTransformMatrix *= FMatrix::TranslationMatrix(GetSpringArmOffset());
+		bIsTransformDirty = false;
+	}
+
+	return WorldTransformMatrix;
+}
+
+const FMatrix& USpringArmComponent::GetWorldTransformMatrixInverse() const
+{
+	if (bIsTransformDirtyInverse)
+	{
+		if (AttachParent)
+		{
+			WorldTransformMatrixInverse *= AttachParent->GetWorldTransformMatrixInverse();
+		}
+
+		WorldTransformMatrixInverse = WorldTransformMatrix.Inverse();
+
+		bIsTransformDirtyInverse = false;
+	}
+
+	return WorldTransformMatrixInverse;
+}
+FVector USpringArmComponent::GetWorldLocation() const
+{
+	return GetWorldTransformMatrix().GetLocation() - GetSpringArmOffset();
+}
+
+
+//크기 적용 필요
 FVector USpringArmComponent::GetSpringArmOffset() const
 {
 	FVector CurTargetOffset = TargetOffset;
 	FQuaternion CurQuat = GetWorldRotationAsQuaternion();
 	FMatrix CurRotationMatrix = CurQuat.ToRotationMatrix();
+	//FMatrix CurScaleMatrix = FMatrix::ScaleMatrix(GetWorldScale3D()); 오류나는데 시간없어서 넘김
 	FVector Forward = CurQuat.GetForward();
 	FVector TargetArmOffset = -Forward * TargetArmLength;
+	//FVector CurSocketOffset = (FMatrix::TranslationMatrix(SocketOffset) * CurScaleMatrix * CurRotationMatrix).GetLocation();
 	FVector CurSocketOffset = (FMatrix::TranslationMatrix(SocketOffset) * CurRotationMatrix).GetLocation();
 	return CurTargetOffset + CurSocketOffset + TargetArmOffset;
 }
 
-FVector USpringArmComponent::GetDestination() const
-{
-	return GetDestinationMatrix().GetLocation();
-}
-
-FMatrix USpringArmComponent::GetDestinationMatrix() const
-{
-	if (bIsTransformDirty)
-	{
-		WorldTransformMatrix = FMatrix::GetModelMatrix(RelativeLocation, RelativeRotation, RelativeScale3D);
-
-		if (AttachParent)
-		{
-			WorldTransformMatrix *= AttachParent->GetWorldTransformMatrix();
-		}
-
-		WorldTransformMatrix *= FMatrix::CreateTranslation(GetSpringArmOffset());
-		bIsTransformDirty = false;
-	}
-
-	return WorldTransformMatrix;
-}
-
-
-const FMatrix& USpringArmComponent::GetWorldTransformMatrix() const
-{ 
-	if (bIsTransformDirty)
-	{
-		WorldTransformMatrix = FMatrix::GetModelMatrix(RelativeLocation, RelativeRotation, RelativeScale3D);
-
-		if (AttachParent)
-		{
-			WorldTransformMatrix *= AttachParent->GetWorldTransformMatrix();
-		}
-
-		WorldTransformMatrix *= FMatrix::CreateTranslation(GetSpringArmOffset());
-		bIsTransformDirty = false;
-	}
-
-	return WorldTransformMatrix;
-}
-const FMatrix& USpringArmComponent::GetWorldTransformMatrixInverse() const
-{ 
-	if (bIsTransformDirtyInverse)
-	{
-		WorldTransformMatrixInverse = GetWorldTransformMatrix().Inverse();
-	}
-
-
-	return WorldTransformMatrixInverse;
-}
-
-FVector USpringArmComponent::GetWorldLocation() const
-{ 
-	return GetWorldTransformMatrix().GetLocation();
-}
-FVector USpringArmComponent::GetWorldRotation() const
-{
-	return GetWorldRotationAsQuaternion().ToEuler();
-}
-FQuaternion USpringArmComponent::GetWorldRotationAsQuaternion() const
-{
-	if (AttachParent)
-	{
-		return RelativeRotation * AttachParent->GetWorldRotationAsQuaternion();
-	}
-	return RelativeRotation;
-}
-
-void USpringArmComponent::SetWorldLocation(const FVector& NewLocation)
-{
-	if (AttachParent)
-	{
-		const FMatrix ParentWorldMatrixInverse = AttachParent->GetWorldTransformMatrixInverse();
-		SetRelativeLocation(ParentWorldMatrixInverse.TransformPosition(NewLocation));
-	}
-	else
-	{
-		SetRelativeLocation(NewLocation);
-	}
-	if (bLocationLag == false)
-	{
-		CurLagLocation = NewLocation;
-	}
-}
-void USpringArmComponent::SetWorldRotation(const FQuaternion& NewRotation)
-{
-	if (AttachParent)
-	{
-		FQuaternion ParentWorldRotationQuat = AttachParent->GetWorldRotationAsQuaternion();
-		SetRelativeRotation(NewRotation * ParentWorldRotationQuat.Inverse());
-	}
-	else
-	{
-		SetRelativeRotation(NewRotation);
-	}
-}
 void USpringArmComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 {
 	Super::Serialize(bInIsLoading, InOutHandle);
@@ -174,4 +131,30 @@ void USpringArmComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 UClass* USpringArmComponent::GetSpecificWidgetClass() const
 {
 	return USpringArmComponentWidget::StaticClass();
+}
+UObject* USpringArmComponent::Duplicate()
+{
+	USpringArmComponent* SpringArmComp = Cast<USpringArmComponent>(Super::Duplicate());
+
+	SpringArmComp->TargetArmLength = TargetArmLength;
+	SpringArmComp->SocketOffset = SocketOffset;
+	SpringArmComp->TargetOffset = TargetOffset;
+	SpringArmComp->bUsePawnControlRotation = bUsePawnControlRotation;
+	SpringArmComp->bLocationLag = bLocationLag;
+	SpringArmComp->LocationLagLinearLerpInterpolation = LocationLagLinearLerpInterpolation;
+	SpringArmComp->LocationLagSpeed = LocationLagSpeed;
+	SpringArmComp->bRotationLag = bRotationLag;
+	SpringArmComp->RotationLagLinearLerpInterpolation = RotationLagLinearLerpInterpolation;
+	SpringArmComp->RotationLagSpeed = RotationLagSpeed;
+	SpringArmComp->bInHeritPitch = bInHeritPitch;
+	SpringArmComp->bInHeritYaw = bInHeritYaw;
+	SpringArmComp->bInHeritRoll = bInHeritRoll;
+	SpringArmComp->LagLocation = GetWorldLocation();
+
+	return SpringArmComp;
+}
+
+void USpringArmComponent::DuplicateSubObjects(UObject* DuplicatedObject)
+{
+	Super::DuplicateSubObjects(DuplicatedObject);
 }

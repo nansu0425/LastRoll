@@ -196,9 +196,9 @@ inline float EXPLerp(const float Start, const float End, const float Interpolati
 }
 inline float LinearEXPLerp(const float Start, const float End, const float LinearFactor, const float Interpolation)
 {
-	float Linear = LinearLerp(Start, End, LinearFactor);
-	float Exp = EXPLerp(Start, End, LinearFactor);
-	return LinearFactor * Linear + (LinearFactor - 1) * Exp;
+	float Linear = LinearLerp(Start, End, Interpolation);
+	float Exp = EXPLerp(Start, End, Interpolation);
+	return LinearFactor * Linear + (1 - LinearFactor) * Exp;
 }
 inline float Dot(const FVector& A, const FVector& B)
 {

@@ -36,13 +36,13 @@ public:
 	const virtual FMatrix& GetWorldTransformMatrixInverse() const;
 
 	virtual FVector GetWorldLocation() const;
-	virtual FVector GetWorldRotation() const;
-	virtual FQuaternion GetWorldRotationAsQuaternion() const;
+	FVector GetWorldRotation() const;
+	FQuaternion GetWorldRotationAsQuaternion() const;
     FVector GetWorldScale3D() const;
 
-	virtual void SetWorldLocation(const FVector& NewLocation);
-	virtual void SetWorldRotation(const FVector& NewRotation);
-	virtual void SetWorldRotation(const FQuaternion& NewRotation);
+	void SetWorldLocation(const FVector& NewLocation);
+	void SetWorldRotation(const FVector& NewRotation);
+	void SetWorldRotation(const FQuaternion& NewRotation);
     void SetWorldScale3D(const FVector& NewScale);
 
 private:
