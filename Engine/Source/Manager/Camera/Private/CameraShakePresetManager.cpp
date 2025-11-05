@@ -19,10 +19,29 @@ void UCameraShakePresetManager::Initialize()
 {
 	UE_LOG("CameraShakePresetManager: Initializing");
 
-	// 기본 Preset 생성
+	// CameraShakePresets.json 파일이 있는지 확인
+	UPathManager& PathManager = UPathManager::GetInstance();
+	path PresetFilePath = PathManager.GetEngineDataPath() / "CameraShakePresets.json";
+
+	if (exists(PresetFilePath))
+	{
+		// 파일이 있으면 로드
+		UE_LOG("CameraShakePresetManager: Found existing preset file, loading...");
+		if (LoadPresetsFromFile("CameraShakePresets.json"))
+		{
+			UE_LOG_SUCCESS("CameraShakePresetManager: Initialized with %d presets from file", static_cast<int32>(Presets.size()));
+			return;
+		}
+		else
+		{
+			UE_LOG_WARNING("CameraShakePresetManager: Failed to load preset file, using default presets");
+		}
+	}
+
+	// 파일이 없거나 로드 실패 시 기본 Preset 생성
 	CreateDefaultPresets();
 
-	UE_LOG_SUCCESS("CameraShakePresetManager: Initialized with %d presets", static_cast<int32>(Presets.size()));
+	UE_LOG_SUCCESS("CameraShakePresetManager: Initialized with %d default presets", static_cast<int32>(Presets.size()));
 }
 
 void UCameraShakePresetManager::CreateDefaultPresets()
