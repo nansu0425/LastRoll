@@ -56,7 +56,11 @@ void UDeviceResources::CreateDeviceAndSwapChain(HWND InWindowHandle)
 	SwapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT; // 렌더 타겟으로 사용
 	SwapChainDescription.BufferCount = 2; // 더블 버퍼링
 	SwapChainDescription.OutputWindow = InWindowHandle; // 렌더링할 창 핸들
+#ifdef GAME_BUILD
+	SwapChainDescription.Windowed = FALSE; 
+#else
 	SwapChainDescription.Windowed = TRUE; // 창 모드
+#endif
 	SwapChainDescription.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // 스왑 방식
 
 	// Direct3D 장치와 스왑 체인을 생성

@@ -814,6 +814,14 @@ void URenderer::Update()
 			continue;
 		}
 
+#ifdef GAME_BUILD
+    	const D3D11_VIEWPORT& LocalViewport = DeviceResources->GetViewportInfo();
+    	GetDeviceContext()->RSSetViewports(1, &LocalViewport);
+    	Viewport->SetRenderRect(LocalViewport);
+    	UCamera* CurrentCamera = Viewport->GetViewportClient()->GetCamera();
+
+    	CurrentCamera->Update(LocalViewport);
+#else
     	FRect SingleWindowRect = Viewport->GetRect();
     	const int32 ViewportToolBarHeight = 32;
     	D3D11_VIEWPORT LocalViewport = { (float)SingleWindowRect.Left,(float)SingleWindowRect.Top + ViewportToolBarHeight, (float)SingleWindowRect.Width, (float)SingleWindowRect.Height - ViewportToolBarHeight, 0.0f, 1.0f };
@@ -822,6 +830,7 @@ void URenderer::Update()
         UCamera* CurrentCamera = Viewport->GetViewportClient()->GetCamera();
 
         CurrentCamera->Update(LocalViewport);
+#endif
 
         // Camera constant buffer update moved to RenderLevel()
         // (Allows PIE mode to use PlayerCameraManager instead of EditorCamera)
