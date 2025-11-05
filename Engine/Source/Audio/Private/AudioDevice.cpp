@@ -15,7 +15,7 @@ FAudioDevice::~FAudioDevice()
 
 bool FAudioDevice::Initialize()
 {
-    HRESULT HResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    HRESULT HResult = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(HResult)) return false;
 
     XAudio2 = nullptr;
