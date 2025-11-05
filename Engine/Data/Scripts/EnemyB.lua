@@ -81,6 +81,9 @@ function BeginPlay()
     obj.DeathSpinAxis = Vector(1, 0, 0)
     -- ================================================
 
+    obj.HitSound = GetAudioComponentByName("knight.wav")
+    obj.DeathSound = GetAudioComponentByName("knight_death.wav")
+    
     -- Overlap 델리게이트 바인딩
     local SphereComp = Owner:GetComponent("USphereComponent")
     if SphereComp then
@@ -119,6 +122,8 @@ function TakeDamage(InDamage)
     Dir:Normalize()
     obj.KnockbackDir = Dir
     obj.KnockbackDis = 3
+    
+    obj.HitSound:Play()
 
     if obj.HP <= 0 then
         Die()
@@ -133,6 +138,8 @@ function Die()
     obj.IsDying = true
     obj.MoveState = "Idle" -- 이동 정지
     obj.CurrentSpeed = 0
+    
+    obj.DeathSound:Play()
     
     local UpwardForce = Vector(0, 0, obj.DeathInitialFlySpeed)
     local OutwardForce = obj.KnockbackDir * (obj.DeathInitialFlySpeed * 0.5)
