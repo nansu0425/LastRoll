@@ -19,6 +19,8 @@ public:
     virtual void InitializeComponents() override;
 
 protected:
+    UAudioComponent* HitAudioComponent;
+    UAudioComponent* DeathAudioComponent;
     UScriptComponent* EnemyScriptComponent = nullptr;
     USphereComponent* SphereCollider = nullptr;
 };

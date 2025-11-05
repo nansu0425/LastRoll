@@ -28,6 +28,8 @@ function BeginPlay()
     obj.Rotation = Quaternion(0, 0, 0, 1)
     obj.CurRotZ = 90
     obj.ToPlayerDirXY = Vector2(0,0)
+    obj.HitSound = GetAudioComponentByName("knight.wav")
+    obj.DeathSound = GetAudioComponentByName("knight_death.wav")
 
     -- ========== 체스 말 이동 로직용 변수 추가 ==========
     obj.StepDistance = 14.0          -- 한 번의 "홉(hop)"으로 이동할 거리
@@ -101,6 +103,8 @@ function TakeDamage(InDamage)
     obj.KnockbackDir = Dir
     obj.KnockbackDis = 3
     --print("Enemy HP: " .. obj.HP .. " / " .. obj.MaxHP)
+    
+    obj.HitSound:Play()
 
     -- 사망 처리
     if obj.HP <= 0 then
@@ -121,6 +125,8 @@ function Die()
     
     obj.MoveState = "Idle"
     obj.MoveTimer = 0
+    
+    obj.DeathSound:Play()
     
     local UpwardForce = Vector(0, 0, obj.DeathInitialFlySpeed)
     

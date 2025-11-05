@@ -20,14 +20,14 @@ USoundWave::~USoundWave()
     ClearData();
 }
 
-bool USoundWave::LoadFromFile(const FString& InFileName)
+bool USoundWave::LoadFromFile(const FString& InFilePath)
 {
     ClearData();
 
-    std::ifstream File(InFileName, std::ios::binary);
+    std::ifstream File(InFilePath, std::ios::binary);
     if (!File.is_open())
     {
-        UE_LOG_ERROR("파일을 여는데 실패했습니다: %s", InFileName.c_str());
+        UE_LOG_ERROR("파일을 여는데 실패했습니다: %s", InFilePath.c_str());
         return false;
     }
 
@@ -86,6 +86,8 @@ bool USoundWave::LoadFromFile(const FString& InFileName)
         return false;
     }
     File.close();
+
+    FileName = GetFileName(InFilePath); 
     return true;
 }
 
@@ -141,4 +143,15 @@ void USoundWave::ClearData()
     }
     WaveDataSize = 0;
     ZeroMemory(&WaveFormat, sizeof(WaveFormat));
+}
+
+FString USoundWave::GetFileName(const FString& InFilePath)
+{
+    FString Key = "Audio\\";
+    size_t Pos = InFilePath.find(Key);
+    if (Pos != FString::npos)
+    {
+        return InFilePath.substr(Pos + Key.size());
+    }
+    return InFilePath;
 }

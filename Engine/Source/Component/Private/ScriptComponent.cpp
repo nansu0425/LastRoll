@@ -316,6 +316,17 @@ void UScriptComponent::SetInstanceTable(const sol::table GlobalTable)
 		};
 		InstanceEnv["GetAudioComponentByName"] = [this](const FString& ComponentName) -> UAudioComponent*
 		{
+			AActor* Owner = GetOwner();
+			for (UActorComponent* ActorComponent : Owner->GetOwnedComponents())
+			{
+				if (UAudioComponent* AudioComponent = Cast<UAudioComponent>(ActorComponent))
+				{
+					if (AudioComponent->Sound->FileName == ComponentName)
+					{
+						return AudioComponent;
+					}
+				}
+			}
 			return nullptr;
 		};
 

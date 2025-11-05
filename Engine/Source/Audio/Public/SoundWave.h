@@ -10,9 +10,11 @@ public:
 
     virtual ~USoundWave();
 
-    bool LoadFromFile(const FString& InFileName);
+    bool LoadFromFile(const FString& InFilePath);
 
 public:
+    FString FileName;
+    
     /** XAudio2 포맷 정보 */
     WAVEFORMATEX WaveFormat;
 
@@ -28,4 +30,6 @@ private:
     bool ReadChunkData(std::ifstream& InFile, void* InBuffer, DWORD InBufferSize, DWORD InBufferPos);
 
     void ClearData();
+
+    FString GetFileName(const FString& InFilePath);
 };

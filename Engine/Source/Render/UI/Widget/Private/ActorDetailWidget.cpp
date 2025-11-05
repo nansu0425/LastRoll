@@ -885,7 +885,7 @@ void UActorDetailWidget::RenderTransformEdit()
 		ImGui::PushID("AudioComponent");
 
 		// Sound selection
-		FString PreviewName = AudioComp->Sound ? AudioComp->Sound->GetName().ToString() : "None";
+		FString PreviewName = AudioComp->Sound ? AudioComp->Sound->FileName.c_str() : "None";
 		if (ImGui::BeginCombo("Sound", PreviewName.c_str()))
 		{
 			const auto& SoundCache = UAssetManager::GetInstance().GetSoundCache();
@@ -895,7 +895,7 @@ void UActorDetailWidget::RenderTransformEdit()
 				if (!SoundInList) continue;
 
 				const bool bIsSelected = (AudioComp->Sound == SoundInList);
-				if (ImGui::Selectable(SoundInList->GetName().ToString().c_str(), bIsSelected))
+				if (ImGui::Selectable(SoundInList->FileName.c_str(), bIsSelected))
 				{
 					AudioComp->Sound = SoundInList;
 				}
