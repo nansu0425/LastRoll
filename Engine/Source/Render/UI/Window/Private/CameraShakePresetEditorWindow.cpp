@@ -18,7 +18,7 @@ UCameraShakePresetEditorWindow::UCameraShakePresetEditorWindow()
 	: SelectedPresetName(FName(""))
 	, bShowAddDialog(false)
 	, bShowRemoveDialog(false)
-	, DefaultPresetsFilePath("Engine/Data/CameraShakePresets.json")
+	, DefaultPresetsFilePath("CameraShakePresets.json")
 {
 	FUIWindowConfig Config;
 	Config.WindowTitle = "Camera Shake Preset Editor";

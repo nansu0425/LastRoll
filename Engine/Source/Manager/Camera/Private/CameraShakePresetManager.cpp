@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Manager/Camera/Public/CameraShakePresetManager.h"
 #include "Component/Camera/Public/CameraModifier_CameraShake.h"
+#include "Manager/Path/Public/PathManager.h"
 #include <json.hpp>
 #include <fstream>
 
@@ -69,14 +70,34 @@ bool UCameraShakePresetManager::LoadPresetsFromFile(const FString& FilePath)
 {
 	try
 	{
-		// JSON 파일 로드
-		json::JSON RootJSON = json::JSON::Load(FilePath);
+		// 절대 경로 구성 (EngineDataPath 사용)
+		UPathManager& PathManager = UPathManager::GetInstance();
+		path FullPath = PathManager.GetEngineDataPath() / FilePath;
+
+		UE_LOG("CameraShakePresetManager: Loading from %s", FullPath.string().c_str());
+
+		// 파일 읽기
+		std::ifstream File(FullPath.string());
+		if (!File.is_open())
+		{
+			UE_LOG_ERROR("CameraShakePresetManager: Failed to open file for reading: %s", FullPath.string().c_str());
+			return false;
+		}
+
+		FString FileContent((std::istreambuf_iterator<char>(File)), std::istreambuf_iterator<char>());
+		File.close();
+
+		// JSON 파싱
+		json::JSON RootJSON = json::JSON::Load(FileContent);
 
 		if (!RootJSON.hasKey("Presets"))
 		{
-			UE_LOG_WARNING("CameraShakePresetManager: Invalid JSON format (missing 'Presets' key)");
+			UE_LOG_ERROR("CameraShakePresetManager: Invalid JSON format (missing 'Presets' key)");
 			return false;
 		}
+
+		// 기존 Preset 클리어
+		ClearAllPresets();
 
 		// Preset 배열 로드
 		auto& PresetArray = RootJSON["Presets"];
@@ -90,7 +111,7 @@ bool UCameraShakePresetManager::LoadPresetsFromFile(const FString& FilePath)
 			LoadedCount++;
 		}
 
-		UE_LOG_SUCCESS("CameraShakePresetManager: Loaded %d presets from %s", LoadedCount, FilePath.c_str());
+		UE_LOG_SUCCESS("CameraShakePresetManager: Loaded %d presets from %s", LoadedCount, FullPath.string().c_str());
 		return true;
 	}
 	catch (const std::exception& e)
@@ -104,6 +125,12 @@ bool UCameraShakePresetManager::SavePresetsToFile(const FString& FilePath)
 {
 	try
 	{
+		// 절대 경로 구성 (EngineDataPath 사용)
+		UPathManager& PathManager = UPathManager::GetInstance();
+		path FullPath = PathManager.GetEngineDataPath() / FilePath;
+
+		UE_LOG("CameraShakePresetManager: Saving to %s", FullPath.string().c_str());
+
 		// JSON 루트 생성
 		json::JSON RootJSON;
 		json::JSON PresetArray = json::Array();
@@ -119,17 +146,17 @@ bool UCameraShakePresetManager::SavePresetsToFile(const FString& FilePath)
 		RootJSON["Presets"] = PresetArray;
 
 		// 파일 쓰기
-		std::ofstream File(FilePath.c_str());
+		std::ofstream File(FullPath.string().c_str());
 		if (!File.is_open())
 		{
-			UE_LOG_ERROR("CameraShakePresetManager: Failed to open file for writing: %s", FilePath.c_str());
+			UE_LOG_ERROR("CameraShakePresetManager: Failed to open file for writing: %s", FullPath.string().c_str());
 			return false;
 		}
 
 		File << RootJSON.dump(4); // 들여쓰기 4칸
 		File.close();
 
-		UE_LOG_SUCCESS("CameraShakePresetManager: Saved %d presets to %s", static_cast<int32>(Presets.size()), FilePath.c_str());
+		UE_LOG_SUCCESS("CameraShakePresetManager: Saved %d presets to %s", static_cast<int32>(Presets.size()), FullPath.string().c_str());
 		return true;
 	}
 	catch (const std::exception& e)

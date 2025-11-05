@@ -84,7 +84,7 @@ private:
 	char NewPresetNameBuffer[128];  // 새 Preset 이름 입력 버퍼
 
 	// 파일 경로
-	FString DefaultPresetsFilePath; // 기본 Preset 파일 경로 ("Engine/Data/CameraShakePresets.json")
+	FString DefaultPresetsFilePath; // 기본 Preset 파일 경로 (EngineDataPath 기준, 예: "CameraShakePresets.json")
 
 	// 임시 카메라 액터 (ViewTarget 설정용)
 	AActor* TempCameraActor = nullptr;
