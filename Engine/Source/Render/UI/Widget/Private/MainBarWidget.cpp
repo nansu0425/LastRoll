@@ -526,14 +526,27 @@ void UMainBarWidget::RenderToolsMenu()
 
 		if (ImGui::MenuItem("Camera Shake Presets"))
 		{
-			// Camera Shake Preset Editor 윈도우 생성 및 등록
 			auto& UIManager = UUIManager::GetInstance();
-			UCameraShakePresetEditorWindow* PresetEditor = UUIWindowFactory::CreateCameraShakePresetEditorWindow();
-			if (PresetEditor)
+
+			// 이미 존재하는 창 찾기
+			UUIWindow* ExistingWindow = UIManager.FindUIWindow(FName("Camera Shake Preset Editor"));
+
+			if (ExistingWindow)
 			{
-				UIManager.RegisterUIWindow(PresetEditor);
-				PresetEditor->SetWindowState(EUIWindowState::Visible);
-				UE_LOG("MainBarWidget: Camera Shake Preset Editor 열림");
+				// 이미 창이 있으면 표시만
+				ExistingWindow->SetWindowState(EUIWindowState::Visible);
+				UE_LOG("MainBarWidget: Camera Shake Preset Editor 활성화");
+			}
+			else
+			{
+				// 없으면 새로 생성
+				UCameraShakePresetEditorWindow* PresetEditor = UUIWindowFactory::CreateCameraShakePresetEditorWindow();
+				if (PresetEditor)
+				{
+					UIManager.RegisterUIWindow(PresetEditor);
+					PresetEditor->SetWindowState(EUIWindowState::Visible);
+					UE_LOG("MainBarWidget: Camera Shake Preset Editor 생성");
+				}
 			}
 		}
 

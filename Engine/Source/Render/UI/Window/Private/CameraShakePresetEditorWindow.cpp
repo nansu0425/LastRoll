@@ -50,9 +50,9 @@ void UCameraShakePresetEditorWindow::Initialize()
 	UE_LOG("CameraShakePresetEditorWindow: Initialized");
 }
 
-void UCameraShakePresetEditorWindow::OnPreRenderWindow(float MenuBarOffset)
+void UCameraShakePresetEditorWindow::RenderWidget()
 {
-	Super::OnPreRenderWindow(MenuBarOffset);
+	Super::RenderWidget();
 	UCameraShakePresetManager& PresetManager = UCameraShakePresetManager::GetInstance();
 
 	// 레이아웃: 좌우 분할 + 하단 버튼

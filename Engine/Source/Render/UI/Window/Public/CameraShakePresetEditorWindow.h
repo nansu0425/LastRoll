@@ -36,7 +36,7 @@ public:
 
 	// UUIWindow 오버라이드
 	virtual void Initialize() override;
-	virtual void OnPreRenderWindow(float MenuBarOffset) override;
+	virtual void RenderWidget() override;
 
 private:
 	/**
