@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Component/Camera/Public/CameraModifier.h"
+#include "Global/Public/BezierCurve.h"
 
 /**
  * @brief 카메라 흔들림 패턴 타입
@@ -55,6 +56,10 @@ private:
 	FVector LastLocationOffset;   // 이전 프레임 위치 오프셋 (스무딩용)
 	FVector LastRotationOffset;   // 이전 프레임 회전 오프셋 (스무딩용)
 
+	// 베지어 곡선 기반 감쇠
+	FCubicBezierCurve DecayCurve; // 시간에 따른 감쇠 곡선 (X=시간비율, Y=진폭배율)
+	bool bUseDecayCurve;          // true면 DecayCurve 사용, false면 기본 감쇠 사용
+
 public:
 	UCameraModifier_CameraShake();
 	virtual ~UCameraModifier_CameraShake() override;
@@ -77,6 +82,25 @@ public:
 	);
 
 	/**
+	 * @brief Bezier 곡선 기반 감쇠를 사용하여 카메라 흔들림 시작
+	 *
+	 * @param InDuration 흔들림 지속 시간 (초)
+	 * @param InLocationAmplitude 위치 흔들림 강도 (월드 단위)
+	 * @param InRotationAmplitude 회전 흔들림 강도 (도)
+	 * @param InPattern 흔들림 패턴 타입
+	 * @param InFrequency 흔들림 주파수 (Hz). Sine 패턴에만 사용됨
+	 * @param InDecayCurve 감쇠 곡선 (X=정규화된 시간 [0,1], Y=진폭 배율 [0,1])
+	 */
+	void StartShakeWithCurve(
+		float InDuration,
+		float InLocationAmplitude,
+		float InRotationAmplitude,
+		ECameraShakePattern InPattern,
+		float InFrequency,
+		const FCubicBezierCurve& InDecayCurve
+	);
+
+	/**
 	 * @brief 흔들림 즉시 중지
 	 */
 	void StopShake();
@@ -85,6 +109,30 @@ public:
 	 * @brief 현재 흔들림이 활성화되어 있는지 확인
 	 */
 	bool IsShaking() const { return bIsShaking; }
+
+	// ===== Bezier Curve Getter/Setter =====
+
+	/**
+	 * @brief 현재 감쇠 곡선 가져오기
+	 */
+	const FCubicBezierCurve& GetDecayCurve() const { return DecayCurve; }
+
+	/**
+	 * @brief 감쇠 곡선 설정
+	 * @param InCurve 새로운 감쇠 곡선
+	 */
+	void SetDecayCurve(const FCubicBezierCurve& InCurve);
+
+	/**
+	 * @brief Bezier 곡선 감쇠 사용 여부
+	 */
+	bool IsUsingDecayCurve() const { return bUseDecayCurve; }
+
+	/**
+	 * @brief Bezier 곡선 감쇠 사용 여부 설정
+	 * @param bInUse true면 Bezier 곡선 사용, false면 기본 감쇠 사용
+	 */
+	void SetUseDecayCurve(bool bInUse) { bUseDecayCurve = bInUse; }
 
 	// UCameraModifier에서 오버라이드
 	virtual void Initialize(APlayerCameraManager* InOwner) override;
