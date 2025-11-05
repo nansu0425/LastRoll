@@ -13,6 +13,7 @@
 #include "Render/UI/Window/Public/EditorWindow.h"
 #include "Render/UI/Window/Public/ViewportClientWindow.h"
 #include "Render/UI/Window/Public/CameraShakeWindow.h"
+#include "Render/UI/Window/Public/CameraShakePresetEditorWindow.h"
 #include "Render/UI/Widget/Public/StatusBarWidget.h"
 
 UMainMenuWindow& UUIWindowFactory::CreateMainMenuWindow()
@@ -85,6 +86,13 @@ UViewportClientWindow* UUIWindowFactory::CreateViewportClientWindow(EUIDockDirec
 UCameraShakeWindow* UUIWindowFactory::CreateCameraShakeWindow(EUIDockDirection InDockDirection)
 {
 	auto* Window = NewObject<UCameraShakeWindow>();
+	Window->GetMutableConfig().DockDirection = InDockDirection;
+	return Window;
+}
+
+UCameraShakePresetEditorWindow* UUIWindowFactory::CreateCameraShakePresetEditorWindow(EUIDockDirection InDockDirection)
+{
+	auto* Window = NewObject<UCameraShakePresetEditorWindow>();
 	Window->GetMutableConfig().DockDirection = InDockDirection;
 	return Window;
 }

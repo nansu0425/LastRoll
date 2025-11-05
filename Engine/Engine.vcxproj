@@ -436,6 +436,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClInclude Include="Source\Editor\Public\ObjectPicker.h" />
     <ClInclude Include="Source\Global\Constant.h" />
     <ClInclude Include="Source\Global\CoreTypes.h" />
+    <ClInclude Include="Source\Global\Public\CameraShakeTypes.h" />
     <ClInclude Include="Source\Global\Enum.h" />
     <ClInclude Include="Source\Global\EnumReflection.h" />
     <ClInclude Include="Source\Global\Function.h" />
@@ -454,6 +455,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClInclude Include="Source\ImGui\imstb_truetype.h" />
     <ClInclude Include="Source\Level\Public\Level.h" />
     <ClInclude Include="Source\Manager\Asset\Public\AssetManager.h" />
+    <ClInclude Include="Source\Manager\Camera\Public\CameraShakePresetManager.h" />
     <ClInclude Include="Source\Manager\Config\Public\ConfigManager.h" />
     <ClInclude Include="Source\Manager\Input\Public\InputManager.h" />
     <ClInclude Include="Source\Manager\Path\Public\PathManager.h" />
@@ -717,7 +719,9 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClCompile Include="Source\Editor\Private\Grid.cpp" />
     <ClCompile Include="Source\Editor\Private\ObjectPicker.cpp" />
     <ClCompile Include="Source\Editor\Private\CameraShakeDetailPanel.cpp" />
+    <ClCompile Include="Source\Editor\Private\CameraShakePresetDetailPanel.cpp" />
     <ClCompile Include="Source\Global\BezierCurve.cpp" />
+    <ClCompile Include="Source\Global\CameraShakeTypes.cpp" />
     <ClCompile Include="Source\Global\CoreTypes.cpp" />
     <ClCompile Include="Source\Global\Matrix.cpp" />
     <ClCompile Include="Source\Global\Memory.cpp" />
@@ -731,6 +735,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClCompile Include="Source\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="Source\ImGui\ImGuiBezierEditor.cpp" />
     <ClCompile Include="Source\Level\Private\Level.cpp" />
+    <ClCompile Include="Source\Manager\Camera\Private\CameraShakePresetManager.cpp" />
     <ClCompile Include="Source\Manager\Config\Private\ConfigManager.cpp" />
     <ClCompile Include="Source\Manager\Input\Private\InputManager.cpp" />
     <ClCompile Include="Source\Manager\Path\Private\PathManager.cpp" />
@@ -809,6 +814,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClCompile Include="Source\Render\UI\Window\Private\OutlinerWindow.cpp" />
     <ClCompile Include="Source\Render\UI\Window\Private\DetailWindow.cpp" />
     <ClCompile Include="Source\Render\UI\Window\Private\CameraShakeWindow.cpp" />
+    <ClCompile Include="Source\Render\UI\Window\Private\CameraShakePresetEditorWindow.cpp" />
     <ClCompile Include="Source\Render\UI\Window\Private\UIWindow.cpp" />
     <ClCompile Include="Source\Render\UI\Window\Private\ViewportClientWindow.cpp" />
     <ClCompile Include="Source\Texture\Private\Material.cpp">

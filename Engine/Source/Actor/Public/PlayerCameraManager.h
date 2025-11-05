@@ -135,6 +135,18 @@ public:
 	 */
 	void ClearAllCameraModifiers();
 
+	// ===== 카메라 쉐이크 Preset API =====
+	/**
+	 * @brief Preset 이름으로 카메라 쉐이크 재생
+	 *
+	 * UCameraShakePresetManager에서 Preset을 찾아 카메라 쉐이크를 시작합니다.
+	 * UCameraModifier_CameraShake가 없으면 자동 생성합니다.
+	 *
+	 * @param PresetName 재생할 Preset 이름 (예: FName("Explosion"))
+	 * @return 성공적으로 재생되면 true, Preset이 없거나 실패하면 false
+	 */
+	bool PlayCameraShakePreset(FName PresetName);
+
 	// ===== 카메라 페이드 API =====
 	/**
 	 * @brief 카메라 페이드 효과 시작

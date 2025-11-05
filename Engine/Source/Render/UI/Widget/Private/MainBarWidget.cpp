@@ -4,6 +4,8 @@
 #include "Manager/UI/Public/UIManager.h"
 #include "Manager/UI/Public/ViewportManager.h"
 #include "Render/UI/Window/Public/UIWindow.h"
+#include "Render/UI/Factory/Public/UIWindowFactory.h"
+#include "Render/UI/Window/Public/CameraShakePresetEditorWindow.h"
 #include "Level/Public/Level.h"
 #include "Render/Renderer/Public/Renderer.h"
 
@@ -521,6 +523,20 @@ void UMainBarWidget::RenderToolsMenu()
 			URenderer::GetInstance().HotReloadShaders();
 			UE_LOG("Vertex Shader, PixelShader 핫 리로드 완료");
 		}
+
+		if (ImGui::MenuItem("Camera Shake Presets"))
+		{
+			// Camera Shake Preset Editor 윈도우 생성 및 등록
+			auto& UIManager = UUIManager::GetInstance();
+			UCameraShakePresetEditorWindow* PresetEditor = UUIWindowFactory::CreateCameraShakePresetEditorWindow();
+			if (PresetEditor)
+			{
+				UIManager.RegisterUIWindow(PresetEditor);
+				PresetEditor->SetWindowState(EUIWindowState::Visible);
+				UE_LOG("MainBarWidget: Camera Shake Preset Editor 열림");
+			}
+		}
+
 		ImGui::EndMenu();
 	}
 }
