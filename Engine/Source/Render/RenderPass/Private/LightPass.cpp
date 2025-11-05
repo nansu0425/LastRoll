@@ -11,22 +11,14 @@
 
 constexpr uint32 CSNumThread = 128;
 
-FLightPass::FLightPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferCamera, 
-	ID3D11InputLayout* InGizmoInputLayout, ID3D11VertexShader* InGizmoVS, ID3D11PixelShader* InGizmoPS,
-	ID3D11DepthStencilState* InGizmoDSS) :
+FLightPass::FLightPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferCamera) :
 	FRenderPass(InPipeline, InConstantBufferCamera, nullptr)
 {
 	FRenderResourceFactory::CreateComputeShader(L"Asset/Shader/ViewClusterCS.hlsl", &ViewClusterCS);
 	FRenderResourceFactory::CreateComputeShader(L"Asset/Shader/ClusteredLightCullingCS.hlsl", &ClusteredLightCullingCS);
-	FRenderResourceFactory::CreateComputeShader(L"Asset/Shader/ClusterGizmoSetCS.hlsl", &ClusterGizmoSetCS);
 
 	CreateOptionBuffers();
-	GizmoInputLayout = InGizmoInputLayout;
-	GizmoVS = InGizmoVS;
-	GizmoPS = InGizmoPS;
-	GizmoDSS = InGizmoDSS;
 	CameraConstantBuffer = InConstantBufferCamera;
-
 }
 void FLightPass::CreateOptionBuffers()
 {
@@ -48,10 +40,6 @@ void FLightPass::CreateOptionBuffers()
 	FRenderResourceFactory::CreateStructuredShaderResourceView(SpotLightIndicesRWStructuredBuffer, &SpotLightIndicesRWStructuredBufferSRV);
 	FRenderResourceFactory::CreateUnorderedAccessView(PointLightIndicesRWStructuredBuffer, &PointLightIndicesRWStructuredBufferUAV);
 	FRenderResourceFactory::CreateUnorderedAccessView(SpotLightIndicesRWStructuredBuffer, &SpotLightIndicesRWStructuredBufferUAV);
-
-	ClusterGizmoVertexRWStructuredBuffer = FRenderResourceFactory::CreateRWStructuredBuffer(28, (GetClusterCount() + 1) * 8);
-	FRenderResourceFactory::CreateUnorderedAccessView(ClusterGizmoVertexRWStructuredBuffer, &ClusterGizmoVertexRWStructuredBufferUAV);
-	FRenderResourceFactory::CreateStructuredShaderResourceView(ClusterGizmoVertexRWStructuredBuffer, &ClusterGizmoVertexRWStructuredBufferSRV);
 }
 
 void FLightPass::ReleaseOptionBuffers()
@@ -64,8 +52,6 @@ void FLightPass::ReleaseOptionBuffers()
 	SafeRelease(PointLightIndicesRWStructuredBufferUAV);
 	SafeRelease(SpotLightIndicesRWStructuredBufferSRV);
 	SafeRelease(SpotLightIndicesRWStructuredBufferUAV);
-	SafeRelease(ClusterGizmoVertexRWStructuredBufferUAV);
-	SafeRelease(ClusterGizmoVertexRWStructuredBufferSRV);
 
 	SafeRelease(ViewClusterInfoConstantBuffer);
 	SafeRelease(ClusterSliceInfoConstantBuffer);
@@ -76,7 +62,6 @@ void FLightPass::ReleaseOptionBuffers()
 	SafeRelease(ClusterAABBRWStructuredBuffer);
 	SafeRelease(PointLightIndicesRWStructuredBuffer);
 	SafeRelease(SpotLightIndicesRWStructuredBuffer);
-	SafeRelease(ClusterGizmoVertexRWStructuredBuffer);
 }
 bool FLightPass::IsChangeOption()
 {
@@ -243,54 +228,6 @@ void FLightPass::Execute(FRenderingContext& Context)
 	Pipeline->SetShaderResourceView(1, EShaderType::CS, nullptr);
 	Pipeline->SetShaderResourceView(2, EShaderType::CS, nullptr);
 
-	// 클러스터 기즈모 제작
-	if (bClusterGizmoSet == false) 
-	{
-		bClusterGizmoSet = true;
-		Pipeline->SetUnorderedAccessView(0, ClusterGizmoVertexRWStructuredBufferUAV);
-		Pipeline->SetShaderResourceView(0, EShaderType::CS, ClusterAABBRWStructuredBufferSRV);
-		Pipeline->SetShaderResourceView(1, EShaderType::CS, PointLightStructuredBufferSRV);
-		Pipeline->SetShaderResourceView(2, EShaderType::CS, SpotLightStructuredBufferSRV);
-		Pipeline->SetShaderResourceView(3, EShaderType::CS, PointLightIndicesRWStructuredBufferSRV);
-		Pipeline->SetShaderResourceView(4, EShaderType::CS, SpotLightIndicesRWStructuredBufferSRV);
-		Pipeline->DispatchCS(ClusterGizmoSetCS, ThreadGroupCount, 1, 1);
-		Pipeline->SetUnorderedAccessView(0, nullptr);
-		Pipeline->SetShaderResourceView(0, EShaderType::CS, nullptr);
-		Pipeline->SetShaderResourceView(1, EShaderType::CS, nullptr);
-		Pipeline->SetShaderResourceView(2, EShaderType::CS, nullptr);
-		Pipeline->SetShaderResourceView(3, EShaderType::CS, nullptr);
-		Pipeline->SetShaderResourceView(4, EShaderType::CS, nullptr);
-	}
-	
-	if (bRenderClusterGizmo) 
-	{
-		//클러스터 기즈모 출력
-		ID3D11RasterizerState* RS = FRenderResourceFactory::GetRasterizerState(FRenderState());
-		FPipelineInfo PipelineInfo = { nullptr, GizmoVS, RS, GizmoDSS, GizmoPS, nullptr, D3D11_PRIMITIVE_TOPOLOGY_LINELIST };
-		Pipeline->UpdatePipeline(PipelineInfo);
-		Pipeline->SetConstantBuffer(1, EShaderType::VS, ConstantBufferCamera);
-
-		Pipeline->SetShaderResourceView(0, EShaderType::VS, ClusterGizmoVertexRWStructuredBufferSRV);
-
-		URenderer& Renderer = URenderer::GetInstance();
-		const auto& DeviceResources = Renderer.GetDeviceResources();
-		ID3D11RenderTargetView* RTV = nullptr;
-		if (Renderer.GetFXAA())
-		{
-			RTV = DeviceResources->GetSceneColorRenderTargetView();
-		}
-		else
-		{
-			RTV = DeviceResources->GetRenderTargetView();
-		}
-		ID3D11RenderTargetView* RTVs[] = { RTV };
-		ID3D11DepthStencilView* DSV = DeviceResources->GetDepthStencilView();
-		Pipeline->SetRenderTargets(1, RTVs, DSV);
-		Pipeline->Draw((GetClusterCount() + 1) * 24, 0);
-		Pipeline->SetShaderResourceView(0, EShaderType::VS, nullptr);
-
-	}
-
 	// 다음 메쉬 드로우를 위한 빛 관련 정보 업로드
 	Pipeline->SetConstantBuffer(3, EShaderType::VS | EShaderType::PS, GlobalLightConstantBuffer);
 	Pipeline->SetConstantBuffer(4, EShaderType::VS | EShaderType::PS, ClusterSliceInfoConstantBuffer);
@@ -355,7 +292,6 @@ void FLightPass::Release()
 {
 	SafeRelease(ViewClusterCS);
 	SafeRelease(ClusteredLightCullingCS);
-	SafeRelease(ClusterGizmoSetCS);
 
 	ReleaseOptionBuffers();
 }

@@ -26,15 +26,7 @@ void FClusteredRenderingGridPass::Execute(FRenderingContext& Context)
     URenderer& Renderer = URenderer::GetInstance();
 
     //--- Detatch DSV from GPU ---//
-    ID3D11RenderTargetView* RTV;
-    if (!(Context.ShowFlags & EEngineShowFlags::SF_FXAA))
-    {
-        RTV = Renderer.GetDeviceResources()->GetRenderTargetView();
-    }
-    else
-    {
-        RTV = Renderer.GetDeviceResources()->GetSceneColorRenderTargetView();
-    }
+    ID3D11RenderTargetView* RTV = Renderer.GetDeviceResources()->GetFrameRenderTargetView();
     auto* DSV = Renderer.GetDeviceResources()->GetDepthStencilView();
     Renderer.GetDeviceContext()->OMSetRenderTargets(1, &RTV, nullptr);
 

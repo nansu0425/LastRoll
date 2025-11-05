@@ -69,9 +69,7 @@ void URenderer::Init(HWND InWindowHandle)
 	CreateDecalShader();
 	CreateFogShader();
 	CreateConstantBuffers();
-	CreateFXAAShader();
 	CreateStaticMeshShader();
-	CreateGizmoShader();
 	CreateClusteredRenderingGrid();
 	CreateDepthOnlyShader();
 	CreatePointLightShadowShader();
@@ -89,7 +87,7 @@ void URenderer::Init(HWND InWindowHandle)
 	// ShadowMapFilterPass = new FShadowMapFilterPass(ShadowMapPass, Pipeline, BoxTextureFilterRowCS, BoxTextureFilterColumnCS);
 	RenderPasses.push_back(ShadowMapFilterPass);
 
-	LightPass = new FLightPass(Pipeline, ConstantBufferViewProj, GizmoInputLayout, GizmoVS, GizmoPS, DefaultDepthStencilState);
+	LightPass = new FLightPass(Pipeline, ConstantBufferViewProj);
 	RenderPasses.push_back(LightPass);
 
 	FStaticMeshPass* StaticMeshPass = new FStaticMeshPass(Pipeline, ConstantBufferViewProj, ConstantBufferModels,
@@ -122,19 +120,18 @@ void URenderer::Init(HWND InWindowHandle)
 	FSceneDepthPass* SceneDepthPass = new FSceneDepthPass(Pipeline, ConstantBufferViewProj, DisabledDepthStencilState);
 	RenderPasses.push_back(SceneDepthPass);
 
-	FVignettePass* VignettePass = new FVignettePass(Pipeline, DeviceResources);
-	RenderPasses.push_back(VignettePass);
-
-	FFadePass* FadePass = new FFadePass(Pipeline, DeviceResources);
-	RenderPasses.push_back(FadePass);
-
-	// UPipeline* InPipeline, UDeviceResources* InDeviceResources, ID3D11VertexShader* InVS,
-	// ID3D11PixelShader* InPS, ID3D11InputLayout* InLayout, ID3D11SamplerState* InSampler
-	FXAAPass = new FFXAAPass(Pipeline, DeviceResources, FXAAVertexShader, FXAAPixelShader, FXAAInputLayout, FXAASamplerState);
-	//RenderPasses.push_back(FXAAPass);
-
 	HitProxyPass = new FHitProxyPass(Pipeline, ConstantBufferViewProj, ConstantBufferModels,
 		HitProxyVS, HitProxyPS, HitProxyInputLayout, DefaultDepthStencilState);
+
+	//포스트 프로세싱 넣는 순서대로 작동
+	FVignettePass* VignettePass = new FVignettePass(Pipeline, DeviceResources);
+	PostProcessingPasses.push_back(VignettePass);
+
+	FFXAAPass* FXAAPass = new FFXAAPass(Pipeline, DeviceResources);
+	PostProcessingPasses.push_back(FXAAPass);
+
+
+	ColorCopyPass = new FColorCopyPass(Pipeline, DeviceResources);
 }
 
 void URenderer::Release()
@@ -150,8 +147,14 @@ void URenderer::Release()
 		RenderPass->Release();
 		SafeDelete(RenderPass);
 	}
-	FXAAPass->Release();
-	SafeDelete(FXAAPass);
+	ColorCopyPass->Release();
+	SafeDelete(ColorCopyPass);
+
+	for (auto& PPPass : PostProcessingPasses)
+	{
+		PPPass->Release();
+		SafeDelete(PPPass);
+	}
 
 	if (HitProxyPass)
 	{
@@ -375,24 +378,6 @@ void URenderer::CreateFogShader()
 	RegisterShaderReloadCache(ShaderPath, ShaderUsage::FOG);
 }
 
-void URenderer::CreateFXAAShader()
-{
-	const std::wstring ShaderFilePathString = L"Asset/Shader/FXAAShader.hlsl";
-	const std::filesystem::path ShaderPath(ShaderFilePathString);
-
-	TArray<D3D11_INPUT_ELEMENT_DESC> FXAALayout =
-	{
-		{"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	    {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-    };
-	FRenderResourceFactory::CreateVertexShaderAndInputLayout(ShaderFilePathString, FXAALayout, &FXAAVertexShader, &FXAAInputLayout);
-	FRenderResourceFactory::CreatePixelShader(ShaderFilePathString, &FXAAPixelShader);
-	
-	FXAASamplerState = FRenderResourceFactory::CreateFXAASamplerState();
-
-	RegisterShaderReloadCache(ShaderPath, ShaderUsage::FXAA);
-}
-
 void URenderer::CreateStaticMeshShader()
 {
 	const std::wstring ShaderFilePathString = L"Asset/Shader/UberLit.hlsl";
@@ -439,24 +424,6 @@ void URenderer::CreateStaticMeshShader()
 	FRenderResourceFactory::CreatePixelShader(ShaderFilePathString, &UberLitPixelShaderWorldNormal, "Uber_PS", WorldNormalViewMacros.data());
 
 	RegisterShaderReloadCache(ShaderPath, ShaderUsage::STATICMESH);
-}
-
-void URenderer::CreateGizmoShader()
-{
-	const std::wstring ShaderFilePathString = L"Asset/Shader/GizmoLine.hlsl";
-	const std::filesystem::path ShaderPath(ShaderFilePathString);
-
-	// Create shaders
-	TArray<D3D11_INPUT_ELEMENT_DESC> LayoutDesc =
-	{
-		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
-	};
-
-	FRenderResourceFactory::CreateVertexShaderAndInputLayout(ShaderFilePathString, LayoutDesc, &GizmoVS, &GizmoInputLayout);
-	FRenderResourceFactory::CreatePixelShader(ShaderFilePathString, &GizmoPS);
-
-	RegisterShaderReloadCache(ShaderPath, ShaderUsage::GIZMO);
 }
 
 void URenderer::CreateClusteredRenderingGrid()
@@ -683,20 +650,6 @@ void URenderer::HotReloadShaders()
 				}
 			}
 			break;
-		case ShaderUsage::FXAA:
-			SafeRelease(FXAAInputLayout);
-			SafeRelease(FXAAVertexShader);
-			SafeRelease(FXAAPixelShader);
-			SafeRelease(FXAASamplerState);
-			CreateFXAAShader();
-			if (FXAAPass)
-			{
-				FXAAPass->SetInputLayout(FXAAInputLayout);
-				FXAAPass->SetVertexShader(FXAAVertexShader);
-				FXAAPass->SetPixelShader(FXAAPixelShader);
-				FXAAPass->SetSamplerState(FXAASamplerState);
-			}
-			break;
 		case ShaderUsage::STATICMESH:
 			SafeRelease(UberLitInputLayout);
 			SafeRelease(UberLitVertexShader);
@@ -713,22 +666,6 @@ void URenderer::HotReloadShaders()
 					StaticMeshPass->SetInputLayout(UberLitInputLayout);
 					StaticMeshPass->SetVertexShader(UberLitVertexShader);
 					StaticMeshPass->SetPixelShader(UberLitPixelShader);
-					break;
-				}
-			}
-			break;
-		case ShaderUsage::GIZMO:
-			SafeRelease(GizmoInputLayout);
-			SafeRelease(GizmoVS);
-			SafeRelease(GizmoPS);
-			CreateGizmoShader();
-			for (FRenderPass* RenderPass : RenderPasses)
-			{
-				if (auto* LightPass = dynamic_cast<FLightPass*>(RenderPass))
-				{
-					LightPass->SetInputLayout(GizmoInputLayout);
-					LightPass->SetVertexShader(GizmoVS);
-					LightPass->SetPixelShader(GizmoPS);
 					break;
 				}
 			}
@@ -784,14 +721,6 @@ void URenderer::ReleaseDefaultShader()
 	SafeRelease(FogVertexShader);
 	SafeRelease(FogPixelShader);
 	SafeRelease(FogInputLayout);
-	
-	SafeRelease(FXAAVertexShader);
-	SafeRelease(FXAAPixelShader);
-	SafeRelease(FXAAInputLayout);
-
-	SafeRelease(GizmoVS);
-	SafeRelease(GizmoPS);
-	SafeRelease(GizmoInputLayout);
 
 	SafeRelease(ClusteredRenderingGridInputLayout);
 	SafeRelease(ClusteredRenderingGridVS);
@@ -829,7 +758,6 @@ void URenderer::ReleaseBlendState()
 
 void URenderer::ReleaseSamplerState()
 {
-	SafeRelease(FXAASamplerState);
 	SafeRelease(DefaultSampler);
 	SafeRelease(ShadowComparisonSampler);
 	SafeRelease(VarianceShadowSampler);
@@ -901,20 +829,13 @@ void URenderer::Update()
 			ViewportIndex == UViewportManager::GetInstance().GetPIEActiveViewportIndex();
 		if (!bIsPIEViewport)
 		{
+			auto RTV = GetFrameRenderTargetView();
+			auto DSV = DeviceResources->GetDepthStencilView();
+			GetDeviceContext()->OMSetRenderTargets(1, &RTV, DSV);
 			// Grid, Gizmo 렌더링 (3D, FXAA 적용 대상)
 			GEditor->GetEditorModule()->RenderEditorGeometry();
 			GEditor->GetEditorModule()->RenderGizmo(CurrentCamera, LocalViewport);
 		}
-    }
-
-    // FXAA는 SceneColor → 백버퍼로 복사
-    if (bFXAAEnabled)
-    {
-        ID3D11RenderTargetView* nullRTV[] = { nullptr };
-        GetDeviceContext()->OMSetRenderTargets(1, nullRTV, nullptr);
-
-        FRenderingContext RenderingContext;
-        FXAAPass->Execute(RenderingContext);
     }
 
     // D2D 오버레이는 FXAA 후 각 뷰포트마다 독립적으로 렌더링
@@ -956,7 +877,7 @@ void URenderer::Update()
 
 void URenderer::RenderBegin() const
 {
-	auto* RenderTargetView = DeviceResources->GetRenderTargetView();
+	auto* RenderTargetView = DeviceResources->GetFrameRenderTargetView();
 	GetDeviceContext()->ClearRenderTargetView(RenderTargetView, ClearColor);
 
 	// @TODO: The clear color for the normal buffer should be a specific value (e.g., {0.5, 0.5, 1.0, 1.0})
@@ -966,27 +887,11 @@ void URenderer::RenderBegin() const
 	auto* DepthStencilView = DeviceResources->GetDepthStencilView();
 	GetDeviceContext()->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
-	// FXAA bool값 변수에 따라서 RTV세팅
-    if (bFXAAEnabled)
-    {
-        auto* SceneColorRenderTargetView = DeviceResources->GetSceneColorRenderTargetView();
-        auto* NormalRenderTargetView = DeviceResources->GetNormalRenderTargetView();
-        GetDeviceContext()->ClearRenderTargetView(SceneColorRenderTargetView, ClearColor);
-        GetDeviceContext()->ClearRenderTargetView(NormalRenderTargetView, ClearColor);
-        GetDeviceContext()->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
-        ID3D11RenderTargetView* rtvs[] = { SceneColorRenderTargetView, NormalRenderTargetView };
-        GetDeviceContext()->OMSetRenderTargets(2, rtvs, DepthStencilView);
-    }
-    else
-    {
-        auto* RenderTargetView = DeviceResources->GetRenderTargetView();
-        auto* NormalRenderTargetView = DeviceResources->GetNormalRenderTargetView();
-        GetDeviceContext()->ClearRenderTargetView(RenderTargetView, ClearColor);
-        GetDeviceContext()->ClearRenderTargetView(NormalRenderTargetView, ClearColor);
-        GetDeviceContext()->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
-        ID3D11RenderTargetView* rtvs[] = { RenderTargetView, NormalRenderTargetView };
-        GetDeviceContext()->OMSetRenderTargets(2, rtvs, DepthStencilView);
-    }
+	GetDeviceContext()->ClearRenderTargetView(RenderTargetView, ClearColor);
+	GetDeviceContext()->ClearRenderTargetView(NormalRenderTargetView, ClearColor);
+	GetDeviceContext()->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	ID3D11RenderTargetView* rtvs[] = { RenderTargetView, NormalRenderTargetView };
+	GetDeviceContext()->OMSetRenderTargets(2, rtvs, DepthStencilView);
 
     DeviceResources->UpdateViewport();
 }
@@ -1165,6 +1070,23 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 	{
 		RenderPass->Execute(RenderingContext);
 	}
+
+	//PP
+	if (PostProcessingPasses.empty() == false) 
+	{
+		int PPIdx = 0;
+		for (auto PPPass : PostProcessingPasses)
+		{
+			PPPass->ExecutePP(RenderingContext, PPIdx++);
+		}
+		//마지막 렌더링이 PingPong일때 메인FrameBuffer로 ColorCopy필요
+		if (PPIdx % 2 == 1)
+		{
+			ColorCopyPass->ExecutePP(RenderingContext, PPIdx);
+		}
+
+		Pipeline->SetShaderResourceView(0, EShaderType::PS, nullptr);
+	}
 }
 
 void URenderer::RenderEditorPrimitive(const FEditorPrimitive& InPrimitive, const FRenderState& InRenderState, uint32 InStride, uint32 InIndexBufferStride)
@@ -1220,7 +1142,7 @@ void URenderer::OnResize(uint32 InWidth, uint32 InHeight) const
     if (!DeviceResources || !GetDeviceContext() || !GetSwapChain()) return;
 
     DeviceResources->ReleaseFactories();
-    DeviceResources->ReleaseSceneColorTarget();
+    DeviceResources->ReleasePingPongBuffer();
 	DeviceResources->ReleaseFrameBuffer();
 	DeviceResources->ReleaseDepthBuffer();
 	DeviceResources->ReleaseNormalBuffer();
@@ -1233,17 +1155,14 @@ void URenderer::OnResize(uint32 InWidth, uint32 InHeight) const
     }
 
 	DeviceResources->UpdateViewport();
-    DeviceResources->CreateSceneColorTarget();
+    DeviceResources->CreatePingPongBuffer();
 	DeviceResources->CreateFrameBuffer();
 	DeviceResources->CreateDepthBuffer();
 	DeviceResources->CreateNormalBuffer();
     DeviceResources->CreateFactories();
 
-    ID3D11RenderTargetView* targetView = bFXAAEnabled
-        ? DeviceResources->GetSceneColorRenderTargetView()
-        : DeviceResources->GetRenderTargetView();
-    ID3D11RenderTargetView* targetViews[] = { targetView };
-    GetDeviceContext()->OMSetRenderTargets(1, targetViews, DeviceResources->GetDepthStencilView());
+	ID3D11RenderTargetView* targetView = DeviceResources->GetFrameRenderTargetView();
+    GetDeviceContext()->OMSetRenderTargets(1, &targetView, DeviceResources->GetDepthStencilView());
 }
 
 ID3D11VertexShader* URenderer::GetVertexShader(EViewModeIndex ViewModeIndex) const

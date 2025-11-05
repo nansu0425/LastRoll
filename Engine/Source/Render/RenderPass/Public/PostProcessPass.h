@@ -10,7 +10,7 @@ class UDeviceResources;
  * 파생 클래스는 UpdateConstants()와 SetRenderTargets()를 재정의하여 세부 동작을 구현해야 한다.
  * @note 쉐이더를 작성할 때 첫번째 슬롯에 씬 SRV를 바인딩해야한다.
  */
-class FPostProcessPass : public FRenderPass
+class FPostProcessPass
 {
 public:
     FPostProcessPass(UPipeline* InPipeline, UDeviceResources* InDeviceResources);
@@ -21,9 +21,9 @@ public:
      * @brief 포스트 프로세스 패스의 고정된 실행 알고리즘을 정의한다.
      * @note final 함수이다. 파생 클래스는 이 함수 대신 UpdateConstants()와 SetRenderTargets()를 재정의해야 한다.
      */
-    virtual void Execute(FRenderingContext& Context) final;
+    void ExecutePP(FRenderingContext& Context, const uint32 PPIdx);
 
-    virtual void Release() override;
+    virtual void Release();
 
 protected:
     /**
@@ -31,14 +31,12 @@ protected:
      */
     virtual void UpdateConstants();
 
-    virtual void SetShaderResourcesViews();
+    virtual void SetShaderResourcesViews(const uint32 PPIdx);
     
-    virtual void SetRenderTargets();
-
-    virtual void ResetShaderResourcesViews();
-
-    virtual void ResetRenderTargets();
+    virtual void SetRenderTargets(const uint32 PPIdx);
     
+    UPipeline* Pipeline;
+
     UDeviceResources* DeviceResources = nullptr;
 
     Microsoft::WRL::ComPtr<ID3D11VertexShader> VertexShader = nullptr;
