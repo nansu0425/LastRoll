@@ -10,7 +10,7 @@ APlayerCameraManager::APlayerCameraManager()
 	: BlendTime(0.0f)
 	, BlendTimeRemaining(0.0f)
 	, bIsBlending(false)
-	, FadeColor(0.0f, 0.0f, 0.0f, 1.0f)
+	, FadeColor(0.0f, 0.0f, 0.0f)
 	, FadeAmount(0.0f)
 	, FadeAlpha(0.0f, 0.0f)
 	, FadeTime(0.0f)
@@ -195,7 +195,7 @@ void APlayerCameraManager::ClearAllCameraModifiers()
 	UE_LOG_DEBUG("APlayerCameraManager: 모든 카메라 모디파이어 제거됨");
 }
 
-void APlayerCameraManager::StartCameraFade(float FromAlpha, float ToAlpha, float Duration, FVector4 Color)
+void APlayerCameraManager::StartCameraFade(float FromAlpha, float ToAlpha, float Duration, FVector Color)
 {
 	FadeColor = Color;
 	FadeAmount = FromAlpha;
@@ -260,6 +260,8 @@ void APlayerCameraManager::UpdateViewTarget(float DeltaTime)
 		ViewTarget.POV.Location = FVector(0, 0, 500);
 		ViewTarget.POV.Rotation = FQuaternion::Identity();
 	}
+
+	ViewTarget.POV.OverlayColor = FVector4(FadeColor, FadeAmount);
 
 	// 캐시된 POV에 저장
 	CachedPOV = ViewTarget.POV;
@@ -353,7 +355,7 @@ void APlayerCameraManager::UpdateFading(float DeltaTime)
 	if (FadeTimeRemaining <= 0.0f)
 	{
 		// 페이드 완료
-		FadeAlpha.X = FadeAlpha.Y;
+		FadeAmount = FadeAlpha.Y;
 		FadeTimeRemaining = 0.0f;
 		bIsFading = false;
 	}
@@ -361,8 +363,10 @@ void APlayerCameraManager::UpdateFading(float DeltaTime)
 	{
 		// 페이드 알파 보간
 		float FadeBlendAlpha = 1.0f - (FadeTimeRemaining / FadeTime);
-		FadeAlpha.X = Lerp(FadeAmount, FadeAlpha.Y, FadeBlendAlpha);
+		FadeAmount = Lerp(FadeAlpha.X, FadeAlpha.Y, FadeBlendAlpha);
 	}
+
+	UE_LOG("FadeAmount: %f", FadeAmount);
 
 	// TODO: 후처리 페이드 오버레이를 위해 URenderer와 통합
 	// 현재는 렌더러가 사용할 수 있도록 페이드 데이터를 GetFadeAlpha()로 제공

@@ -76,7 +76,7 @@ void ACameraTestActor::InitializeComponents()
 void ACameraTestActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	UE_LOG_SUCCESS("=== CameraTestActor: BeginPlay ===");
 	UE_LOG("위치: (%.2f, %.2f, %.2f)", 
 		GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z);
@@ -295,8 +295,13 @@ void ACameraTestActor::TestViewTargetSwitch()
 
 void ACameraTestActor::RunAutomatedTests(float DeltaTime)
 {
+	static float ElapsedTime = 0.0f;
+	ElapsedTime += DeltaTime;
+	
 	TestTimer += DeltaTime;
 
+	CameraComponent->SetTargetAspectRatio(1.0f + 1.0f * sin(ElapsedTime * 2 * PI));
+	
 	// 5초마다 테스트를 순서대로 실행
 	constexpr float TestInterval = 5.0f;
 

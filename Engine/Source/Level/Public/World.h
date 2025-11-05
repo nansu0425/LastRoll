@@ -1,5 +1,8 @@
 #pragma once
 #include <filesystem>
+
+#include "Actor/Public/PlayerCameraManager.h"
+#include "Core/Public/NewObject.h"
 #include "Core/Public/Object.h"
 #include "Global/Types.h"
 
@@ -65,7 +68,16 @@ public:
 	void SetWorldType(EWorldType InWorldType);
 
 	// Camera Manager Access (for Game/PIE modes)
-	APlayerCameraManager* GetCameraManager() const { return CameraManager; }
+	APlayerCameraManager* GetCameraManager() 
+	{
+		if (!CameraManager)
+		{
+			/** @todo 메모리 누수 확인 */
+			CameraManager = NewObject<APlayerCameraManager>(this);
+			SetCameraManager(CameraManager);
+		}
+		return CameraManager;
+	}
 	void SetCameraManager(APlayerCameraManager* InManager) { CameraManager = InManager; }
 
 private:

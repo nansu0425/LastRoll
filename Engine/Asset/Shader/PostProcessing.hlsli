@@ -25,10 +25,9 @@ PS_INPUT mainVS(uint VertexID : SV_VertexID)
     return Output;
 }
 
-float2 GetSceneColorUV(float2 PosNDC)
+float2 GetSceneColorUV(float2 Position)
 {
     uint TexWidth, TexHeight = 0;
     SceneTexture.GetDimensions(TexWidth, TexHeight);
-    float2 TexSizeRCP = float2(1 / (float) TexWidth, 1 / (float) TexHeight);
-    return float2(PosNDC.x / TexWidth, PosNDC.y / TexHeight);
+    return float2(Position.x / TexWidth, Position.y / TexHeight);
 }

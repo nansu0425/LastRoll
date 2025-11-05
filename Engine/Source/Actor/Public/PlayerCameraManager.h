@@ -52,13 +52,17 @@ private:
 	bool bIsBlending;                   // 뷰 타겟 전환 중일 때 true
 
 	// ===== 카메라 페이딩 =====
-	FVector4 FadeColor;                 // 페이드 오버레이 색상 (예: 검은색으로 페이드)
+	FVector FadeColor;                 // 페이드 오버레이 색상 (예: 검은색으로 페이드)
 	float FadeAmount;                   // 목표 페이드 양 [0.0, 1.0]
 	FVector2 FadeAlpha;                 // (현재, 목표) 페이드 알파
 	float FadeTime;                     // 페이드 지속 시간
 	float FadeTimeRemaining;            // 페이드 남은 시간
 	bool bIsFading;                     // 페이드 중일 때 true
 
+	// ===== 카메라 종횡비 =====
+	float TargetAspectRatio;			// 뷰포트의 종횡비와는 다른 카메라가 목표로하는 종횡비 (레터박스에서 사용)
+										// @todo: 변수를 카메라 컴포넌트로 옮겨야 할 수 있음
+	
 	// ===== 카메라 스타일 =====
 	FName CameraStyle;                  // 현재 카메라 스타일 이름 (예: "Default", "ThirdPerson")
 
@@ -136,7 +140,7 @@ public:
 	 * @brief 카메라 페이드 효과 시작
 	 *
 	 * 시간에 걸쳐 화면을 지정된 색상으로 페이드합니다. 일반적인 사용 예:
-	 * - 사망 시 검an색으로 페이드: StartCameraFade(0.0, 1.0, 1.0, FVector4(0,0,0,1))
+	 * - 사망 시 검은색으로 페이드: StartCameraFade(0.0, 1.0, 1.0, FVector4(0,0,0,1))
 	 * - 스폰 시 검은색에서 페이드: StartCameraFade(1.0, 0.0, 1.0, FVector4(0,0,0,1))
 	 *
 	 * @param FromAlpha 시작 페이드 알파 [0.0, 1.0]. 0 = 페이드 없음, 1 = 전체 페이드
@@ -144,7 +148,7 @@ public:
 	 * @param Duration 페이드 지속 시간 (초)
 	 * @param Color 페이드 오버레이 색상
 	 */
-	void StartCameraFade(float FromAlpha, float ToAlpha, float Duration, FVector4 Color);
+	void StartCameraFade(float FromAlpha, float ToAlpha, float Duration, FVector Color);
 
 	/**
 	 * @brief 카메라 페이드 즉시 중지
