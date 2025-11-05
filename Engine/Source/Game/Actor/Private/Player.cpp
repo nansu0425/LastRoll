@@ -3,6 +3,7 @@
 #include "Game/Actor/Public/Player.h"
 
 #include "Actor/Public/PlayerCameraManager.h"
+#include "Game/Actor/Public/TopDownCameraActor.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Component/Public/ScriptComponent.h"
 #include "Component/Shape/Public/SphereComponent.h"
@@ -21,8 +22,6 @@ APlayer::APlayer()
     DetectionCollider = CreateDefaultSubobject<USphereComponent>();
 
     PhysicsCollider = CreateDefaultSubobject<USphereComponent>();
-
-	bCanEverTick = true; // Tick 활성화
 }
 
 UClass* APlayer::GetDefaultRootComponent()
@@ -58,9 +57,29 @@ void APlayer::BeginPlay()
 {
     AActor::BeginPlay();
 
+    if (!GWorld)
+    {
+        UE_LOG_ERROR("APlayer::BeginPlay - GWorld가 null입니다!");
+        return;
+    }
+
+    // Create TopDownCameraActor
+    if (!CameraActor)
+    {
+        AActor* SpawnedCamera = GWorld->SpawnActor(ATopDownCameraActor::StaticClass());
+        CameraActor = Cast<ATopDownCameraActor>(SpawnedCamera);
+
+        if (CameraActor)
+        {
+            CameraActor->SetName("PlayerTopDownCamera");
+            CameraActor->SetFollowTarget(this);
+            CameraActor->SetCameraOffset(FVector(-5.0f, 0.0f, 25.0f));  // Player.lua TopCamera 오프셋
+        }
+    }
+
     // Create PlayerCameraManager when player spawns (similar to Unreal Engine's PlayerController)
     // Use SpawnActor to properly register with Level for automatic cleanup
-    if (!PlayerCameraManager && GWorld)
+    if (!PlayerCameraManager)
     {
         AActor* SpawnedActor = GWorld->SpawnActor(APlayerCameraManager::StaticClass());
         PlayerCameraManager = Cast<APlayerCameraManager>(SpawnedActor);
@@ -68,19 +87,33 @@ void APlayer::BeginPlay()
         if (PlayerCameraManager)
         {
             PlayerCameraManager->SetName("PlayerCameraManager");
-            UE_LOG("APlayer: Created PlayerCameraManager");
+
+            // TopDownCameraActor를 ViewTarget으로 설정
+            if (CameraActor)
+            {
+                PlayerCameraManager->SetViewTarget(CameraActor, 0.0f);
+            }
         }
     }
 }
 
 void APlayer::EndPlay()
 {
-    // Destroy PlayerCameraManager if it exists
-    // It's an Actor spawned via SpawnActor, so use DestroyActor for proper cleanup
-    if (PlayerCameraManager && GWorld)
+    if (GWorld)
     {
-        GWorld->DestroyActor(PlayerCameraManager);
-        PlayerCameraManager = nullptr;
+        // Destroy TopDownCameraActor if it exists
+        if (CameraActor)
+        {
+            GWorld->DestroyActor(CameraActor);
+            CameraActor = nullptr;
+        }
+
+        // Destroy PlayerCameraManager if it exists
+        if (PlayerCameraManager)
+        {
+            GWorld->DestroyActor(PlayerCameraManager);
+            PlayerCameraManager = nullptr;
+        }
     }
 
     AActor::EndPlay();
