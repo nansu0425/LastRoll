@@ -1,6 +1,7 @@
 #pragma once
 #include "Actor/Public/Actor.h"
 
+class USpringArmComponent;
 class UCameraComponent;
 
 /**
@@ -55,6 +56,7 @@ public:
     FVector GetRotation() const;
 
 private:
+    USpringArmComponent* SpringArmComponent = nullptr;
     UCameraComponent* CameraComponent = nullptr;
     AActor* FollowTarget = nullptr;  // 추적할 타겟 (Player)
     FVector CameraOffset;            // 타겟 기준 오프셋

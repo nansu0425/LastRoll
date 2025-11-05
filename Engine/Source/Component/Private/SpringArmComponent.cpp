@@ -156,7 +156,6 @@ UObject* USpringArmComponent::Duplicate()
 	SpringArmComp->LocationLagLinearLerpInterpolation = LocationLagLinearLerpInterpolation;
 	SpringArmComp->LocationLagSpeed = LocationLagSpeed;
 	SpringArmComp->bRotationLag = bRotationLag;
-	SpringArmComp->RotationLagLinearLerpInterpolation = RotationLagLinearLerpInterpolation;
 	SpringArmComp->RotationLagSpeed = RotationLagSpeed;
 	SpringArmComp->bInHeritPitch = bInHeritPitch;
 	SpringArmComp->bInHeritYaw = bInHeritYaw;
