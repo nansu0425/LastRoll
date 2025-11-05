@@ -31,6 +31,9 @@
 #include "Render/UI/GameUI/Public/GameUI.h"
 #include "Editor/Public/Editor.h"
 #include "Level/Public/Level.h"
+#include "Level/Public/World.h"
+#include "Game/Actor/Public/Player.h"
+#include "Game/Actor/Public/TopDownCameraActor.h"
 IMPLEMENT_SINGLETON_CLASS(UScriptManager, UObject)
 
 UScriptManager::UScriptManager()
@@ -933,12 +936,41 @@ void UScriptManager::RegisterCoreTypes()
 		"Right", sol::property(&UCamera::GetRight),
 		"Up", sol::property(&UCamera::GetUp)
 	);
-	LuaState["GetCamera"] = []()->UCamera*
+
+	// ====================================================================
+	// ATopDownCameraActor - Top-down camera actor for PIE/Game mode
+	// ====================================================================
+	lua.new_usertype<ATopDownCameraActor>("TopDownCameraActor",
+		sol::base_classes, sol::bases<AActor>(),
+		"Location", sol::property(&ATopDownCameraActor::GetActorLocation, &ATopDownCameraActor::SetActorLocation),
+		"Rotation", sol::property(&ATopDownCameraActor::GetRotation, &ATopDownCameraActor::SetRotation),
+		"SetCameraOffset", &ATopDownCameraActor::SetCameraOffset,
+		"SetFollowTarget", &ATopDownCameraActor::SetFollowTarget
+	);
+	LuaState["GetCamera"] = [](sol::this_state s)->sol::object
 	{
+		sol::state_view lua(s);
+
+		// PIE/Game 모드인 경우 TopDownCameraActor 반환
+		if (GWorld && (GWorld->GetWorldType() == EWorldType::PIE || GWorld->GetWorldType() == EWorldType::Game))
+		{
+			// World에서 APlayer 찾기
+			APlayer* Player = GWorld->GetFirstPlayerActor();
+			if (Player)
+			{
+				ATopDownCameraActor* CameraActor = Player->GetCameraActor();
+				if (CameraActor)
+				{
+					return sol::make_object(lua, CameraActor);
+				}
+			}
+		}
+
+		// Editor 모드인 경우 UCamera 반환
 		auto& ViewportManager = UViewportManager::GetInstance();
-		const auto& Viewports = ViewportManager.GetViewports();
 		const auto& Clients = ViewportManager.GetClients();
-		return Clients[ViewportManager.GetActiveIndex()]->GetCamera();
+		UCamera* EditorCamera = Clients[ViewportManager.GetActiveIndex()]->GetCamera();
+		return sol::make_object(lua, EditorCamera);
 	};
 	LuaState["WorldToScreenPos"] = [](FVector WorldPos)->FVector2
 	{
@@ -947,7 +979,27 @@ void UScriptManager::RegisterCoreTypes()
 		const auto& Clients = ViewportManager.GetClients();
 		FViewportClient* ViewportClient = Clients[ViewportManager.GetActiveIndex()];
 		FViewport* Viewport = ViewportClient->GetOwningViewport();
-		const FCameraConstants& CamConstant = ViewportClient->GetCamera()->GetFViewProjConstants();
+
+		// PIE/Game 모드인 경우 PlayerCameraManager의 카메라 사용
+		FCameraConstants CamConstant;
+		if (GWorld && (GWorld->GetWorldType() == EWorldType::PIE || GWorld->GetWorldType() == EWorldType::Game))
+		{
+			APlayerCameraManager* CameraManager = GWorld->GetCameraManager();
+			if (CameraManager)
+			{
+				CamConstant = CameraManager->GetCameraConstants();
+			}
+			else
+			{
+				// Fallback to EditorCamera if PlayerCameraManager doesn't exist
+				CamConstant = ViewportClient->GetCamera()->GetFViewProjConstants();
+			}
+		}
+		else
+		{
+			// Editor 모드인 경우 EditorCamera 사용
+			CamConstant = ViewportClient->GetCamera()->GetFViewProjConstants();
+		}
 
 		FVector4 ViewPos = FVector4(WorldPos, 1) * CamConstant.View;
 		FVector4 ClipPos = ViewPos * CamConstant.Projection;

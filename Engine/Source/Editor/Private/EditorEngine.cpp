@@ -158,6 +158,11 @@ void UEditorEngine::StartPIE(int32 InViewportIndex)
     if (PIEWorld)
     {
         PIEWorld->SetWorldType(EWorldType::PIE);
+
+        // IMPORTANT: BeginPlay()를 WorldContexts 추가 전에 호출
+        // 이렇게 하면 렌더러가 PIE World를 처음 렌더링할 때 PlayerCameraManager가 이미 생성되어 있음
+        PIEWorld->BeginPlay();
+
         FWorldContext PIEContext;
         PIEContext.SetWorld(PIEWorld);
         WorldContexts.push_back(PIEContext);
