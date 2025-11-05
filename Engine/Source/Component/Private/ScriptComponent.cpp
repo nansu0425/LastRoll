@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Component/Public/AudioComponent.h"
 #include "Component/Public/ScriptComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Manager/Script/Public/ScriptManager.h"
@@ -311,6 +312,10 @@ void UScriptComponent::SetInstanceTable(const sol::table GlobalTable)
 					}
 				}
 			}
+			return nullptr;
+		};
+		InstanceEnv["GetAudioComponentByName"] = [this](const FString& ComponentName) -> UAudioComponent*
+		{
 			return nullptr;
 		};
 

@@ -873,10 +873,13 @@ void URenderer::Update()
             FD2DOverlayManager::GetInstance().FlushAndRender();
         }
     }
+	
+#ifndef GAME_BUILD
     {
         TIME_PROFILE(UUIManager)
         UUIManager::GetInstance().Render();
     }
+#endif
 
     RenderEnd();
 }

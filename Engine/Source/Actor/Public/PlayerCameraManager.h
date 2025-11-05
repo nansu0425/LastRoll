@@ -98,6 +98,12 @@ public:
 	AActor* GetViewTarget() const { return ViewTarget.Target; }
 
 	/**
+	 * @brief 현재 뷰 타겟 정보 가져오기
+	 * @note 비녜트를 외부에서 수정하기 위해서 임의로 Getter 생성함
+	 */
+	FViewTarget& GetViewTargetInfo() { return ViewTarget; }
+	
+	/**
 	 * @brief 현재 뷰 타겟의 카메라 컴포넌트 가져오기
 	 */
 	UCameraComponent* GetViewTargetCamera() const { return ViewTarget.CameraComponent; }

@@ -11,6 +11,7 @@
 #include "Actor/Public/PlayerCameraManager.h"
 #include "Actor/Public/StaticMeshActor.h"
 #include "Component/Public/ActorComponent.h"
+#include "Component/Public/AudioComponent.h"
 #include "Component/Public/SceneComponent.h"
 #include "Component/Public/ScriptComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
@@ -714,6 +715,17 @@ void UScriptManager::RegisterCoreTypes()
 		"SetScriptPath", &UScriptComponent::SetScriptPath,
 		"BeginPlay", &UScriptComponent::BeginPlay
 	);
+	
+	// ====================================================================
+	// UAudioComponent - 오디오 컴포넌트
+	// ====================================================================
+	lua.new_usertype<UAudioComponent>("AudioComponent",
+		sol::no_constructor,
+		sol::base_classes, sol::bases<UActorComponent>(),
+
+		"Play", &UAudioComponent::Play,
+		"Stop", &UAudioComponent::Stop
+	);
 
 	// ====================================================================
 	// Coroutine
@@ -973,7 +985,7 @@ void UScriptManager::RegisterCoreTypes()
 
 
 	UE_LOG_INFO("Lua core types registered (Vector, Quaternion, Actor, OverlapInfo, PrimitiveComponent)");
-
+	
 	// ====================================================================
 	// Helper Functions
 	// ====================================================================
@@ -987,6 +999,34 @@ void UScriptManager::RegisterCoreTypes()
 			return;
 		}
 		CameraManager->StartCameraFade(FromAlpha, ToAlpha, Duration, Color);
+	};
+
+	LuaState["SetVignette"] = [](FVector InVignetteColor, float InVignetteIntensity)
+	{
+		APlayerCameraManager* CameraManager = GWorld->GetCameraManager();
+		if (!CameraManager)
+		{
+			UE_LOG_ERROR("StartCameraFade: 카메라 매니저를 찾을 수 없습니다.");
+			return;
+		}
+		FViewTarget ViewTarget = CameraManager->GetViewTargetInfo();
+		ViewTarget.POV.PostProcessSettings.bOverride_VignetteColor = true;
+		ViewTarget.POV.PostProcessSettings.VignetteColor = InVignetteColor;
+		ViewTarget.POV.PostProcessSettings.bOverride_VignetteIntensity = true;
+		ViewTarget.POV.PostProcessSettings.VignetteIntensity = InVignetteIntensity;
+	};
+	
+	LuaState["ResetVignette"] = [](FVector InVignetteColor, float InVignetteIntensity)
+	{
+		APlayerCameraManager* CameraManager = GWorld->GetCameraManager();
+		if (!CameraManager)
+		{
+			UE_LOG_ERROR("StartCameraFade: 카메라 매니저를 찾을 수 없습니다.");
+			return;
+		}
+		FViewTarget ViewTarget = CameraManager->GetViewTargetInfo();
+		ViewTarget.POV.PostProcessSettings.bOverride_VignetteColor = false;
+		ViewTarget.POV.PostProcessSettings.bOverride_VignetteIntensity = false;
 	};
 
 	LuaState["SetTimeDilation"] = [](float InTimeDilation)

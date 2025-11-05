@@ -11,6 +11,10 @@ Global
 		Debug|x86 = Debug|x86
 		Develop|x64 = Develop|x64
 		Develop|x86 = Develop|x86
+		Game|x64 = Game|x64
+		Game|x86 = Game|x86
+		GameDebug|x64 = GameDebug|x64
+		GameDebug|x86 = GameDebug|x86
 		ObjViewerDebug|x64 = ObjViewerDebug|x64
 		ObjViewerDebug|x86 = ObjViewerDebug|x86
 		Release|x64 = Release|x64
@@ -25,6 +29,14 @@ Global
 		{F0FA0242-F319-424C-986E-8187D4AEC898}.Develop|x64.Build.0 = Develop|x64
 		{F0FA0242-F319-424C-986E-8187D4AEC898}.Develop|x86.ActiveCfg = Develop|Win32
 		{F0FA0242-F319-424C-986E-8187D4AEC898}.Develop|x86.Build.0 = Develop|Win32
+		{F0FA0242-F319-424C-986E-8187D4AEC898}.Game|x64.ActiveCfg = Game|x64
+		{F0FA0242-F319-424C-986E-8187D4AEC898}.Game|x64.Build.0 = Game|x64
+		{F0FA0242-F319-424C-986E-8187D4AEC898}.Game|x86.ActiveCfg = Game|Win32
+		{F0FA0242-F319-424C-986E-8187D4AEC898}.Game|x86.Build.0 = Game|Win32
+		{F0FA0242-F319-424C-986E-8187D4AEC898}.GameDebug|x64.ActiveCfg = GameDebug|x64
+		{F0FA0242-F319-424C-986E-8187D4AEC898}.GameDebug|x64.Build.0 = GameDebug|x64
+		{F0FA0242-F319-424C-986E-8187D4AEC898}.GameDebug|x86.ActiveCfg = GameDebug|Win32
+		{F0FA0242-F319-424C-986E-8187D4AEC898}.GameDebug|x86.Build.0 = GameDebug|Win32
 		{F0FA0242-F319-424C-986E-8187D4AEC898}.ObjViewerDebug|x64.ActiveCfg = ObjViewerDebug|x64
 		{F0FA0242-F319-424C-986E-8187D4AEC898}.ObjViewerDebug|x64.Build.0 = ObjViewerDebug|x64
 		{F0FA0242-F319-424C-986E-8187D4AEC898}.ObjViewerDebug|x86.ActiveCfg = ObjViewerDebug|Win32
