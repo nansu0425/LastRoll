@@ -28,8 +28,9 @@ public:
 protected:
     /**
      * @brief 상수 버퍼를 업데이트하고 GPU에 바인딩한다.
+     * @param Context 렌더링 컨텍스트 (카메라 정보, PostProcessSettings 등 포함)
      */
-    virtual void UpdateConstants();
+    virtual void UpdateConstants(const FRenderingContext& Context);
 
     virtual void SetShaderResourcesViews(const uint32 PPIdx);
     

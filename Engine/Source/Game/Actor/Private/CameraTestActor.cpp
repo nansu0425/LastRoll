@@ -53,8 +53,19 @@ void ACameraTestActor::InitializeComponents()
 		CameraComponent->SetAspectRatio(16.0f / 9.0f);
 		CameraComponent->SetNearClipPlane(1.0f);
 		CameraComponent->SetFarClipPlane(10000.0f);
-		
+
+		// ===== PostProcessSettings 설정 (Vignette 효과 테스트) =====
+		FPostProcessSettings& PPSettings = CameraComponent->GetPostProcessSettings();
+
+		// 강한 빨간색 비네트 효과
+		PPSettings.bOverride_VignetteIntensity = true;
+		PPSettings.VignetteIntensity = 0.8f;
+
+		PPSettings.bOverride_VignetteColor = true;
+		PPSettings.VignetteColor = FVector(1.0f, 0.0f, 0.0f);  // 빨간색
+
 		UE_LOG_DEBUG("ACameraTestActor: CameraComponent 초기화됨 (FOV=90, Aspect=16:9)");
+		UE_LOG_SUCCESS("ACameraTestActor: PostProcessSettings 설정됨 (Vignette: Intensity=0.8, Color=Red)");
 	}
 	else
 	{
@@ -285,34 +296,77 @@ void ACameraTestActor::TestViewTargetSwitch()
 void ACameraTestActor::RunAutomatedTests(float DeltaTime)
 {
 	TestTimer += DeltaTime;
-	
+
 	// 5초마다 테스트를 순서대로 실행
 	constexpr float TestInterval = 5.0f;
-	
+
 	if (TestTimer >= TestInterval)
 	{
 		TestTimer = 0.0f;
-		CurrentTestPhase = (CurrentTestPhase + 1) % 4;
-		
+		CurrentTestPhase = (CurrentTestPhase + 1) % 5;  // 페이즈 수 증가 (0-4)
+
 		switch (CurrentTestPhase)
 		{
 		case 0:
-			UE_LOG_SYSTEM("=== 자동화 테스트 페이즈 0: 대기 중 ===");
+			UE_LOG_SYSTEM("=== 자동화 테스트 페이즈 0: Vignette OFF ===");
+			if (CameraComponent)
+			{
+				FPostProcessSettings& PP = CameraComponent->GetPostProcessSettings();
+				PP.bOverride_VignetteIntensity = false;  // 효과 비활성화
+				UE_LOG_SUCCESS("✓ Vignette 효과 비활성화");
+			}
 			break;
-			
+
 		case 1:
-			UE_LOG_SYSTEM("=== 자동화 테스트 페이즈 1: 폭발 흔들림 ===");
-			TestCameraShake_Explosion();
+			UE_LOG_SYSTEM("=== 자동화 테스트 페이즈 1: Vignette 빨간색 (강함) ===");
+			if (CameraComponent)
+			{
+				FPostProcessSettings& PP = CameraComponent->GetPostProcessSettings();
+				PP.bOverride_VignetteIntensity = true;
+				PP.VignetteIntensity = 0.8f;
+				PP.bOverride_VignetteColor = true;
+				PP.VignetteColor = FVector(1.0f, 0.0f, 0.0f);  // 빨간색
+				UE_LOG_SUCCESS("✓ 빨간색 비네트 (Intensity=0.8)");
+			}
 			break;
-			
+
 		case 2:
-			UE_LOG_SYSTEM("=== 자동화 테스트 페이즈 2: 피격 흔들림 ===");
-			TestCameraShake_Hit();
+			UE_LOG_SYSTEM("=== 자동화 테스트 페이즈 2: Vignette 파란색 (약함) ===");
+			if (CameraComponent)
+			{
+				FPostProcessSettings& PP = CameraComponent->GetPostProcessSettings();
+				PP.bOverride_VignetteIntensity = true;
+				PP.VignetteIntensity = 0.4f;
+				PP.bOverride_VignetteColor = true;
+				PP.VignetteColor = FVector(0.0f, 0.0f, 1.0f);  // 파란색
+				UE_LOG_SUCCESS("✓ 파란색 비네트 (Intensity=0.4)");
+			}
 			break;
-			
+
 		case 3:
-			UE_LOG_SYSTEM("=== 자동화 테스트 페이즈 3: 지진 흔들림 ===");
-			TestCameraShake_Earthquake();
+			UE_LOG_SYSTEM("=== 자동화 테스트 페이즈 3: Vignette 녹색 (중간) ===");
+			if (CameraComponent)
+			{
+				FPostProcessSettings& PP = CameraComponent->GetPostProcessSettings();
+				PP.bOverride_VignetteIntensity = true;
+				PP.VignetteIntensity = 0.6f;
+				PP.bOverride_VignetteColor = true;
+				PP.VignetteColor = FVector(0.0f, 1.0f, 0.0f);  // 녹색
+				UE_LOG_SUCCESS("✓ 녹색 비네트 (Intensity=0.6)");
+			}
+			break;
+
+		case 4:
+			UE_LOG_SYSTEM("=== 자동화 테스트 페이즈 4: Vignette 검은색 (최대) ===");
+			if (CameraComponent)
+			{
+				FPostProcessSettings& PP = CameraComponent->GetPostProcessSettings();
+				PP.bOverride_VignetteIntensity = true;
+				PP.VignetteIntensity = 1.0f;
+				PP.bOverride_VignetteColor = true;
+				PP.VignetteColor = FVector(0.0f, 0.0f, 0.0f);  // 검은색
+				UE_LOG_SUCCESS("✓ 검은색 비네트 (Intensity=1.0)");
+			}
 			break;
 		}
 	}

@@ -308,6 +308,13 @@ void APlayerCameraManager::UpdateBlending(float DeltaTime)
 		CachedPOV.NearClipPlane = Lerp(ViewTarget.POV.NearClipPlane, PendingViewTarget.POV.NearClipPlane, BlendAlpha);
 		CachedPOV.FarClipPlane = Lerp(ViewTarget.POV.FarClipPlane, PendingViewTarget.POV.FarClipPlane, BlendAlpha);
 		CachedPOV.OrthoWidth = Lerp(ViewTarget.POV.OrthoWidth, PendingViewTarget.POV.OrthoWidth, BlendAlpha);
+
+		// ===== PostProcessSettings 보간 =====
+		CachedPOV.PostProcessSettings = FPostProcessSettings::Lerp(
+			ViewTarget.POV.PostProcessSettings,
+			PendingViewTarget.POV.PostProcessSettings,
+			BlendAlpha
+		);
 	}
 }
 
