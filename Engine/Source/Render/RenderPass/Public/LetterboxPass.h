@@ -17,7 +17,7 @@ public:
     virtual ~FLetterboxPass();
 
 protected:
-    virtual void UpdateConstants() override;
+    virtual void UpdateConstants(const FRenderingContext& Context) override;
 
 private:
     Microsoft::WRL::ComPtr<ID3D11Buffer> LetterboxConstantBuffer = nullptr;

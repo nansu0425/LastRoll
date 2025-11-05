@@ -52,13 +52,17 @@ private:
 	bool bIsBlending;                   // 뷰 타겟 전환 중일 때 true
 
 	// ===== 카메라 페이딩 =====
-	FVector4 FadeColor;                 // 페이드 오버레이 색상 (예: 검은색으로 페이드)
+	FVector FadeColor;                 // 페이드 오버레이 색상 (예: 검은색으로 페이드)
 	float FadeAmount;                   // 목표 페이드 양 [0.0, 1.0]
 	FVector2 FadeAlpha;                 // (현재, 목표) 페이드 알파
 	float FadeTime;                     // 페이드 지속 시간
 	float FadeTimeRemaining;            // 페이드 남은 시간
 	bool bIsFading;                     // 페이드 중일 때 true
 
+	// ===== 카메라 종횡비 =====
+	float TargetAspectRatio;			// 뷰포트의 종횡비와는 다른 카메라가 목표로하는 종횡비 (레터박스에서 사용)
+										// @todo: 변수를 카메라 컴포넌트로 옮겨야 할 수 있음
+	
 	// ===== 카메라 스타일 =====
 	FName CameraStyle;                  // 현재 카메라 스타일 이름 (예: "Default", "ThirdPerson")
 

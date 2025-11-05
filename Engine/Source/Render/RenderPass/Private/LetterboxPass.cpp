@@ -20,14 +20,11 @@ FLetterboxPass::~FLetterboxPass()
 {
 }
 
-void FLetterboxPass::UpdateConstants()
+void FLetterboxPass::UpdateConstants(const FRenderingContext& Context)
 {
     FLetterboxConstants LetterboxConstants = {};
     LetterboxConstants.LetterboxColor = FVector(0.0f, 0.0f, 0.0f);
-    /**
-     * @todo 현재는 하드코딩된 값을 사용하지만, 컨텍스트에서 가져오도록 수정해야함
-     */
-    float TargetAspectRatio = 2.0f;
+    float TargetAspectRatio = Context.ViewInfo.TargetAspectRatio;
     if (TargetAspectRatio <= 0.0f)
     {
         // 유효하지 않은 종횡비가 전달될 경우 무시함

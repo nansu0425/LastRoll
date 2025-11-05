@@ -4,11 +4,11 @@ struct FRenderingContext
 {
     FRenderingContext(){}
 
-    FRenderingContext(const FCameraConstants* InViewProj, const FPostProcessSettings& InPostProcessSettings, class UCamera* InCurrentCamera, EViewModeIndex InViewMode, uint64 InShowFlags, const D3D11_VIEWPORT& InViewport, const FVector2& InRenderTargetSize)
-        : ViewProjConstants(InViewProj), PostProcessSettings(InPostProcessSettings), CurrentCamera(InCurrentCamera), ViewMode(InViewMode), ShowFlags(InShowFlags), Viewport(InViewport), RenderTargetSize(InRenderTargetSize) {}
+    FRenderingContext(const FCameraConstants* InViewProj, const FMinimalViewInfo& InViewInfo, class UCamera* InCurrentCamera, EViewModeIndex InViewMode, uint64 InShowFlags, const D3D11_VIEWPORT& InViewport, const FVector2& InRenderTargetSize)
+        : ViewProjConstants(InViewProj), ViewInfo(InViewInfo), CurrentCamera(InCurrentCamera), ViewMode(InViewMode), ShowFlags(InShowFlags), Viewport(InViewport), RenderTargetSize(InRenderTargetSize) {}
 
     const FCameraConstants* ViewProjConstants= nullptr;
-    FPostProcessSettings PostProcessSettings;
+    FMinimalViewInfo ViewInfo;
     UCamera* CurrentCamera = nullptr;
     EViewModeIndex ViewMode;
     uint64 ShowFlags;

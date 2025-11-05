@@ -14,6 +14,7 @@ UCameraComponent::UCameraComponent()
 	, FarClipPlane(10000.0f)
 	, bUsePerspectiveProjection(true)
 	, OrthoWidth(1000.0f)
+	, TargetAspectRatio(0.0f)
 {
 }
 
@@ -34,6 +35,7 @@ void UCameraComponent::GetCameraView(FMinimalViewInfo& OutPOV) const
 	OutPOV.FarClipPlane = FarClipPlane;
 	OutPOV.OrthoWidth = OrthoWidth;
 	OutPOV.bUsePerspectiveProjection = bUsePerspectiveProjection;
+	OutPOV.TargetAspectRatio = TargetAspectRatio;
 
 	// ===== PostProcessSettings 복사 =====
 	OutPOV.PostProcessSettings = PostProcessSettings;

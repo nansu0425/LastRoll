@@ -10,6 +10,7 @@
 #include "Component/Shape/Public/BoxComponent.h"
 #include "Component/Shape/Public/SphereComponent.h"
 #include "Component/Shape/Public/CapsuleComponent.h"
+#include "Component/Camera/Public/CameraComponent.h"
 #include "Global/Vector.h"
 #include "Manager/Asset/Public/AssetManager.h"
 #include "Manager/Input/Public/InputManager.h"
@@ -808,6 +809,73 @@ void UActorDetailWidget::RenderTransformEdit()
 		ImGui::PopID();
 		ImGui::Separator();
 	}
+	// --- CameraComponent Properties ---
+	if (UCameraComponent* CameraComp = Cast<UCameraComponent>(SelectedComponent))
+	{
+		ImGui::Text("Camera Properties");
+		ImGui::PushID("CameraComponent");
+
+		// 색상 설정
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+
+		// Field of View
+		float Fov = CameraComp->GetFieldOfView();
+		if (ImGui::DragFloat("Field of View", &Fov, 0.1f, 1.0f, 180.0f, "%.3f"))
+		{
+			CameraComp->SetFieldOfView(Fov);
+		}
+
+		// Projection Type
+		bool bIsPerspective = CameraComp->IsUsingPerspectiveProjection();
+		if (ImGui::Checkbox("Use Perspective Projection", &bIsPerspective))
+		{
+			CameraComp->SetProjectionType(bIsPerspective);
+		}
+
+		// Ortho Width (only if not in perspective)
+		if (!bIsPerspective)
+		{
+			float OrthoWidth = CameraComp->GetOrthoWidth();
+			if (ImGui::DragFloat("Ortho Width", &OrthoWidth, 1.0f, 1.0f, 10000.0f, "%.3f"))
+			{
+				CameraComp->SetOrthoWidth(OrthoWidth);
+			}
+		}
+
+		// Aspect Ratio
+		float AspectRatio = CameraComp->GetAspectRatio();
+		if (ImGui::DragFloat("Aspect Ratio", &AspectRatio, 0.01f, 0.1f, 10.0f, "%.3f"))
+		{
+			CameraComp->SetAspectRatio(AspectRatio);
+		}
+
+		// Target Aspect Ratio
+		float TargetAspectRatio = CameraComp->GetTargetAspectRatio();
+		if (ImGui::DragFloat("Target Aspect Ratio", &TargetAspectRatio, 0.01f, 0.1f, 10.0f, "%.3f"))
+		{
+			CameraComp->SetTargetAspectRatio(TargetAspectRatio);
+		}
+
+		// Clipping Planes
+		float NearClip = CameraComp->GetNearClipPlane();
+		if (ImGui::DragFloat("Near Clip Plane", &NearClip, 0.1f, 0.01f, 1000.0f, "%.3f"))
+		{
+			CameraComp->SetNearClipPlane(NearClip);
+		}
+
+		float FarClip = CameraComp->GetFarClipPlane();
+		if (ImGui::DragFloat("Far Clip Plane", &FarClip, 10.0f, 1.0f, 100000.0f, "%.3f"))
+		{
+			CameraComp->SetFarClipPlane(FarClip);
+		}
+
+		ImGui::PopStyleColor(3);
+		ImGui::PopID();
+		ImGui::Separator();
+	}
+
 	// --- BoxComponent Properties ---
 	if (UBoxComponent* BoxComp = Cast<UBoxComponent>(SelectedComponent))
 	{

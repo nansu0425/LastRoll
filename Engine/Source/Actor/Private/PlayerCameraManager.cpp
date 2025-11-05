@@ -10,7 +10,7 @@ APlayerCameraManager::APlayerCameraManager()
 	: BlendTime(0.0f)
 	, BlendTimeRemaining(0.0f)
 	, bIsBlending(false)
-	, FadeColor(0.0f, 0.0f, 0.0f, 1.0f)
+	, FadeColor(0.0f, 0.0f, 0.0f)
 	, FadeAmount(0.0f)
 	, FadeAlpha(0.0f, 0.0f)
 	, FadeTime(0.0f)
@@ -239,6 +239,8 @@ void APlayerCameraManager::UpdateCamera(float DeltaTime)
 
 	// 5단계: 최종 POV를 카메라 상수(View/Projection 행렬)로 변환
 	UpdateCameraConstants();
+
+	UE_LOG("Update!");
 }
 
 void APlayerCameraManager::UpdateViewTarget(float DeltaTime)
@@ -260,6 +262,8 @@ void APlayerCameraManager::UpdateViewTarget(float DeltaTime)
 		ViewTarget.POV.Location = FVector(0, 0, 500);
 		ViewTarget.POV.Rotation = FQuaternion::Identity();
 	}
+
+	ViewTarget.POV.OverlayColor = FVector4(FadeColor, FadeAmount);
 
 	// 캐시된 POV에 저장
 	CachedPOV = ViewTarget.POV;

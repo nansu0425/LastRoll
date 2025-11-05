@@ -147,9 +147,13 @@ struct FMinimalViewInfo
 	float FarClipPlane;
 	float OrthoWidth;               // 직교 투영용
 	bool bUsePerspectiveProjection; // true: 원근 투영, false: 직교 투영
+	float TargetAspectRatio;		// 목표 종횡비 (레터박스에 활용)
 
 	// ===== 후처리 설정 =====
 	FPostProcessSettings PostProcessSettings;
+
+	// @note: FSceneView의 OverlayColor에 대응된다.
+	FVector4 OverlayColor; // OverlayColor.rgb = FadeColor, OverlayColor.a = FadeAmount
 
 	// 기본 생성자
 	FMinimalViewInfo()

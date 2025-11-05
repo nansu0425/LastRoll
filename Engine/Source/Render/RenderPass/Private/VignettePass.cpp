@@ -23,7 +23,7 @@ FVignettePass::~FVignettePass()
 void FVignettePass::UpdateConstants(const FRenderingContext& Context)
 {
     // ===== PostProcessSettings에서 Vignette 설정 읽기 =====
-    const FPostProcessSettings& PPSettings = Context.PostProcessSettings;
+    const FPostProcessSettings& PPSettings = Context.ViewInfo.PostProcessSettings;
 
     FVignetteConstants VignetteConstants = {};
 

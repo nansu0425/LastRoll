@@ -22,6 +22,7 @@ private:
 	float AspectRatio;                  // 너비 / 높이, 기본값: 16.0f/9.0f
 	float NearClipPlane;                // Near Z, 기본값: 1.0f
 	float FarClipPlane;                 // Far Z, 기본값: 10000.0f
+	float TargetAspectRatio;			// 목표 종횡비 (레터박스에 활용)
 
 	// 카메라 타입
 	bool bUsePerspectiveProjection;     // true: 원근 투영, false: 직교 투영
@@ -52,6 +53,11 @@ public:
 	void SetFarClipPlane(float InFar) { FarClipPlane = InFar; }
 	void SetProjectionType(bool bInUsePerspective) { bUsePerspectiveProjection = bInUsePerspective; }
 	void SetOrthoWidth(float InWidth) { OrthoWidth = InWidth; }
+	void SetTargetAspectRatio(float InTargetAspect)
+	{
+		UE_LOG("Target: %f", InTargetAspect);
+		TargetAspectRatio = InTargetAspect;
+	}
 
 	// Getter
 	float GetFieldOfView() const { return FieldOfView; }
@@ -60,6 +66,7 @@ public:
 	float GetFarClipPlane() const { return FarClipPlane; }
 	bool IsUsingPerspectiveProjection() const { return bUsePerspectiveProjection; }
 	float GetOrthoWidth() const { return OrthoWidth; }
+	float GetTargetAspectRatio() const { return TargetAspectRatio; }
 
 	// ===== PostProcessSettings Getter/Setter =====
 	FPostProcessSettings& GetPostProcessSettings() { return PostProcessSettings; }
