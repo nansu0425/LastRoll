@@ -121,7 +121,18 @@ bool FVector::operator!=(const FVector& InOther) const
 	}
 	return false;
 }
-
+FVector FVector::LinearLerpVt3(const FVector& Start, const FVector End, const float Interpolation)
+{
+	return FVector(LinearLerp(Start.X, End.X, Interpolation), LinearLerp(Start.Y, End.Y, Interpolation), LinearLerp(Start.Z, End.Z, Interpolation));
+}
+FVector FVector::EXPLerpVt3(const FVector& Start, const FVector End, const float Interpolation)
+{
+	return FVector(EXPLerp(Start.X, End.X, Interpolation), EXPLerp(Start.Y, End.Y, Interpolation), EXPLerp(Start.Z, End.Z, Interpolation));
+}
+FVector FVector::LinearEXPLerpVt3(const FVector& Start, const FVector End, const float LinearFactor, const float Interpolation)
+{
+	return FVector(LinearEXPLerp(Start.X, End.X, LinearFactor, Interpolation), LinearEXPLerp(Start.Y, End.Y, LinearFactor, Interpolation), LinearEXPLerp(Start.Z, End.Z, LinearFactor, Interpolation));
+}
 FArchive& operator<<(FArchive& Ar, FVector& Vector)
 {
 	Ar << Vector.X;
@@ -321,4 +332,3 @@ FArchive& operator<<(FArchive& Ar, FVector2& Vector)
 	Ar << Vector.Y;
 	return Ar;
 }
-

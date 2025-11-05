@@ -54,8 +54,13 @@ void USpringArmComponentWidget::RenderWidget()
 	{
 		Component->SetbLocationLag(bLocationLag);
 	}
+	float LocationLagLinearLerpInterpolation = Component->GetLocationLagLinearLerpInterpolation();
+	if (ImGui::DragFloat("LocationLagLinearLerpInterpolation", &LocationLagLinearLerpInterpolation, 1.0f, 0.0f))
+	{
+		Component->SetLocationLagLinearLerpInterpolation(LocationLagLinearLerpInterpolation);
+	}
 	float LocationLagSpeed = Component->GetLocationLagSpeed();
-	if (ImGui::DragFloat("LocationLagSpeed", &LocationLagSpeed))
+	if (ImGui::DragFloat("LocationLagSpeed", &LocationLagSpeed, 1.0f, 0.0f))
 	{
 		Component->SetLocationLagSpeed(LocationLagSpeed);
 	}
@@ -64,11 +69,16 @@ void USpringArmComponentWidget::RenderWidget()
 	{
 		Component->SetbRotationLag(bRotationLag);
 	}
+	float RotationLagLinearLerpInterpolation = Component->GetRotationLagLinearLerpInterpolation();
+	if (ImGui::DragFloat("RotationLagLinearLerpInterpolation", &RotationLagLinearLerpInterpolation, 1.0f, 0.0f))
+	{
+		Component->SetRotationLagLinearLerpInterpolation(RotationLagLinearLerpInterpolation);
+	}
 	float RotationLagSpeed = Component->GetRotationLagSpeed();
-	if (ImGui::DragFloat("RotationLagSpeed", &RotationLagSpeed))
+	if (ImGui::DragFloat("RotationLagSpeed", &RotationLagSpeed, 1.0f, 0.0f))
 	{
 		Component->SetRotationLagSpeed(RotationLagSpeed);
-	}
+	}	
 	bool bInHeritPitch = Component->GetbInHeritPitch();
 	if (ImGui::Checkbox("InHeritPitch", &bInHeritPitch))
 	{

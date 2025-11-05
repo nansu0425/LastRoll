@@ -11,8 +11,20 @@ USpringArmComponent::USpringArmComponent()
 
 void USpringArmComponent::BeginPlay()
 {
-
+	CurLagLocation = GetWorldLocation();
 }
+
+
+void USpringArmComponent::TickComponent(float DeltaTime)
+{
+	Super::TickComponent(DeltaTime);
+	MarkAsDirty();
+	if (bLocationLag) 
+	{
+		CurLagLocation = FVector::LinearEXPLerpVt3(CurLagLocation, GetDestination(), LocationLagLinearLerpInterpolation, LocationLagSpeed);
+	}
+}
+
 
 FVector USpringArmComponent::GetSpringArmOffset() const
 {
@@ -25,8 +37,28 @@ FVector USpringArmComponent::GetSpringArmOffset() const
 	return CurTargetOffset + CurSocketOffset + TargetArmOffset;
 }
 
+FVector USpringArmComponent::GetDestination() const
+{
+	return GetDestinationMatrix().GetLocation();
+}
 
+FMatrix USpringArmComponent::GetDestinationMatrix() const
+{
+	if (bIsTransformDirty)
+	{
+		WorldTransformMatrix = FMatrix::GetModelMatrix(RelativeLocation, RelativeRotation, RelativeScale3D);
 
+		if (AttachParent)
+		{
+			WorldTransformMatrix *= AttachParent->GetWorldTransformMatrix();
+		}
+
+		WorldTransformMatrix *= FMatrix::CreateTranslation(GetSpringArmOffset());
+		bIsTransformDirty = false;
+	}
+
+	return WorldTransformMatrix;
+}
 
 
 const FMatrix& USpringArmComponent::GetWorldTransformMatrix() const
@@ -85,6 +117,10 @@ void USpringArmComponent::SetWorldLocation(const FVector& NewLocation)
 	{
 		SetRelativeLocation(NewLocation);
 	}
+	if (bLocationLag == false)
+	{
+		CurLagLocation = NewLocation;
+	}
 }
 void USpringArmComponent::SetWorldRotation(const FQuaternion& NewRotation)
 {
@@ -97,10 +133,6 @@ void USpringArmComponent::SetWorldRotation(const FQuaternion& NewRotation)
 	{
 		SetRelativeRotation(NewRotation);
 	}
-}
-void USpringArmComponent::TickComponent(float DeltaTime)
-{
-	Super::TickComponent(DeltaTime);
 }
 void USpringArmComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 {

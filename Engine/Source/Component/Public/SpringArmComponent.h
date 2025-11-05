@@ -15,7 +15,8 @@ public:
 
 
 	FVector GetSpringArmOffset() const;
-
+	FVector GetDestination() const;
+	FMatrix GetDestinationMatrix() const;
 
 	//World Transform 값 관련 함수를 오버라이딩 해서 SpringArm Option값들을 반영한다.
 	const virtual FMatrix& GetWorldTransformMatrix() const;
@@ -42,8 +43,12 @@ public:
 	bool GetbLocationLag() const { return bLocationLag; }
 	void SetLocationLagSpeed(float InLocationLagSpeed) { 	MarkAsDirty(); LocationLagSpeed = InLocationLagSpeed; }
 	float GetLocationLagSpeed() const { return LocationLagSpeed; }
+	void SetLocationLagLinearLerpInterpolation(float InLocationLagLinearLerpInterpolation) { 	MarkAsDirty(); LocationLagLinearLerpInterpolation = InLocationLagLinearLerpInterpolation; }
+	float GetLocationLagLinearLerpInterpolation() const { return LocationLagLinearLerpInterpolation; }
 	void SetbRotationLag(bool InbRotationLag) { 	MarkAsDirty(); bRotationLag = InbRotationLag; }
 	bool GetbRotationLag() const { return bRotationLag; }
+	void SetRotationLagLinearLerpInterpolation(float InRotationLagLinearLerpInterpolation) { 	MarkAsDirty(); RotationLagLinearLerpInterpolation = InRotationLagLinearLerpInterpolation; }
+	float GetRotationLagLinearLerpInterpolation() const { return RotationLagLinearLerpInterpolation; }
 	void SetRotationLagSpeed(float InRotationLagSpeed) { 	MarkAsDirty(); RotationLagSpeed = InRotationLagSpeed; }
 	float GetRotationLagSpeed() const { return RotationLagSpeed; }
 	void SetbInHeritPitch(bool InbInHeritPitch) { 	MarkAsDirty(); bInHeritPitch = InbInHeritPitch; }
@@ -58,13 +63,14 @@ private:
 	FVector TargetOffset; //스프링암의 시작점 (월드기준)
 	bool bUsePawnControlRotation = false;
 	bool bLocationLag = true;
+	float LocationLagLinearLerpInterpolation;
 	float LocationLagSpeed = 5;
 	bool bRotationLag = true;
+	float RotationLagLinearLerpInterpolation;
 	float RotationLagSpeed = 5;
 	bool bInHeritPitch = true;
 	bool bInHeritYaw = true;
 	bool bInHeritRoll = true;
 
-
-
+	FVector CurLagLocation;
 };
