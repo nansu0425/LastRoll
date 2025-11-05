@@ -497,6 +497,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClInclude Include="Source\Audio\Public\AudioDevice.h" />
     <ClInclude Include="Source\Audio\Public\SoundWave.h" />
     <ClInclude Include="Source\Component\Camera\Public\CameraModifier_CameraShake.h" />
+    <ClInclude Include="Source\Component\Camera\Public\CameraModifier_Transition.h" />
     <ClInclude Include="Source\Component\Mesh\Public\MeshComponent.h">
       <DeploymentContent>false</DeploymentContent>
     </ClInclude>
@@ -593,6 +594,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClInclude Include="Source\Global\Constant.h" />
     <ClInclude Include="Source\Global\CoreTypes.h" />
     <ClInclude Include="Source\Global\Public\CameraShakeTypes.h" />
+    <ClInclude Include="Source\Global\Public\TransitionTypes.h" />
     <ClInclude Include="Source\Global\Enum.h" />
     <ClInclude Include="Source\Global\EnumReflection.h" />
     <ClInclude Include="Source\Global\Function.h" />
@@ -612,6 +614,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClInclude Include="Source\Level\Public\Level.h" />
     <ClInclude Include="Source\Manager\Asset\Public\AssetManager.h" />
     <ClInclude Include="Source\Manager\Camera\Public\CameraShakePresetManager.h" />
+    <ClInclude Include="Source\Manager\Camera\Public\TransitionPresetManager.h" />
     <ClInclude Include="Source\Manager\Config\Public\ConfigManager.h" />
     <ClInclude Include="Source\Manager\Input\Public\InputManager.h" />
     <ClInclude Include="Source\Manager\Path\Public\PathManager.h" />
@@ -816,6 +819,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClCompile Include="Source\Audio\Private\AudioDevice.cpp" />
       <ClCompile Include="Source\Audio\Private\SoundWave.cpp" />
     <ClCompile Include="Source\Component\Camera\Private\CameraModifier_CameraShake.cpp" />
+    <ClCompile Include="Source\Component\Camera\Private\CameraModifier_Transition.cpp" />
     <ClCompile Include="Source\Component\Mesh\Private\MeshComponent.cpp">
       <DeploymentContent>false</DeploymentContent>
     </ClCompile>
@@ -908,6 +912,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClCompile Include="Source\Editor\Private\CameraShakePresetDetailPanel.cpp" />
     <ClCompile Include="Source\Global\BezierCurve.cpp" />
     <ClCompile Include="Source\Global\CameraShakeTypes.cpp" />
+    <ClCompile Include="Source\Global\Private\TransitionTypes.cpp" />
     <ClCompile Include="Source\Global\CoreTypes.cpp" />
     <ClCompile Include="Source\Global\Matrix.cpp" />
     <ClCompile Include="Source\Global\Memory.cpp" />
@@ -922,6 +927,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClCompile Include="Source\ImGui\ImGuiBezierEditor.cpp" />
     <ClCompile Include="Source\Level\Private\Level.cpp" />
     <ClCompile Include="Source\Manager\Camera\Private\CameraShakePresetManager.cpp" />
+    <ClCompile Include="Source\Manager\Camera\Private\TransitionPresetManager.cpp" />
     <ClCompile Include="Source\Manager\Config\Private\ConfigManager.cpp" />
     <ClCompile Include="Source\Manager\Input\Private\InputManager.cpp" />
     <ClCompile Include="Source\Manager\Path\Private\PathManager.cpp" />

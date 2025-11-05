@@ -34,6 +34,8 @@
 #include "Level/Public/World.h"
 #include "Game/Actor/Public/Player.h"
 #include "Game/Actor/Public/TopDownCameraActor.h"
+#include "Component/Camera/Public/CameraModifier_Transition.h"
+#include "Manager/Camera/Public/TransitionPresetManager.h"
 IMPLEMENT_SINGLETON_CLASS(UScriptManager, UObject)
 
 UScriptManager::UScriptManager()
@@ -812,8 +814,43 @@ void UScriptManager::RegisterCoreTypes()
 		"A", EKeyInput::A,
 		"S", EKeyInput::S,
 		"D", EKeyInput::D,
+		"Q", EKeyInput::Q,
+		"E", EKeyInput::E,
+		"R", EKeyInput::R,
+		"F", EKeyInput::F,
+		"P", EKeyInput::P,
+		"G", EKeyInput::G,
+		"Num0", EKeyInput::Num0,
+		"Num1", EKeyInput::Num1,
+		"Num2", EKeyInput::Num2,
+		"Num3", EKeyInput::Num3,
+		"Num4", EKeyInput::Num4,
+		"Num5", EKeyInput::Num5,
+		"Num6", EKeyInput::Num6,
+		"Num7", EKeyInput::Num7,
+		"Num8", EKeyInput::Num8,
+		"Num9", EKeyInput::Num9,
+		"F1", EKeyInput::F1,
+		"F2", EKeyInput::F2,
+		"F3", EKeyInput::F3,
+		"F4", EKeyInput::F4,
+		"Space", EKeyInput::Space,
+		"Enter", EKeyInput::Enter,
+		"Esc", EKeyInput::Esc,
+		"Tab", EKeyInput::Tab,
+		"Shift", EKeyInput::Shift,
+		"Ctrl", EKeyInput::Ctrl,
+		"Alt", EKeyInput::Alt,
+		"Up", EKeyInput::Up,
+		"Down", EKeyInput::Down,
+		"Left", EKeyInput::Left,
+		"Right", EKeyInput::Right,
 		"MouseLeft", EKeyInput::MouseLeft,
-		"MouseRight", EKeyInput::MouseRight);
+		"MouseRight", EKeyInput::MouseRight,
+		"MouseMiddle", EKeyInput::MouseMiddle,
+		"Backtick", EKeyInput::Backtick,
+		"Backspace", EKeyInput::Backspace,
+		"Delete", EKeyInput::Delete);
 
 	LuaState["IsKeyDown"] = [](EKeyInput InputKey) -> bool
 	{
@@ -1114,6 +1151,102 @@ void UScriptManager::RegisterCoreTypes()
 		std::uniform_real_distribution<float> Distribution(MinValue, MaxValue);
 		return Distribution(RandomGenerator);
 	};
+
+	// ====================================================================
+	// Camera Transition System
+	// ====================================================================
+
+	// FMinimalViewInfo 생성자 함수 등록
+	lua.set_function("ViewInfo", sol::overload(
+		[]() { return FMinimalViewInfo(); },
+		[](const FVector& Location, const FQuaternion& Rotation, float FOV) {
+			FMinimalViewInfo ViewInfo;
+			ViewInfo.Location = Location;
+			ViewInfo.Rotation = Rotation;
+			ViewInfo.FOV = FOV;
+			return ViewInfo;
+		}
+	));
+
+	// FMinimalViewInfo usertype 등록
+	lua.new_usertype<FMinimalViewInfo>("FMinimalViewInfo",
+		sol::no_constructor,  // 생성자는 위에서 ViewInfo 함수로 등록했음
+
+		// Properties
+		"Location", &FMinimalViewInfo::Location,
+		"Rotation", &FMinimalViewInfo::Rotation,
+		"FOV", &FMinimalViewInfo::FOV,
+		"AspectRatio", &FMinimalViewInfo::AspectRatio,
+		"NearClipPlane", &FMinimalViewInfo::NearClipPlane,
+		"FarClipPlane", &FMinimalViewInfo::FarClipPlane
+	);
+
+	// FCubicBezierCurve Preset 팩토리 메서드 등록
+	lua.set_function("BezierLinear", &FCubicBezierCurve::CreateLinear);
+	lua.set_function("BezierEaseIn", &FCubicBezierCurve::CreateEaseIn);
+	lua.set_function("BezierEaseOut", &FCubicBezierCurve::CreateEaseOut);
+	lua.set_function("BezierEaseInOut", &FCubicBezierCurve::CreateEaseInOut);
+	lua.set_function("BezierBounce", &FCubicBezierCurve::CreateBounce);
+
+	// FCubicBezierCurve usertype 등록
+	lua.new_usertype<FCubicBezierCurve>("FCubicBezierCurve",
+		sol::constructors<FCubicBezierCurve(), FCubicBezierCurve(const FVector2&, const FVector2&, const FVector2&, const FVector2&)>(),
+		"Evaluate", &FCubicBezierCurve::Evaluate,
+		"SampleY", &FCubicBezierCurve::SampleY
+	);
+
+	// UCameraModifier_Transition usertype 등록
+	lua.new_usertype<UCameraModifier_Transition>("CameraTransition",
+		sol::no_constructor,
+
+		// Methods
+		"IsTransitioning", &UCameraModifier_Transition::IsTransitioning,
+		"GetProgress", &UCameraModifier_Transition::GetProgress,
+		"StopTransition", &UCameraModifier_Transition::StopTransition
+	);
+
+	// Camera Transition Helper Functions
+	LuaState["GetCameraManager"] = []() -> APlayerCameraManager* {
+		if (GWorld && (GWorld->GetWorldType() == EWorldType::PIE ||
+		               GWorld->GetWorldType() == EWorldType::Game))
+		{
+			return GWorld->GetCameraManager();
+		}
+		UE_LOG_WARNING("GetCameraManager: Only available in PIE/Game mode");
+		return nullptr;
+	};
+
+	LuaState["StartCameraTransition"] = [](const FMinimalViewInfo& TargetPOV, float Duration, const FCubicBezierCurve& TimingCurve) -> UCameraModifier_Transition* {
+		APlayerCameraManager* CameraManager = GWorld->GetCameraManager();
+		if (!CameraManager)
+		{
+			UE_LOG_ERROR("StartCameraTransition: 카메라 매니저를 찾을 수 없습니다.");
+			return nullptr;
+		}
+		return CameraManager->StartTransition(TargetPOV, Duration, TimingCurve);
+	};
+
+	LuaState["PlayTransitionPreset"] = [](const FMinimalViewInfo& TargetPOV, const std::string& PresetName) -> UCameraModifier_Transition* {
+		APlayerCameraManager* CameraManager = GWorld->GetCameraManager();
+		if (!CameraManager)
+		{
+			UE_LOG_ERROR("PlayTransitionPreset: 카메라 매니저를 찾을 수 없습니다.");
+			return nullptr;
+		}
+		return CameraManager->PlayTransitionPreset(TargetPOV, FName(PresetName));
+	};
+
+	LuaState["StopAllCameraTransitions"] = []() {
+		APlayerCameraManager* CameraManager = GWorld->GetCameraManager();
+		if (!CameraManager)
+		{
+			UE_LOG_ERROR("StopAllCameraTransitions: 카메라 매니저를 찾을 수 없습니다.");
+			return;
+		}
+		CameraManager->StopAllTransitions();
+	};
+
+	UE_LOG_SUCCESS("Camera Transition Lua bindings registered");
 }
 
 void UScriptManager::RegisterGlobalFunctions()

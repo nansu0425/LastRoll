@@ -3,7 +3,9 @@
 #include "Component/Camera/Public/CameraComponent.h"
 #include "Component/Camera/Public/CameraModifier.h"
 #include "Component/Camera/Public/CameraModifier_CameraShake.h"
+#include "Component/Camera/Public/CameraModifier_Transition.h"
 #include "Manager/Camera/Public/CameraShakePresetManager.h"
+#include "Manager/Camera/Public/TransitionPresetManager.h"
 #include "Global/Function.h"
 
 IMPLEMENT_CLASS(APlayerCameraManager, AActor)
@@ -430,4 +432,58 @@ void APlayerCameraManager::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 	// TODO: 카메라 매니저에 대한 JSON 직렬화 구현
 	// ViewTarget, 모디파이어, 페이드 상태는 런타임 상태이므로
 	// BeginPlay 또는 게임플레이 코드에서 설정되어야 합니다
+}
+
+UCameraModifier_Transition* APlayerCameraManager::StartTransition(
+	const FMinimalViewInfo& TargetPOV,
+	float Duration,
+	const FCubicBezierCurve& TimingCurve)
+{
+	// Find or create transition modifier
+	UCameraModifier_Transition* Transition = Cast<UCameraModifier_Transition>(
+		FindCameraModifierByClass(UCameraModifier_Transition::StaticClass())
+	);
+
+	if (!Transition)
+	{
+		Transition = Cast<UCameraModifier_Transition>(
+			AddCameraModifier(UCameraModifier_Transition::StaticClass())
+		);
+	}
+
+	if (Transition)
+	{
+		FMinimalViewInfo CurrentPOV = GetCameraCachePOV();
+		Transition->StartTransition(CurrentPOV, TargetPOV, Duration, TimingCurve);
+	}
+
+	return Transition;
+}
+
+UCameraModifier_Transition* APlayerCameraManager::PlayTransitionPreset(
+	const FMinimalViewInfo& TargetPOV,
+	FName PresetName)
+{
+	UTransitionPresetManager& PresetManager = UTransitionPresetManager::GetInstance();
+	FTransitionPresetData* Preset = PresetManager.FindPreset(PresetName);
+
+	if (!Preset)
+	{
+		UE_LOG_ERROR("APlayerCameraManager::PlayTransitionPreset - Preset '%s' not found",
+			PresetName.ToString().c_str());
+		return nullptr;
+	}
+
+	return StartTransition(TargetPOV, Preset->Duration, Preset->TimingCurve);
+}
+
+void APlayerCameraManager::StopAllTransitions()
+{
+	for (UCameraModifier* Modifier : ModifierList)
+	{
+		if (UCameraModifier_Transition* Transition = Cast<UCameraModifier_Transition>(Modifier))
+		{
+			Transition->StopTransition();
+		}
+	}
 }
