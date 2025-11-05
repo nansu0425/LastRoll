@@ -8,6 +8,8 @@
 #include "Render/RenderPass/Public/ShadowMapPass.h"
 #include "Source/Editor/Public/Camera.h"
 #include "Render/UI/Overlay/Public/StatOverlay.h"
+#include "Actor/Public/PlayerCameraManager.h"
+#include "Level/Public/World.h"
 
 constexpr uint32 CSNumThread = 128;
 
@@ -191,15 +193,65 @@ void FLightPass::Execute(FRenderingContext& Context)
 	FRenderResourceFactory::UpdateStructuredBuffer(SpotLightStructuredBuffer, SpotLightDatas);
 
 	// Cluster AABB Set
-	FCameraConstants Inv = Context.CurrentCamera->GetFViewProjConstantsInverse();
-	FMatrix ProjectionInv = Inv.Projection;
-	FMatrix ViewInv = Inv.View;
-	FMatrix ViewMatrix = Context.CurrentCamera->GetFViewProjConstants().View;
-	float CamNear = Context.CurrentCamera->GetNearZ();
-	float CamFar = Context.CurrentCamera->GetFarZ();
-	float Aspect = Context.CurrentCamera->GetAspect();
-	float fov = Context.CurrentCamera->GetFovY();
-	uint32 Orthographic = ECameraType::ECT_Orthographic == Context.CurrentCamera->GetCameraType() ? 1 : 0;
+	// PIE/Game 모드인 경우 PlayerCameraManager의 카메라 사용, Editor 모드인 경우 EditorCamera 사용
+	FMatrix ProjectionInv;
+	FMatrix ViewInv;
+	FMatrix ViewMatrix;
+	float CamNear;
+	float CamFar;
+	float Aspect;
+	float fov;
+	uint32 Orthographic;
+
+	if (GWorld && (GWorld->GetWorldType() == EWorldType::PIE || GWorld->GetWorldType() == EWorldType::Game))
+	{
+		APlayerCameraManager* CameraManager = GWorld->GetCameraManager();
+		if (CameraManager)
+		{
+			// PlayerCameraManager에서 카메라 정보 가져오기
+			const FCameraConstants& CamConstant = CameraManager->GetCameraConstants();
+			const FMinimalViewInfo& POV = CameraManager->GetCameraCachePOV();
+
+			ViewMatrix = CamConstant.View;
+			ProjectionInv = CamConstant.Projection.InverseGeneral();
+			ViewInv = CamConstant.View.InverseGeneral();
+			CamNear = CamConstant.NearClip;
+			CamFar = CamConstant.FarClip;
+			Aspect = POV.AspectRatio;
+			fov = POV.FOV;
+			Orthographic = POV.bUsePerspectiveProjection ? 0 : 1;
+		}
+		else
+		{
+			// Fallback to EditorCamera if PlayerCameraManager doesn't exist
+			FCameraConstants CamConstant = Context.CurrentCamera->GetFViewProjConstants();
+			FCameraConstants CamConstantInv = Context.CurrentCamera->GetFViewProjConstantsInverse();
+
+			ViewMatrix = CamConstant.View;
+			ProjectionInv = CamConstantInv.Projection;
+			ViewInv = CamConstantInv.View;
+			CamNear = Context.CurrentCamera->GetNearZ();
+			CamFar = Context.CurrentCamera->GetFarZ();
+			Aspect = Context.CurrentCamera->GetAspect();
+			fov = Context.CurrentCamera->GetFovY();
+			Orthographic = ECameraType::ECT_Orthographic == Context.CurrentCamera->GetCameraType() ? 1 : 0;
+		}
+	}
+	else
+	{
+		// Editor 모드인 경우 EditorCamera 사용
+		FCameraConstants CamConstant = Context.CurrentCamera->GetFViewProjConstants();
+		FCameraConstants CamConstantInv = Context.CurrentCamera->GetFViewProjConstantsInverse();
+
+		ViewMatrix = CamConstant.View;
+		ProjectionInv = CamConstantInv.Projection;
+		ViewInv = CamConstantInv.View;
+		CamNear = Context.CurrentCamera->GetNearZ();
+		CamFar = Context.CurrentCamera->GetFarZ();
+		Aspect = Context.CurrentCamera->GetAspect();
+		fov = Context.CurrentCamera->GetFovY();
+		Orthographic = ECameraType::ECT_Orthographic == Context.CurrentCamera->GetCameraType() ? 1 : 0;
+	}
 
 	FRenderResourceFactory::UpdateConstantBufferData(ViewClusterInfoConstantBuffer,
 		FViewClusterInfo{ ProjectionInv, ViewInv, ViewMatrix, CamNear,CamFar,Aspect,fov});
