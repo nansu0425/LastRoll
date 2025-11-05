@@ -98,8 +98,11 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 
 void ULevel::Init()
 {
-	for (AActor* Actor: LevelActors)
+	// Use index-based loop to handle actors being spawned during BeginPlay
+	// Range-based loop would cause iterator invalidation when LevelActors is modified
+	for (int32 i = 0; i < LevelActors.size(); ++i)
 	{
+		AActor* Actor = LevelActors[i];
 		if (Actor)
 		{
 			Actor->BeginPlay();

@@ -3,6 +3,7 @@
 class UScriptComponent;
 class UStaticMeshComponent;
 class USphereComponent;
+class APlayerCameraManager;
 
 UCLASS()
 class APlayer : public AActor
@@ -19,8 +20,18 @@ public:
 
     virtual void InitializeComponents() override;
 
+    virtual void BeginPlay() override;
+
+    virtual void EndPlay() override;
+
+    // Camera Manager Access
+    APlayerCameraManager* GetPlayerCameraManager() const { return PlayerCameraManager; }
+
 private:
     UScriptComponent* PlayerScriptComponent = nullptr;
     USphereComponent* DetectionCollider = nullptr;  // Enemy 탐지용
     USphereComponent* PhysicsCollider = nullptr;
+
+    // Player owns the camera manager (similar to PlayerController in Unreal Engine)
+    APlayerCameraManager* PlayerCameraManager = nullptr;
 };

@@ -1,7 +1,7 @@
 #pragma once
 #include <filesystem>
 
-#include "Actor/Public/PlayerCameraManager.h"
+#include "Audio/Public/AudioDevice.h"
 #include "Core/Public/NewObject.h"
 #include "Core/Public/Object.h"
 #include "Global/Types.h"
@@ -11,6 +11,7 @@ class ULevel;
 class AActor;
 class UClass;
 class APlayerCameraManager;  // Forward declaration for game camera
+class APlayer;  // Forward declaration for player actor
 
 namespace json { class JSON; }
 using JSON = json::JSON;
@@ -68,17 +69,13 @@ public:
 	void SetWorldType(EWorldType InWorldType);
 
 	// Camera Manager Access (for Game/PIE modes)
-	APlayerCameraManager* GetCameraManager() 
-	{
-		if (!CameraManager)
-		{
-			/** @todo 메모리 누수 확인 */
-			CameraManager = NewObject<APlayerCameraManager>(this);
-			SetCameraManager(CameraManager);
-		}
-		return CameraManager;
-	}
-	void SetCameraManager(APlayerCameraManager* InManager) { CameraManager = InManager; }
+	// Gets the PlayerCameraManager from the first APlayer found in the level
+	APlayerCameraManager* GetCameraManager();
+
+	// Player Access
+	APlayer* GetFirstPlayerActor();
+
+	FAudioDevice* GetAudioDevice() { return AudioDevice; }
 
 private:
 	EWorldType WorldType;
@@ -86,8 +83,7 @@ private:
 	bool bBegunPlay = false;
 	TArray<AActor*> PendingDestroyActors;
 
-	// Camera Manager (for Game/PIE modes)
-	APlayerCameraManager* CameraManager = nullptr;
+	FAudioDevice* AudioDevice = nullptr;
 
 	void FlushPendingDestroy(); // Destroy marking 된 액터들을 실제 삭제
 	void UpdateCollisions(); // 모든 PrimitiveComponent의 충돌 업데이트
