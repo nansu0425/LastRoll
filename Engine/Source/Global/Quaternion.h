@@ -30,4 +30,9 @@ struct FQuaternion
 	static FQuaternion MakeFromDirection(const FVector& Direction);
 	static FVector RotateVector(const FQuaternion& q, const FVector& v);
 	FVector RotateVector(const FVector& V) const;
+
+	FVector GetForward() const;
+	FVector GetRight() const;
+	FVector GetUp() const;
+
 };

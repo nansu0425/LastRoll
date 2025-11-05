@@ -491,6 +491,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClInclude Include="Source\Render\UI\GameUI\Public\GameUI.h" />
     <ClInclude Include="Source\Render\UI\Overlay\Public\D2DOverlayManager.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\ShadowMapFilterPass.h" />
+    <ClInclude Include="Source\Render\UI\Widget\Public\SpringArmComponentWidget.h" />
     <ClInclude Include="Source\Texture\Public\ShadowMapResources.h" />
     <ClInclude Include="Source\Render\UI\Factory\Public\UIWindowFactory.h" />
     <ClInclude Include="Source\Render\UI\ImGui\Public\ImGuiHelper.h" />
@@ -765,6 +766,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClCompile Include="Source\Render\UI\GameUI\Private\GameUI.cpp" />
     <ClCompile Include="Source\Render\UI\Overlay\Private\D2DOverlayManager.cpp" />
     <ClCompile Include="Source\Render\UI\Overlay\Private\StatOverlay.cpp" />
+    <ClCompile Include="Source\Render\UI\Widget\Private\SpringArmComponentWidget.cpp" />
     <ClCompile Include="Source\Texture\Private\ShadowMapResources.cpp" />
     <ClCompile Include="Source\Render\UI\Factory\Private\UIWindowFactory.cpp" />
     <ClCompile Include="Source\Render\UI\ImGui\Private\ImGuiHelper.cpp" />

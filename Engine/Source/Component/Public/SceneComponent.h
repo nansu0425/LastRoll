@@ -4,6 +4,8 @@
 namespace json { class JSON; }
 using JSON = json::JSON;
 
+class USpringArmComponent;
+
 UCLASS()
 class USceneComponent : public UActorComponent
 {
@@ -30,20 +32,21 @@ public:
 	const FQuaternion& GetRelativeRotation() const { return RelativeRotation; }
 	const FVector& GetRelativeScale3D() const { return RelativeScale3D; }
 
-	const FMatrix& GetWorldTransformMatrix() const;
-	const FMatrix& GetWorldTransformMatrixInverse() const;
+	const virtual FMatrix& GetWorldTransformMatrix() const;
+	const virtual FMatrix& GetWorldTransformMatrixInverse() const;
 
-	FVector GetWorldLocation() const;
-    FVector GetWorldRotation() const;
-    FQuaternion GetWorldRotationAsQuaternion() const;
+	virtual FVector GetWorldLocation() const;
+	virtual FVector GetWorldRotation() const;
+	virtual FQuaternion GetWorldRotationAsQuaternion() const;
     FVector GetWorldScale3D() const;
 
-    void SetWorldLocation(const FVector& NewLocation);
-    void SetWorldRotation(const FVector& NewRotation);
-    void SetWorldRotation(const FQuaternion& NewRotation);
+	virtual void SetWorldLocation(const FVector& NewLocation);
+	virtual void SetWorldRotation(const FVector& NewRotation);
+	virtual void SetWorldRotation(const FQuaternion& NewRotation);
     void SetWorldScale3D(const FVector& NewScale);
 
 private:
+	friend class USpringArmComponent;
 	mutable bool bIsTransformDirty = true;
 	mutable bool bIsTransformDirtyInverse = true;
 	mutable FMatrix WorldTransformMatrix;

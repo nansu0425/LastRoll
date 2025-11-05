@@ -215,3 +215,15 @@ FVector FQuaternion::RotateVector(const FVector& V) const
 	const FVector Result = V + (TT * W) + TT.Cross(Q);
 	return Result;
 }
+FVector FQuaternion::GetForward() const
+{
+	return RotateVector(FVector(1, 0, 0));
+}
+FVector FQuaternion::GetRight() const
+{
+	return RotateVector(FVector(0, 1, 0));
+}
+FVector FQuaternion::GetUp() const
+{
+	return RotateVector(FVector(0, 0, 1));
+}
