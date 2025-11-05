@@ -24,8 +24,8 @@ void USpringArmComponent::TickComponent(float DeltaTime)
 		//이동지연보간
 		FVector CurLerpMoveDis = FVector::LinearEXPLerpVt3(LagLocation, CurWorldLocation, LocationLagLinearLerpInterpolation, LocationLagSpeed) - LagLocation;
 		LagLocation += CurLerpMoveDis;
-		UE_LOG("Lerp : %f,%f,%f , Lag : %f, %f, %f ", CurLerpMoveDis.X, CurLerpMoveDis.Y, CurLerpMoveDis.Z,
-			LagLocation.X, LagLocation.Y, LagLocation.Z);
+		// UE_LOG("Lerp : %f,%f,%f , Lag : %f, %f, %f ", CurLerpMoveDis.X, CurLerpMoveDis.Y, CurLerpMoveDis.Z,
+		// 	LagLocation.X, LagLocation.Y, LagLocation.Z);
 		FVector FinalLagLocation = LagLocation;
 	}
 	else 

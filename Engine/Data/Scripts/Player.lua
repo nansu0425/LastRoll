@@ -1,11 +1,15 @@
 local Util = require("Data\\Scripts\\Util")
 local ActorPool = require("Data/Scripts/ActorPool")
+local CameraTest = require("Data/Scripts/CameraTransitionTest")
 
 if _G.PlayerData == nil then
 _G.PlayerData = {}
 end
 
 _G.PlayerData.PlayerPos = Vector(0,0,0)
+
+-- Camera 제어 플래그 (외부에서 접근 가능하도록 전역으로 선언)
+bFollowPlayer = true  -- true: Player 따라다님, false: Free Camera (Transition 활성화)
 
 -- Projectile 활성화/비활성화 플래그
 local bLinearProjectileEnabled = true   -- Linear Projectile 활성화 여부
@@ -91,6 +95,10 @@ function Init()
 
     TopCamera()
     print("[Player] Actor Init: " .. obj.UUID)
+    print("[Player] Camera Transition Test Keys:")
+    print("  Number Keys 1-7: Different camera views")
+    print("  Number Key 0: Stop all transitions")
+    print("  F Key: Toggle Follow Player mode")
 
 end
 
@@ -124,6 +132,58 @@ function Tick(dt)
 
     HPPer = obj.HP / obj.MaxHP
     Util.RenderHPBar(obj.Location, Vector2(70, 20), HPPer)
+
+    -- ===== F 키: Follow Player 모드 토글 =====
+    if IsKeyPressed(EKeyInput.F) then
+        bFollowPlayer = not bFollowPlayer
+        if bFollowPlayer then
+            print("[Player] Follow Player 모드 활성화 (카메라가 Player를 따라다님)")
+        else
+            print("[Player] Free Camera 모드 활성화 (카메라 자유 이동)")
+        end
+    end
+
+    -- ===== Camera Transition Test (Number Keys 1-9, 0) =====
+    if IsKeyPressed(EKeyInput.Num1) then
+        bFollowPlayer = false  -- Transition 시작 시 Follow Player 모드 비활성화
+        CameraTest.TransitionToTopView()
+    end
+
+    if IsKeyPressed(EKeyInput.Num2) then
+        bFollowPlayer = false
+        CameraTest.TransitionToFrontView()
+    end
+
+    if IsKeyPressed(EKeyInput.Num3) then
+        bFollowPlayer = false
+        CameraTest.TransitionToSideView()
+    end
+
+    if IsKeyPressed(EKeyInput.Num4) then
+        bFollowPlayer = false
+        CameraTest.TransitionWithBounce()
+    end
+
+    if IsKeyPressed(EKeyInput.Num5) then
+        bFollowPlayer = false
+        CameraTest.TransitionQuickCut()
+    end
+
+    if IsKeyPressed(EKeyInput.Num6) then
+        bFollowPlayer = false
+        CameraTest.TransitionToPlayer()
+    end
+
+    if IsKeyPressed(EKeyInput.Num7) then
+        bFollowPlayer = false
+        CameraTest.TransitionWithCustomCurve()
+    end
+
+    if IsKeyPressed(EKeyInput.Num0) then
+        CameraTest.StopAllTransitions()
+        bFollowPlayer = true  -- Transition 중지 시 Follow Player 모드 복귀
+        print("[Player] Follow Player 모드로 복귀")
+    end
 end
 
 -- Called once when the Actor ends play
@@ -236,7 +296,10 @@ function Move(dt)
 
     --모든 Enemy 돌면서 겹치면 밀리도록 처리
 
-    TopCamera()
+    -- Follow Player 모드일 때만 카메라를 Player 위치로 이동
+    if bFollowPlayer then
+        TopCamera()
+    end
 end
 
 -- ==============================================================================

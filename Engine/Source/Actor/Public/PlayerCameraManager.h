@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Actor/Public/Actor.h"
 #include "Global/CoreTypes.h"
+#include "Global/Public/BezierCurve.h"
 
 class UCameraComponent;   // 전방 선언
 class UCameraModifier;    // 전방 선언
@@ -172,6 +173,57 @@ public:
 	 * @brief 카메라 페이드 즉시 중지
 	 */
 	void StopCameraFade();
+
+	// ===== 카메라 트랜지션 API =====
+	/**
+	 * @brief 카메라 트랜지션 시작 (Bezier curve 타이밍)
+	 *
+	 * 현재 카메라 상태에서 목표 POV로 부드럽게 전환합니다.
+	 * UCameraModifier_Transition이 없으면 자동 생성합니다.
+	 *
+	 * @param TargetPOV 목표 카메라 상태
+	 * @param Duration 트랜지션 지속 시간 (초)
+	 * @param TimingCurve Bezier 곡선 (타이밍 제어)
+	 * @return 생성된 트랜지션 모디파이어
+	 */
+	class UCameraModifier_Transition* StartTransition(
+		const FMinimalViewInfo& TargetPOV,
+		float Duration,
+		const FCubicBezierCurve& TimingCurve
+	);
+
+	/**
+	 * @brief Preset 이름으로 카메라 트랜지션 재생
+	 *
+	 * UTransitionPresetManager에서 Preset을 찾아 트랜지션을 시작합니다.
+	 *
+	 * @param TargetPOV 목표 카메라 상태
+	 * @param PresetName 재생할 Preset 이름 (예: FName("SlowZoom"))
+	 * @return 생성된 트랜지션 모디파이어, Preset이 없으면 nullptr
+	 */
+	class UCameraModifier_Transition* PlayTransitionPreset(
+		const FMinimalViewInfo& TargetPOV,
+		FName PresetName
+	);
+
+	/**
+	 * @brief Preset 이름으로 카메라 트랜지션 재생 (명시적인 시작 POV)
+	 *
+	 * @param StartPOV 시작 카메라 상태
+	 * @param TargetPOV 목표 카메라 상태
+	 * @param PresetName 재생할 Preset 이름
+	 * @return 생성된 트랜지션 모디파이어, Preset이 없으면 nullptr
+	 */
+	class UCameraModifier_Transition* PlayTransitionPreset(
+		const FMinimalViewInfo& StartPOV,
+		const FMinimalViewInfo& TargetPOV,
+		FName PresetName
+	);
+
+	/**
+	 * @brief 모든 활성 트랜지션 중지
+	 */
+	void StopAllTransitions();
 
 	// ===== 메인 업데이트 함수 =====
 	/**
