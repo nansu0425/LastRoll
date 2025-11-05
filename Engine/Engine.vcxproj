@@ -472,6 +472,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClInclude Include="Source\Render\HitProxy\Public\HitProxy.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\FadePass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\HitProxyPass.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\LetterboxPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\LightPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\PointLightPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\FogPass.h" />
@@ -744,6 +745,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClCompile Include="Source\Render\HitProxy\Private\HitProxy.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\FadePass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\HitProxyPass.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Private\LetterboxPass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\LightPass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\PointLightPass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\FXAAPass.cpp" />
