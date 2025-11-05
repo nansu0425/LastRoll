@@ -30,6 +30,12 @@ end
 function Attack()
     if _G.PlayerData.bPlayerAlive then
         _G.PlayerData.PlayerEnv.TakeDamagePlayer(obj.Dmg)
+
+        -- EnemyB 전용 카메라 쉐이크 (데미지에 비례하는 강도)
+        local ShakeDuration = 0.3
+        local ShakeLocationAmp = obj.Dmg * 1.0  -- 데미지 1당 위치 흔들림 1.0
+        local ShakeRotationAmp = obj.Dmg * 0.5  -- 데미지 1당 회전 흔들림 0.5도
+        StartCameraShake(ShakeDuration, ShakeLocationAmp, ShakeRotationAmp)
     end
 end
 
