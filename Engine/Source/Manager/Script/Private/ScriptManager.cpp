@@ -1090,7 +1090,7 @@ void UScriptManager::RegisterCoreTypes()
 		ViewTarget.CameraComponent->PostProcessSettings.VignetteIntensity = InVignetteIntensity;
 	};
 	
-	LuaState["ResetVignette"] = [](FVector InVignetteColor, float InVignetteIntensity)
+	LuaState["ResetVignette"] = []()
 	{
 		APlayerCameraManager* CameraManager = GWorld->GetCameraManager();
 		if (!CameraManager)
@@ -1100,7 +1100,9 @@ void UScriptManager::RegisterCoreTypes()
 		}
 		FViewTarget& ViewTarget = CameraManager->GetViewTargetInfo();
 		ViewTarget.CameraComponent->PostProcessSettings.bOverride_VignetteColor = false;
+		ViewTarget.CameraComponent->PostProcessSettings.VignetteColor = FVector(0, 0, 0);
 		ViewTarget.CameraComponent->PostProcessSettings.bOverride_VignetteIntensity = false;
+		ViewTarget.CameraComponent->PostProcessSettings.VignetteIntensity = 0.0f;
 	};
 
 	LuaState["SetTimeDilation"] = [](float InTimeDilation)

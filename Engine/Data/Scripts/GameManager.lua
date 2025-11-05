@@ -39,6 +39,7 @@ end
 
 
 function StartSequence()
+ResetVignette()
 _G.GameData.Score = 0
 _G.GameData.EXP = 0
 _G.GameData.Level = 1
