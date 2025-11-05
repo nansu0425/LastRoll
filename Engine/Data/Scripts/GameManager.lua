@@ -52,6 +52,7 @@ SpawnedActor = ActorPool:Get("APlayer")
 print("캐릭터 생성")
 SpawnedActor:GetScriptComponentByName("Player.lua"):GetEnv().Init()
 
+StartCameraFade(1.0, 0.0, 3.0, Vector(0, 0, 0))
 LoadingText = "3"
 coroutine.yield(WaitForSeconds(1.0))
 LoadingText = "2"
