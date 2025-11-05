@@ -201,7 +201,7 @@ end
 function TopCamera()
 TargetPos = obj.Location
 GetCamera().Location = TargetPos + Vector(-5,0,25)
-GetCamera().Rotation = Vector(0,-70,0)
+GetCamera().Rotation = Vector(0, 70, 0)
 end
 
 function Move(dt)

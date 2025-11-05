@@ -545,6 +545,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClInclude Include="Source\Core\Public\WindowsBinWriter.h" />
     <ClInclude Include="Source\Editor\Public\EditorEngine.h" />
     <ClInclude Include="Source\Game\Actor\Public\CameraTestActor.h" />
+    <ClInclude Include="Source\Game\Actor\Public\TopDownCameraActor.h" />
     <ClInclude Include="Source\Game\Actor\Public\EightBallEnemy.h" />
     <ClInclude Include="Source\Game\Actor\Public\Enemy.h" />
     <ClInclude Include="Source\Game\Actor\Public\Player.h" />
@@ -865,6 +866,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClCompile Include="Source\Editor\Private\GizmoMath.cpp" />
     <ClCompile Include="Source\Editor\Private\GizmoRenderer.cpp" />
     <ClCompile Include="Source\Game\Actor\Private\CameraTestActor.cpp" />
+    <ClCompile Include="Source\Game\Actor\Private\TopDownCameraActor.cpp" />
     <ClCompile Include="Source\Game\Actor\Private\EightBallEnemy.cpp" />
     <ClCompile Include="Source\Game\Actor\Private\Enemy.cpp" />
     <ClCompile Include="Source\Game\Actor\Private\Player.cpp" />
