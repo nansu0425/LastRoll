@@ -156,11 +156,11 @@ public:
 protected:
 	void ApplyDockingSettings() const;
 	virtual void OnPreRenderWindow(float MenuBarOffset);
+	virtual void RenderWidget();
 	void UpdateWindowInfo();
 
 	// Render
 	void RenderWindow();
-	void RenderWidget();
 	void Update() const;
 
 protected:
