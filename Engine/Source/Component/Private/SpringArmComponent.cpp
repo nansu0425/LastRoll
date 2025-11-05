@@ -11,14 +11,12 @@ USpringArmComponent::USpringArmComponent()
 
 void USpringArmComponent::BeginPlay()
 {
-	PrevWorldLocation = GetWorldLocation();
 }
 
 void USpringArmComponent::TickComponent(float DeltaTime)
 {
 	Super::TickComponent(DeltaTime);
-	bIsTransformDirty = true;
-	bIsTransformDirtyInverse = true;
+	MarkAsDirty();
 	FVector CurWorldLocation = GetWorldLocation();
 	FVector CurLerpMoveDis = FVector::LinearEXPLerpVt3(LagLocation, CurWorldLocation, LocationLagLinearLerpInterpolation, LocationLagSpeed) - LagLocation;
 	LagLocation += CurLerpMoveDis;
@@ -27,13 +25,8 @@ void USpringArmComponent::TickComponent(float DeltaTime)
 	for (USceneComponent* Child : AttachChildren)
 	{
 		//부모가 이동하면 따라오는 자동 이동으로 인해 현재위치에서 빼야함
-		Child->bIsTransformDirty = true;
-		Child->bIsTransformDirtyInverse = true;
-
 		Child->SetWorldLocation(LagLocation + GetSpringArmOffset());
-
 	}
-	PrevWorldLocation = CurWorldLocation;
 }
 
 
