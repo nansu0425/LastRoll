@@ -12,6 +12,7 @@ class UEditorWindow;
 class UViewportClientWindow;
 class ULevelTabBarWindow;
 class UStatusBarWidget;
+class UCameraShakeWindow;
 
 /**
  * @brief UI 윈도우 도킹 방향
@@ -45,5 +46,6 @@ public:
 		CreateExperimentalFeatureWindow(EUIDockDirection InDockDirection = EUIDockDirection::Right);
 	static UEditorWindow* CreateEditorWindow(EUIDockDirection InDockDirection = EUIDockDirection::None);
 	static UViewportClientWindow* CreateViewportClientWindow(EUIDockDirection InDockDirection = EUIDockDirection::None);
+	static UCameraShakeWindow* CreateCameraShakeWindow(EUIDockDirection InDockDirection = EUIDockDirection::None);
 };
 
