@@ -11,11 +11,13 @@
 #include "Component/Shape/Public/SphereComponent.h"
 #include "Component/Shape/Public/CapsuleComponent.h"
 #include "Component/Camera/Public/CameraComponent.h"
+#include "Component/Public/AudioComponent.h"
 #include "Global/Vector.h"
 #include "Manager/Asset/Public/AssetManager.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Path/Public/PathManager.h"
 #include "Texture/Public/Texture.h"
+#include "Audio/Public/SoundWave.h"
 
 IMPLEMENT_CLASS(UActorDetailWidget, UWidget)
 
@@ -872,6 +874,54 @@ void UActorDetailWidget::RenderTransformEdit()
 		}
 
 		ImGui::PopStyleColor(3);
+		ImGui::PopID();
+		ImGui::Separator();
+	}
+
+	// --- AudioComponent Properties ---
+	if (UAudioComponent* AudioComp = Cast<UAudioComponent>(SelectedComponent))
+	{
+		ImGui::Text("Audio Properties");
+		ImGui::PushID("AudioComponent");
+
+		// Sound selection
+		FString PreviewName = AudioComp->Sound ? AudioComp->Sound->GetName().ToString() : "None";
+		if (ImGui::BeginCombo("Sound", PreviewName.c_str()))
+		{
+			const auto& SoundCache = UAssetManager::GetInstance().GetSoundCache();
+			for (auto& Pair : SoundCache)
+			{
+				USoundWave* SoundInList = Pair.second;
+				if (!SoundInList) continue;
+
+				const bool bIsSelected = (AudioComp->Sound == SoundInList);
+				if (ImGui::Selectable(SoundInList->GetName().ToString().c_str(), bIsSelected))
+				{
+					AudioComp->Sound = SoundInList;
+				}
+
+				if (bIsSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+
+		// Looping checkbox
+		ImGui::Checkbox("Looping", &AudioComp->bLooping);
+
+		// Play and Stop buttons
+		if (ImGui::Button("Play"))
+		{
+			AudioComp->Play();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Stop"))
+		{
+			AudioComp->Stop();
+		}
+
 		ImGui::PopID();
 		ImGui::Separator();
 	}

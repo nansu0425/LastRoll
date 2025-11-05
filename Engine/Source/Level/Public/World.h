@@ -2,6 +2,7 @@
 #include <filesystem>
 
 #include "Actor/Public/PlayerCameraManager.h"
+#include "Audio/Public/AudioDevice.h"
 #include "Core/Public/NewObject.h"
 #include "Core/Public/Object.h"
 #include "Global/Types.h"
@@ -80,6 +81,8 @@ public:
 	}
 	void SetCameraManager(APlayerCameraManager* InManager) { CameraManager = InManager; }
 
+	FAudioDevice* GetAudioDevice() { return AudioDevice; }
+
 private:
 	EWorldType WorldType;
 	ULevel* Level = nullptr; // Persistance Level. Sublevels are not considered in Engine.
@@ -88,6 +91,8 @@ private:
 
 	// Camera Manager (for Game/PIE modes)
 	APlayerCameraManager* CameraManager = nullptr;
+
+	FAudioDevice* AudioDevice = nullptr;
 
 	void FlushPendingDestroy(); // Destroy marking 된 액터들을 실제 삭제
 	void UpdateCollisions(); // 모든 PrimitiveComponent의 충돌 업데이트
