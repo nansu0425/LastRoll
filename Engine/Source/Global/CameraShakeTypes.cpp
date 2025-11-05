@@ -28,17 +28,17 @@ void FCameraShakePresetData::Serialize(bool bIsLoading, JSON& InOutHandle)
 
 		if (InOutHandle.hasKey("Duration"))
 		{
-			Duration = InOutHandle["Duration"].ToFloat();
+			Duration = static_cast<float>(InOutHandle["Duration"].ToFloat());
 		}
 
 		if (InOutHandle.hasKey("LocationAmplitude"))
 		{
-			LocationAmplitude = InOutHandle["LocationAmplitude"].ToFloat();
+			LocationAmplitude = static_cast<float>(InOutHandle["LocationAmplitude"].ToFloat());
 		}
 
 		if (InOutHandle.hasKey("RotationAmplitude"))
 		{
-			RotationAmplitude = InOutHandle["RotationAmplitude"].ToFloat();
+			RotationAmplitude = static_cast<float>(InOutHandle["RotationAmplitude"].ToFloat());
 		}
 
 		if (InOutHandle.hasKey("Pattern"))
@@ -53,7 +53,7 @@ void FCameraShakePresetData::Serialize(bool bIsLoading, JSON& InOutHandle)
 
 		if (InOutHandle.hasKey("Frequency"))
 		{
-			Frequency = InOutHandle["Frequency"].ToFloat();
+			Frequency = static_cast<float>(InOutHandle["Frequency"].ToFloat());
 		}
 
 		if (InOutHandle.hasKey("UseDecayCurve"))

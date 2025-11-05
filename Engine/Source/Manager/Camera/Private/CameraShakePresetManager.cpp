@@ -21,7 +21,7 @@ void UCameraShakePresetManager::Initialize()
 	// 기본 Preset 생성
 	CreateDefaultPresets();
 
-	UE_LOG_SUCCESS("CameraShakePresetManager: Initialized with %d presets", Presets.size());
+	UE_LOG_SUCCESS("CameraShakePresetManager: Initialized with %d presets", static_cast<int32>(Presets.size()));
 }
 
 void UCameraShakePresetManager::CreateDefaultPresets()
@@ -85,7 +85,7 @@ bool UCameraShakePresetManager::LoadPresetsFromFile(const FString& FilePath)
 		for (size_t i = 0; i < PresetArray.length(); ++i)
 		{
 			FCameraShakePresetData Preset;
-			Preset.Serialize(true, PresetArray[i]);
+			Preset.Serialize(true, PresetArray[static_cast<uint32>(i)]);
 			AddPreset(Preset);
 			LoadedCount++;
 		}
@@ -129,7 +129,7 @@ bool UCameraShakePresetManager::SavePresetsToFile(const FString& FilePath)
 		File << RootJSON.dump(4); // 들여쓰기 4칸
 		File.close();
 
-		UE_LOG_SUCCESS("CameraShakePresetManager: Saved %d presets to %s", Presets.size(), FilePath.c_str());
+		UE_LOG_SUCCESS("CameraShakePresetManager: Saved %d presets to %s", static_cast<int32>(Presets.size()), FilePath.c_str());
 		return true;
 	}
 	catch (const std::exception& e)
