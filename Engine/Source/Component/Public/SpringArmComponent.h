@@ -17,7 +17,7 @@ public:
 	const virtual FMatrix& GetWorldTransformMatrixInverse() const;
 	FVector GetWorldLocation() const override;
 
-	FVector GetSpringArmOffset() const;
+	FVector GetSpringArmOffset(bool bUseLagRot) const;
 
 	virtual UClass* GetSpecificWidgetClass() const override;
 
@@ -67,8 +67,8 @@ private:
 	bool bInHeritRoll = true;
 
 	// Lag 상태 저장용 변수
-	FVector PrevWorldLocation;
 	FVector LagLocation;
+	FQuaternion LagRotation;
 public:
 	virtual UObject* Duplicate() override;
 

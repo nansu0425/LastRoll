@@ -18,14 +18,36 @@ void USpringArmComponent::TickComponent(float DeltaTime)
 	Super::TickComponent(DeltaTime);
 	MarkAsDirty();
 	FVector CurWorldLocation = GetWorldLocation();
-	FVector CurLerpMoveDis = FVector::LinearEXPLerpVt3(LagLocation, CurWorldLocation, LocationLagLinearLerpInterpolation, LocationLagSpeed) - LagLocation;
-	LagLocation += CurLerpMoveDis;
-	UE_LOG("Lerp : %f,%f,%f , Lag : %f, %f, %f " , CurLerpMoveDis.X, CurLerpMoveDis.Y, CurLerpMoveDis.Z,
-		LagLocation.X,LagLocation.Y,LagLocation.Z);
+
+	if (bLocationLag)
+	{
+		//이동지연보간
+		FVector CurLerpMoveDis = FVector::LinearEXPLerpVt3(LagLocation, CurWorldLocation, LocationLagLinearLerpInterpolation, LocationLagSpeed) - LagLocation;
+		LagLocation += CurLerpMoveDis;
+		UE_LOG("Lerp : %f,%f,%f , Lag : %f, %f, %f ", CurLerpMoveDis.X, CurLerpMoveDis.Y, CurLerpMoveDis.Z,
+			LagLocation.X, LagLocation.Y, LagLocation.Z);
+		FVector FinalLagLocation = LagLocation;
+	}
+	else 
+	{
+		LagLocation = CurWorldLocation;
+	}
+
+	FQuaternion DesiredWorldRotation = GetWorldRotationAsQuaternion();
+	if (bRotationLag) 
+	{
+		//회전지연보간
+		LagRotation = FQuaternion::Slerp(LagRotation, DesiredWorldRotation, RotationLagSpeed);
+	}
+	else
+	{
+		LagRotation = DesiredWorldRotation;
+	}
+
 	for (USceneComponent* Child : AttachChildren)
 	{
-		//부모가 이동하면 따라오는 자동 이동으로 인해 현재위치에서 빼야함
-		Child->SetWorldLocation(LagLocation + GetSpringArmOffset());
+		Child->SetWorldLocation(LagLocation + GetSpringArmOffset(true));
+		Child->SetWorldRotation(LagRotation);
 	}
 }
 
@@ -41,7 +63,7 @@ const FMatrix& USpringArmComponent::GetWorldTransformMatrix() const
 			WorldTransformMatrix *= AttachParent->GetWorldTransformMatrix();
 		}
 
-		WorldTransformMatrix *= FMatrix::TranslationMatrix(GetSpringArmOffset());
+		WorldTransformMatrix *= FMatrix::TranslationMatrix(GetSpringArmOffset(false));
 		bIsTransformDirty = false;
 	}
 
@@ -66,20 +88,17 @@ const FMatrix& USpringArmComponent::GetWorldTransformMatrixInverse() const
 }
 FVector USpringArmComponent::GetWorldLocation() const
 {
-	return GetWorldTransformMatrix().GetLocation() - GetSpringArmOffset();
+	return GetWorldTransformMatrix().GetLocation() - GetSpringArmOffset(false);
 }
 
 
-//크기 적용 필요
-FVector USpringArmComponent::GetSpringArmOffset() const
+FVector USpringArmComponent::GetSpringArmOffset(bool bUseLagRot) const
 {
 	FVector CurTargetOffset = TargetOffset;
 	FQuaternion CurQuat = GetWorldRotationAsQuaternion();
-	FMatrix CurRotationMatrix = CurQuat.ToRotationMatrix();
-	//FMatrix CurScaleMatrix = FMatrix::ScaleMatrix(GetWorldScale3D()); 오류나는데 시간없어서 넘김
+	FMatrix CurRotationMatrix = bUseLagRot ? LagRotation.ToRotationMatrix() : CurQuat.ToRotationMatrix();
 	FVector Forward = CurQuat.GetForward();
 	FVector TargetArmOffset = -Forward * TargetArmLength;
-	//FVector CurSocketOffset = (FMatrix::TranslationMatrix(SocketOffset) * CurScaleMatrix * CurRotationMatrix).GetLocation();
 	FVector CurSocketOffset = (FMatrix::TranslationMatrix(SocketOffset) * CurRotationMatrix).GetLocation();
 	return CurTargetOffset + CurSocketOffset + TargetArmOffset;
 }
@@ -143,6 +162,7 @@ UObject* USpringArmComponent::Duplicate()
 	SpringArmComp->bInHeritYaw = bInHeritYaw;
 	SpringArmComp->bInHeritRoll = bInHeritRoll;
 	SpringArmComp->LagLocation = GetWorldLocation();
+	SpringArmComp->LagRotation = GetWorldRotationAsQuaternion();
 
 	return SpringArmComp;
 }
