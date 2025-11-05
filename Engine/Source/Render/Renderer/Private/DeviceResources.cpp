@@ -395,7 +395,7 @@ uint64 UDeviceResources::GetTotalRenderTargetMemory() const
 	uint64 TotalBytes = 0;
 	const uint64 PixelCount = static_cast<uint64>(Width) * Height;
 
-	// FrameBuffer: BGRA8 SRGB (4 bytes per pixel)
+	// FrameBuffer: BGRA8 (4 bytes per pixel)
 	if (FrameBuffer)
 	{
 		TotalBytes += PixelCount * 4;
@@ -413,7 +413,7 @@ uint64 UDeviceResources::GetTotalRenderTargetMemory() const
 		TotalBytes += PixelCount * 4;
 	}
 
-	// SceneColorTexture: RGBA16F (8 bytes per pixel)
+	// SceneColorTexture: BGRA8 (4 bytes per pixel)
 	if (PingPongFrameBuffer)
 	{
 		TotalBytes += PixelCount * 4;
