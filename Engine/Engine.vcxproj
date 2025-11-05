@@ -716,6 +716,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClCompile Include="Source\Editor\Private\Gizmo.cpp" />
     <ClCompile Include="Source\Editor\Private\Grid.cpp" />
     <ClCompile Include="Source\Editor\Private\ObjectPicker.cpp" />
+    <ClCompile Include="Source\Global\CoreTypes.cpp" />
     <ClCompile Include="Source\Global\Matrix.cpp" />
     <ClCompile Include="Source\Global\Memory.cpp" />
     <ClCompile Include="Source\Global\Vector.cpp" />

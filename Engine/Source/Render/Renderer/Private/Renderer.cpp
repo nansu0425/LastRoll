@@ -913,6 +913,7 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 
 	// ===== 카메라 선택: PIE/Game에서는 CameraManager 사용, 그 외에는 Editor Camera 사용 =====
 	FCameraConstants ViewProj;
+	FPostProcessSettings PostProcessSettings;  // 후처리 설정
 	UCamera* EditorCamera = InViewport->GetViewportClient()->GetCamera();
 
 	// 월드 타입에 따라 카메라 소스 선택
@@ -923,11 +924,13 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 	{
 		// PIE/Game 모드: PlayerCameraManager 사용
 		ViewProj = CameraManager->GetCameraConstants();
+		PostProcessSettings = CameraManager->GetCameraCachePOV().PostProcessSettings;
 	}
 	else
 	{
 		// Editor 모드: EditorCamera 사용
 		ViewProj = EditorCamera->GetFViewProjConstants();
+		PostProcessSettings = FPostProcessSettings();  // 기본값 (효과 없음)
 	}
 	// 참고: EditorCamera는 RenderPass 호환성을 위해 항상 RenderingContext에 전달됩니다
 	// (많은 RenderPass가 빌보드 회전, 안개 계산 등을 위해 Camera를 직접 참조합니다)
@@ -972,8 +975,8 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 	}
 
 	RenderingContext = FRenderingContext(
-
 		&ViewProj,
+		PostProcessSettings,
 		EditorCamera,  // 항상 유효함 (ViewportClient에서 가져옴)
 		InViewport->GetViewportClient()->GetViewMode(),
 		CurrentLevel->GetShowFlags(),

@@ -1,6 +1,9 @@
 ﻿#include "pch.h"
 #include "Component/Camera/Public/CameraComponent.h"
 #include "Global/CoreTypes.h"
+#include <json.hpp>
+
+using JSON = json::JSON;
 
 IMPLEMENT_CLASS(UCameraComponent, USceneComponent)
 
@@ -31,13 +34,47 @@ void UCameraComponent::GetCameraView(FMinimalViewInfo& OutPOV) const
 	OutPOV.FarClipPlane = FarClipPlane;
 	OutPOV.OrthoWidth = OrthoWidth;
 	OutPOV.bUsePerspectiveProjection = bUsePerspectiveProjection;
+
+	// ===== PostProcessSettings 복사 =====
+	OutPOV.PostProcessSettings = PostProcessSettings;
 }
 
 void UCameraComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 {
 	Super::Serialize(bInIsLoading, InOutHandle);
 
-	// TODO: 카메라 속성에 대한 JSON 직렬화 구현
-	// 현재는 기본값 사용
-	// JSON 직렬화가 필요할 때 완성될 예정
+	// 투영 파라미터 직렬화 (기존 TODO 구현)
+	if (bInIsLoading)
+	{
+		if (InOutHandle.hasKey("FieldOfView"))
+			FieldOfView = static_cast<float>(InOutHandle["FieldOfView"].ToFloat());
+		if (InOutHandle.hasKey("AspectRatio"))
+			AspectRatio = static_cast<float>(InOutHandle["AspectRatio"].ToFloat());
+		if (InOutHandle.hasKey("NearClipPlane"))
+			NearClipPlane = static_cast<float>(InOutHandle["NearClipPlane"].ToFloat());
+		if (InOutHandle.hasKey("FarClipPlane"))
+			FarClipPlane = static_cast<float>(InOutHandle["FarClipPlane"].ToFloat());
+	}
+	else
+	{
+		InOutHandle["FieldOfView"] = FieldOfView;
+		InOutHandle["AspectRatio"] = AspectRatio;
+		InOutHandle["NearClipPlane"] = NearClipPlane;
+		InOutHandle["FarClipPlane"] = FarClipPlane;
+	}
+
+	// ===== PostProcessSettings 직렬화 위임 =====
+	if (bInIsLoading)
+	{
+		if (InOutHandle.hasKey("PostProcess"))
+		{
+			PostProcessSettings.Serialize(bInIsLoading, InOutHandle["PostProcess"]);
+		}
+	}
+	else
+	{
+		JSON PPHandle;
+		PostProcessSettings.Serialize(bInIsLoading, PPHandle);
+		InOutHandle["PostProcess"] = PPHandle;
+	}
 }

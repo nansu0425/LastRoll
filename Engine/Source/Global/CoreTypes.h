@@ -6,6 +6,10 @@
 #include "Core/Public/Name.h"
 #include <Texture/Public/Material.h>
 
+// JSON 전방 선언
+namespace json { class JSON; }
+using JSON = json::JSON;
+
 //struct BatchLineContants
 //{
 //	float CellSize;
@@ -14,6 +18,104 @@
 //	uint32 BoundingBoxStartIndex; // 인덱스 버퍼에서, 바운딩박스가 시작되는 인덱스
 //};
 
+/**
+ * @brief 후처리 효과 설정
+ *
+ * Unreal Engine의 FPostProcessSettings를 참고한 구조입니다.
+ * 각 설정은 Override 플래그를 가지며, 활성화된 설정만 적용됩니다.
+ *
+ * 사용 예시:
+ * @code
+ * FPostProcessSettings PP;
+ * PP.bOverride_VignetteIntensity = true;
+ * PP.VignetteIntensity = 0.8f;
+ * PP.bOverride_VignetteColor = true;
+ * PP.VignetteColor = FVector(1.0f, 0.0f, 0.0f);  // 빨간색
+ * @endcode
+ */
+struct FPostProcessSettings
+{
+	// ===== 소스 전체 가중치 (향후 Volume/Modifier 블렌딩용) =====
+	float BlendWeight;  // 이 설정 전체의 가중치 [0.0, 1.0]
+
+	// ===== Vignette (비네트) =====
+	bool bOverride_VignetteIntensity;   // true면 VignetteIntensity 사용
+	float VignetteIntensity;            // 비네트 강도 [0.0, 1.0]
+
+	bool bOverride_VignetteColor;       // true면 VignetteColor 사용
+	FVector VignetteColor;              // 비네트 색상 (RGB)
+
+	// ===== Bloom (블룸) - 향후 확장 =====
+	// bool bOverride_BloomIntensity;
+	// float BloomIntensity;
+
+	// ===== Depth of Field (피사계 심도) - 향후 확장 =====
+	// bool bOverride_DepthOfFieldFocalDistance;
+	// float DepthOfFieldFocalDistance;
+
+	// 기본 생성자
+	FPostProcessSettings()
+		: BlendWeight(1.0f)
+		, bOverride_VignetteIntensity(false)
+		, VignetteIntensity(0.0f)
+		, bOverride_VignetteColor(false)
+		, VignetteColor(0.0f, 0.0f, 0.0f)
+	{
+	}
+
+	/**
+	 * @brief A에서 B로 선형 보간 (개선된 버전)
+	 *
+	 * 카메라 블렌딩 시 사용됩니다.
+	 * 둘 중 하나라도 Override면 보간하며, Override 없는 쪽은 0(기본값)으로 간주합니다.
+	 *
+	 * @param A 시작 설정
+	 * @param B 목표 설정
+	 * @param Alpha 보간 계수 [0.0, 1.0]
+	 * @return A→B로 보간된 PostProcessSettings
+	 */
+	static FPostProcessSettings Lerp(const FPostProcessSettings& A, const FPostProcessSettings& B, float Alpha)
+	{
+		FPostProcessSettings Result = A;  // 일단 A 복사
+
+		// BlendWeight 보간
+		Result.BlendWeight = A.BlendWeight * (1.0f - Alpha) + B.BlendWeight * Alpha;
+
+		// VignetteIntensity - 둘 중 하나라도 Override면 보간
+		if (A.bOverride_VignetteIntensity || B.bOverride_VignetteIntensity)
+		{
+			Result.bOverride_VignetteIntensity = true;
+			float IA = A.bOverride_VignetteIntensity ? A.VignetteIntensity : 0.0f;
+			float IB = B.bOverride_VignetteIntensity ? B.VignetteIntensity : 0.0f;
+			Result.VignetteIntensity = IA * (1.0f - Alpha) + IB * Alpha;
+		}
+
+		// VignetteColor - 둘 중 하나라도 Override면 보간
+		if (A.bOverride_VignetteColor || B.bOverride_VignetteColor)
+		{
+			Result.bOverride_VignetteColor = true;
+			FVector CA = A.bOverride_VignetteColor ? A.VignetteColor : FVector(0, 0, 0);
+			FVector CB = B.bOverride_VignetteColor ? B.VignetteColor : FVector(0, 0, 0);
+			Result.VignetteColor = CA * (1.0f - Alpha) + CB * Alpha;
+		}
+
+		return Result;
+	}
+
+	/**
+	 * @brief JSON 직렬화 (위임 방식)
+	 *
+	 * CameraComponent 등에서 PostProcessSettings를 블랙박스로 취급하도록 합니다.
+	 *
+	 * @param bInIsLoading true: 로드, false: 저장
+	 * @param InOutHandle JSON 핸들
+	 */
+	void Serialize(bool bInIsLoading, JSON& InOutHandle);
+};
+
+/**
+ * @brief GPU 업로드용 카메라 상수 (View/Projection 행렬)
+ */
 struct FCameraConstants
 {
 	FCameraConstants() : NearClip(0), FarClip(0)
@@ -46,6 +148,9 @@ struct FMinimalViewInfo
 	float OrthoWidth;               // 직교 투영용
 	bool bUsePerspectiveProjection; // true: 원근 투영, false: 직교 투영
 
+	// ===== 후처리 설정 =====
+	FPostProcessSettings PostProcessSettings;
+
 	// 기본 생성자
 	FMinimalViewInfo()
 		: Location(FVector::ZeroVector())
@@ -56,6 +161,7 @@ struct FMinimalViewInfo
 		, FarClipPlane(10000.0f)
 		, OrthoWidth(1000.0f)
 		, bUsePerspectiveProjection(true)
+		, PostProcessSettings()
 	{
 	}
 

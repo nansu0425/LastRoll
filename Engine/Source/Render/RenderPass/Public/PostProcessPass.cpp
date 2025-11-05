@@ -18,8 +18,8 @@ FPostProcessPass::~FPostProcessPass()
 void FPostProcessPass::ExecutePP(FRenderingContext& Context, const uint32 PPIdx)
 {
     SetRenderTargets(PPIdx);
-    
-    UpdateConstants();
+
+    UpdateConstants(Context);
 
     SetShaderResourcesViews(PPIdx);
 
@@ -43,7 +43,7 @@ void FPostProcessPass::Release()
     return;
 }
 
-void FPostProcessPass::UpdateConstants()
+void FPostProcessPass::UpdateConstants(const FRenderingContext& Context)
 {
     return;
 }

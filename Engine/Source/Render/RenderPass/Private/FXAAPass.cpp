@@ -21,7 +21,7 @@ FFXAAPass::~FFXAAPass()
 
 }
 
-void FFXAAPass::UpdateConstants()
+void FFXAAPass::UpdateConstants(const FRenderingContext& Context)
 {
     const D3D11_VIEWPORT& VP = DeviceResources->GetViewportInfo();
     FXAAParams.InvResolution = FVector2(1.0f / VP.Width, 1.0f / VP.Height);
