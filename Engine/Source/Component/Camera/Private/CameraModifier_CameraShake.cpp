@@ -20,6 +20,8 @@ UCameraModifier_CameraShake::UCameraModifier_CameraShake()
 	, PerlinOffset(FVector::ZeroVector())
 	, LastLocationOffset(FVector::ZeroVector())
 	, LastRotationOffset(FVector::ZeroVector())
+	, DecayCurve(FCubicBezierCurve::CreateEaseOut())  // 기본값: EaseOut 곡선
+	, bUseDecayCurve(false)  // 기본적으로 비활성화 (기존 동작 유지)
 {
 	// 카메라 흔들림은 높은 우선순위 (모디파이어 체인에서 나중에 처리)
 	SetPriority(200);
@@ -72,6 +74,30 @@ void UCameraModifier_CameraShake::StartShake(
 		ShakeDuration, LocationAmplitude, RotationAmplitude);
 }
 
+void UCameraModifier_CameraShake::StartShakeWithCurve(
+	float InDuration,
+	float InLocationAmplitude,
+	float InRotationAmplitude,
+	ECameraShakePattern InPattern,
+	float InFrequency,
+	const FCubicBezierCurve& InDecayCurve)
+{
+	// 기본 StartShake() 호출
+	StartShake(InDuration, InLocationAmplitude, InRotationAmplitude, InPattern, InFrequency);
+
+	// Bezier 곡선 설정
+	DecayCurve = InDecayCurve;
+	bUseDecayCurve = true;
+
+	UE_LOG_DEBUG("CameraShake: Bezier 곡선 기반 흔들림 시작");
+}
+
+void UCameraModifier_CameraShake::SetDecayCurve(const FCubicBezierCurve& InCurve)
+{
+	DecayCurve = InCurve;
+	UE_LOG_DEBUG("CameraShake: 감쇠 곡선 업데이트됨");
+}
+
 void UCameraModifier_CameraShake::StopShake()
 {
 	bIsShaking = false;
@@ -102,9 +128,22 @@ bool UCameraModifier_CameraShake::ModifyCamera(float DeltaTime, FMinimalViewInfo
 	}
 
 	// 감쇠 알파 계산 (시간에 따라 흔들림 강도 페이드 아웃)
-	// 자연스러운 감쇠 곡선을 위해 smoothstep 사용
-	float DecayAlpha = ShakeTimeRemaining / ShakeDuration;
-	DecayAlpha = SmoothStep(DecayAlpha); // 부드러운 감쇠 곡선
+	float DecayAlpha;
+	if (bUseDecayCurve)
+	{
+		// Bezier 곡선 기반 감쇠
+		// X = 정규화된 경과 시간 [0,1], Y = 진폭 배율 [0,1]
+		float NormalizedTime = 1.0f - (ShakeTimeRemaining / ShakeDuration); // 0(시작) → 1(끝)
+		DecayAlpha = DecayCurve.SampleY(NormalizedTime);
+		// Note: 일반적으로 감쇠 곡선은 1.0(최대) → 0.0(최소)로 설계됨
+		// 따라서 Y값을 그대로 사용 (곡선이 감쇠를 직접 제어)
+	}
+	else
+	{
+		// 기존 방식: smoothstep 사용
+		DecayAlpha = ShakeTimeRemaining / ShakeDuration;
+		DecayAlpha = SmoothStep(DecayAlpha); // 부드러운 감쇠 곡선
+	}
 
 	// 흔들림 오프셋 평가
 	FVector LocationOffset = FVector::ZeroVector();

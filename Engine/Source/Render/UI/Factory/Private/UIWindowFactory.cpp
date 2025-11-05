@@ -12,6 +12,8 @@
 #include "Render/UI/Window/Public/LevelTabBarWindow.h"
 #include "Render/UI/Window/Public/EditorWindow.h"
 #include "Render/UI/Window/Public/ViewportClientWindow.h"
+#include "Render/UI/Window/Public/CameraShakeWindow.h"
+#include "Render/UI/Window/Public/CameraShakePresetEditorWindow.h"
 #include "Render/UI/Widget/Public/StatusBarWidget.h"
 
 UMainMenuWindow& UUIWindowFactory::CreateMainMenuWindow()
@@ -81,6 +83,20 @@ UViewportClientWindow* UUIWindowFactory::CreateViewportClientWindow(EUIDockDirec
 	return Window;
 }
 
+UCameraShakeWindow* UUIWindowFactory::CreateCameraShakeWindow(EUIDockDirection InDockDirection)
+{
+	auto* Window = NewObject<UCameraShakeWindow>();
+	Window->GetMutableConfig().DockDirection = InDockDirection;
+	return Window;
+}
+
+UCameraShakePresetEditorWindow* UUIWindowFactory::CreateCameraShakePresetEditorWindow(EUIDockDirection InDockDirection)
+{
+	auto* Window = NewObject<UCameraShakePresetEditorWindow>();
+	Window->GetMutableConfig().DockDirection = InDockDirection;
+	return Window;
+}
+
 
 void UUIWindowFactory::CreateDefaultUILayout()
 {
@@ -108,5 +124,7 @@ void UUIWindowFactory::CreateDefaultUILayout()
 	UIManager.RegisterUIWindow(CreateExperimentalFeatureWindow(EUIDockDirection::Right));
 	UIManager.RegisterUIWindow(CreateEditorWindow(EUIDockDirection::None));
 	UIManager.RegisterUIWindow(CreateViewportClientWindow(EUIDockDirection::None));
+	// Camera Shake Window는 필요 시 수동으로 열기 (기본 레이아웃에서 제외)
+	// UIManager.RegisterUIWindow(CreateCameraShakeWindow(EUIDockDirection::None));
 	UE_LOG_SUCCESS("UIWindowFactory: UI 생성이 성공적으로 완료되었습니다");
 }

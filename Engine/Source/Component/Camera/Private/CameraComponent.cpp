@@ -80,3 +80,24 @@ void UCameraComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		InOutHandle["PostProcess"] = PPHandle;
 	}
 }
+
+UObject* UCameraComponent::Duplicate()
+{
+	UCameraComponent* CameraComponent = Cast<UCameraComponent>(Super::Duplicate());
+
+	// 투영 파라미터 복사
+	CameraComponent->FieldOfView = FieldOfView;
+	CameraComponent->AspectRatio = AspectRatio;
+	CameraComponent->NearClipPlane = NearClipPlane;
+	CameraComponent->FarClipPlane = FarClipPlane;
+	CameraComponent->TargetAspectRatio = TargetAspectRatio;
+
+	// 카메라 타입 복사
+	CameraComponent->bUsePerspectiveProjection = bUsePerspectiveProjection;
+	CameraComponent->OrthoWidth = OrthoWidth;
+
+	// 후처리 설정 복사
+	CameraComponent->PostProcessSettings = PostProcessSettings;
+
+	return CameraComponent;
+}

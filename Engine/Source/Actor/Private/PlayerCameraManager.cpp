@@ -2,6 +2,8 @@
 #include "Actor/Public/PlayerCameraManager.h"
 #include "Component/Camera/Public/CameraComponent.h"
 #include "Component/Camera/Public/CameraModifier.h"
+#include "Component/Camera/Public/CameraModifier_CameraShake.h"
+#include "Manager/Camera/Public/CameraShakePresetManager.h"
 #include "Global/Function.h"
 
 IMPLEMENT_CLASS(APlayerCameraManager, AActor)
@@ -193,6 +195,68 @@ void APlayerCameraManager::ClearAllCameraModifiers()
 	ModifierList.clear();
 
 	UE_LOG_DEBUG("APlayerCameraManager: 모든 카메라 모디파이어 제거됨");
+}
+
+bool APlayerCameraManager::PlayCameraShakePreset(FName PresetName)
+{
+	// PresetManager 싱글톤 가져오기
+	UCameraShakePresetManager& PresetManager = UCameraShakePresetManager::GetInstance();
+
+	// Preset 찾기
+	FCameraShakePresetData* Preset = PresetManager.FindPreset(PresetName);
+	if (!Preset)
+	{
+		UE_LOG_ERROR("APlayerCameraManager::PlayCameraShakePreset - Preset '%s'를 찾을 수 없습니다",
+			PresetName.ToString().c_str());
+		return false;
+	}
+
+	// 기존 CameraShake 모디파이어 찾기 또는 생성
+	UCameraModifier_CameraShake* ShakeModifier = Cast<UCameraModifier_CameraShake>(
+		FindCameraModifierByClass(UCameraModifier_CameraShake::StaticClass())
+	);
+
+	if (!ShakeModifier)
+	{
+		// 없으면 새로 생성
+		ShakeModifier = Cast<UCameraModifier_CameraShake>(
+			AddCameraModifier(UCameraModifier_CameraShake::StaticClass())
+		);
+
+		if (!ShakeModifier)
+		{
+			UE_LOG_ERROR("APlayerCameraManager::PlayCameraShakePreset - CameraShake 모디파이어 생성 실패");
+			return false;
+		}
+	}
+
+	// Preset 데이터를 ShakeModifier에 적용
+	if (Preset->bUseDecayCurve)
+	{
+		ShakeModifier->StartShakeWithCurve(
+			Preset->Duration,
+			Preset->LocationAmplitude,
+			Preset->RotationAmplitude,
+			Preset->Pattern,
+			Preset->Frequency,
+			Preset->DecayCurve
+		);
+	}
+	else
+	{
+		ShakeModifier->StartShake(
+			Preset->Duration,
+			Preset->LocationAmplitude,
+			Preset->RotationAmplitude,
+			Preset->Pattern,
+			Preset->Frequency
+		);
+	}
+
+	UE_LOG_SUCCESS("APlayerCameraManager::PlayCameraShakePreset - Preset '%s' 재생 시작 (Duration=%.2fs, LocAmp=%.1f, RotAmp=%.1f)",
+		PresetName.ToString().c_str(), Preset->Duration, Preset->LocationAmplitude, Preset->RotationAmplitude);
+
+	return true;
 }
 
 void APlayerCameraManager::StartCameraFade(float FromAlpha, float ToAlpha, float Duration, FVector Color)

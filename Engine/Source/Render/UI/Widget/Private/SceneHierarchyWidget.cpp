@@ -50,6 +50,24 @@ void USceneHierarchyWidget::RenderWidget()
 		return;
 	}
 
+	// 레벨이 변경되었는지 감지
+	if (CachedLevel != CurrentLevel)
+	{
+		// 새 레벨로 전환됨 - 검색 필터 및 캐시 초기화
+		CachedLevel = CurrentLevel;
+		SearchFilter.clear();
+		FilteredIndices.clear();
+		memset(SearchBuffer, 0, sizeof(SearchBuffer));
+		bNeedsFilterUpdate = true;
+
+		// 이름 변경 상태도 리셋
+		if (RenamingActor)
+		{
+			RenamingActor = nullptr;
+			memset(RenameBuffer, 0, sizeof(RenameBuffer));
+		}
+	}
+
 	// 헤더 정보
 	ImGui::Text("Level: %s", CurrentLevel->GetName().ToString().c_str());
 	ImGui::Separator();
@@ -71,6 +89,26 @@ void USceneHierarchyWidget::RenderWidget()
 		UE_LOG("SceneHierarchy: 필터 업데이트 실행 중...");
 		UpdateFilteredActors(LevelActors);
 		bNeedsFilterUpdate = false;
+	}
+
+	// 방어 코드: FilteredIndices가 LevelActors 범위를 벗어나는지 검증
+	if (!SearchFilter.empty() && !FilteredIndices.empty())
+	{
+		bool bNeedsRefilter = false;
+		for (int32 Index : FilteredIndices)
+		{
+			if (Index >= LevelActors.size())
+			{
+				bNeedsRefilter = true;
+				break;
+			}
+		}
+
+		if (bNeedsRefilter)
+		{
+			UE_LOG_WARNING("SceneHierarchy: FilteredIndices가 범위를 벗어남, 재필터링 실행");
+			UpdateFilteredActors(LevelActors);
+		}
 	}
 
 	// Actor 개수 표시
