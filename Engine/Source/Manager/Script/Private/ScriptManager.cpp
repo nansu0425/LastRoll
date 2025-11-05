@@ -10,6 +10,7 @@
 #include "Actor/Public/Actor.h"
 #include "Actor/Public/PlayerCameraManager.h"
 #include "Actor/Public/StaticMeshActor.h"
+#include "Component/Camera/Public/CameraComponent.h"
 #include "Component/Public/ActorComponent.h"
 #include "Component/Public/AudioComponent.h"
 #include "Component/Public/SceneComponent.h"
@@ -1061,11 +1062,11 @@ void UScriptManager::RegisterCoreTypes()
 			UE_LOG_ERROR("StartCameraFade: 카메라 매니저를 찾을 수 없습니다.");
 			return;
 		}
-		FViewTarget ViewTarget = CameraManager->GetViewTargetInfo();
-		ViewTarget.POV.PostProcessSettings.bOverride_VignetteColor = true;
-		ViewTarget.POV.PostProcessSettings.VignetteColor = InVignetteColor;
-		ViewTarget.POV.PostProcessSettings.bOverride_VignetteIntensity = true;
-		ViewTarget.POV.PostProcessSettings.VignetteIntensity = InVignetteIntensity;
+		FViewTarget& ViewTarget = CameraManager->GetViewTargetInfo();
+		ViewTarget.CameraComponent->PostProcessSettings.bOverride_VignetteColor = true;
+		ViewTarget.CameraComponent->PostProcessSettings.VignetteColor = InVignetteColor;
+		ViewTarget.CameraComponent->PostProcessSettings.bOverride_VignetteIntensity = true;
+		ViewTarget.CameraComponent->PostProcessSettings.VignetteIntensity = InVignetteIntensity;
 	};
 	
 	LuaState["ResetVignette"] = [](FVector InVignetteColor, float InVignetteIntensity)
@@ -1076,9 +1077,9 @@ void UScriptManager::RegisterCoreTypes()
 			UE_LOG_ERROR("StartCameraFade: 카메라 매니저를 찾을 수 없습니다.");
 			return;
 		}
-		FViewTarget ViewTarget = CameraManager->GetViewTargetInfo();
-		ViewTarget.POV.PostProcessSettings.bOverride_VignetteColor = false;
-		ViewTarget.POV.PostProcessSettings.bOverride_VignetteIntensity = false;
+		FViewTarget& ViewTarget = CameraManager->GetViewTargetInfo();
+		ViewTarget.CameraComponent->PostProcessSettings.bOverride_VignetteColor = false;
+		ViewTarget.CameraComponent->PostProcessSettings.bOverride_VignetteIntensity = false;
 	};
 
 	LuaState["SetTimeDilation"] = [](float InTimeDilation)
