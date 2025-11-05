@@ -37,8 +37,6 @@ public:
 	float GetLocationLagLinearLerpInterpolation() const { return LocationLagLinearLerpInterpolation; }
 	void SetbRotationLag(bool InbRotationLag) { MarkAsDirty(); bRotationLag = InbRotationLag; }
 	bool GetbRotationLag() const { return bRotationLag; }
-	void SetRotationLagLinearLerpInterpolation(float InRotationLagLinearLerpInterpolation) { MarkAsDirty(); RotationLagLinearLerpInterpolation = InRotationLagLinearLerpInterpolation; }
-	float GetRotationLagLinearLerpInterpolation() const { return RotationLagLinearLerpInterpolation; }
 	void SetRotationLagSpeed(float InRotationLagSpeed) { MarkAsDirty(); RotationLagSpeed = InRotationLagSpeed; }
 	float GetRotationLagSpeed() const { return RotationLagSpeed; }
 	void SetbInHeritPitch(bool InbInHeritPitch) { MarkAsDirty(); bInHeritPitch = InbInHeritPitch; }
@@ -56,11 +54,10 @@ private:
 
 	bool bLocationLag = true;
 	float LocationLagLinearLerpInterpolation = 0.0f;
-	float LocationLagSpeed = 5.0f;
+	float LocationLagSpeed = 0.02f;
 
 	bool bRotationLag = true;
-	float RotationLagLinearLerpInterpolation = 0.0f;
-	float RotationLagSpeed = 5.0f;
+	float RotationLagSpeed = 0.02f;
 
 	bool bInHeritPitch = true;
 	bool bInHeritYaw = true;

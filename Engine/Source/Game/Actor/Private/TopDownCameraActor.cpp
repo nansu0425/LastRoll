@@ -2,6 +2,7 @@
 #include "Game/Actor/Public/TopDownCameraActor.h"
 #include "Component/Camera/Public/CameraComponent.h"
 #include "Component/Public/SceneComponent.h"
+#include "Component/Public/SpringArmComponent.h"
 
 IMPLEMENT_CLASS(ATopDownCameraActor, AActor)
 
@@ -11,6 +12,8 @@ ATopDownCameraActor::ATopDownCameraActor()
 {
     SetName("TopDownCameraActor");
 
+    SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>();
+    SpringArmComponent->SetCanEverTick(true);
     // CameraComponent 생성
     CameraComponent = CreateDefaultSubobject<UCameraComponent>();
 
@@ -40,7 +43,8 @@ void ATopDownCameraActor::InitializeComponents()
     // CameraComponent를 루트에 부착
     if (CameraComponent)
     {
-        CameraComponent->AttachToComponent(RootComp);
+        SpringArmComponent->AttachToComponent(RootComp);
+        CameraComponent->AttachToComponent(SpringArmComponent);
 
         // 카메라 파라미터 설정
         CameraComponent->SetFieldOfView(90.0f);

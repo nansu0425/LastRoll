@@ -69,11 +69,6 @@ void USpringArmComponentWidget::RenderWidget()
 	{
 		Component->SetbRotationLag(bRotationLag);
 	}
-	float RotationLagLinearLerpInterpolation = Component->GetRotationLagLinearLerpInterpolation();
-	if (ImGui::DragFloat("RotationLagLinearLerpInterpolation", &RotationLagLinearLerpInterpolation, 1.0f, 0.0f))
-	{
-		Component->SetRotationLagLinearLerpInterpolation(RotationLagLinearLerpInterpolation);
-	}
 	float RotationLagSpeed = Component->GetRotationLagSpeed();
 	if (ImGui::DragFloat("RotationLagSpeed", &RotationLagSpeed, 1.0f, 0.0f))
 	{
