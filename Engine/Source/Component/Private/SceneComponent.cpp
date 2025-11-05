@@ -209,15 +209,7 @@ void USceneComponent::SetWorldLocation(const FVector& NewLocation)
 void USceneComponent::SetWorldRotation(const FVector& NewRotation)
 {
     FQuaternion NewWorldRotationQuat = FQuaternion::FromEuler(NewRotation);
-    if (AttachParent)
-    {
-        FQuaternion ParentWorldRotationQuat = AttachParent->GetWorldRotationAsQuaternion();
-        SetRelativeRotation(NewWorldRotationQuat * ParentWorldRotationQuat.Inverse());
-    }
-    else
-    {
-        SetRelativeRotation(NewWorldRotationQuat);
-    }
+	SetWorldRotation(NewWorldRotationQuat);
 }
 
 void USceneComponent::SetWorldRotation(const FQuaternion& NewRotation)

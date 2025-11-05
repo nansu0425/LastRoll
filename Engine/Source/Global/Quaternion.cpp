@@ -215,3 +215,130 @@ FVector FQuaternion::RotateVector(const FVector& V) const
 	const FVector Result = V + (TT * W) + TT.Cross(Q);
 	return Result;
 }
+FVector FQuaternion::GetForward() const
+{
+	return RotateVector(FVector(1, 0, 0));
+}
+FVector FQuaternion::GetRight() const
+{
+	return RotateVector(FVector(0, 1, 0));
+}
+FVector FQuaternion::GetUp() const
+{
+	return RotateVector(FVector(0, 0, 1));
+}
+float FQuaternion::Dot(const FQuaternion& Q) const
+{
+	return X * Q.X + Y * Q.Y + Z * Q.Z + W * Q.W;
+}
+
+FQuaternion FQuaternion::Slerp(const FQuaternion& Q1, const FQuaternion& Q2, float T)
+{
+	// T를 0~1 범위로 클램프
+	T = Clamp(T, 0.0f, 1.0f);
+
+	FQuaternion Start = Q1;
+	FQuaternion End = Q2;
+
+	// 내적 계산
+	float CosHalfTheta = Start.Dot(End);
+
+	// 최단 경로를 위해 부호 조정 (Dot < 0이면 반대 방향)
+	if (CosHalfTheta < 0.0f)
+	{
+		End.X = -End.X;
+		End.Y = -End.Y;
+		End.Z = -End.Z;
+		End.W = -End.W;
+		CosHalfTheta = -CosHalfTheta;
+	}
+
+	// 쿼터니언이 거의 같으면 선형 보간
+	if (CosHalfTheta >= 0.9995f)
+	{
+		return FQuaternion(
+			Start.X + T * (End.X - Start.X),
+			Start.Y + T * (End.Y - Start.Y),
+			Start.Z + T * (End.Z - Start.Z),
+			Start.W + T * (End.W - Start.W)
+		);
+	}
+
+	// 구면 선형 보간
+	float HalfTheta = acosf(CosHalfTheta);
+	float SinHalfTheta = sqrtf(1.0f - CosHalfTheta * CosHalfTheta);
+
+	// 각도가 180도에 가까우면 (SinHalfTheta가 0에 가까우면)
+	if (fabsf(SinHalfTheta) < 0.001f)
+	{
+		// 50:50 혼합
+		return FQuaternion(
+			Start.X * 0.5f + End.X * 0.5f,
+			Start.Y * 0.5f + End.Y * 0.5f,
+			Start.Z * 0.5f + End.Z * 0.5f,
+			Start.W * 0.5f + End.W * 0.5f
+		);
+	}
+
+	// 보간 계수 계산
+	float RatioA = sinf((1.0f - T) * HalfTheta) / SinHalfTheta;
+	float RatioB = sinf(T * HalfTheta) / SinHalfTheta;
+
+	FQuaternion Result(
+		Start.X * RatioA + End.X * RatioB,
+		Start.Y * RatioA + End.Y * RatioB,
+		Start.Z * RatioA + End.Z * RatioB,
+		Start.W * RatioA + End.W * RatioB
+	);
+
+	Result.Normalize();
+	return Result;
+}
+
+FQuaternion FQuaternion::SlerpFullPath(const FQuaternion& Q1, const FQuaternion& Q2, float T)
+{
+	// 최단 경로가 아닌 전체 경로로 보간 (360도 회전용)
+	T = Clamp(T, 0.0f, 1.0f);
+
+	FQuaternion Start = Q1;
+	FQuaternion End = Q2;
+
+	float CosHalfTheta = Start.Dot(End);
+
+	// 쿼터니언이 거의 같으면 선형 보간
+	if (fabsf(CosHalfTheta) >= 0.9995f)
+	{
+		return FQuaternion(
+			Start.X + T * (End.X - Start.X),
+			Start.Y + T * (End.Y - Start.Y),
+			Start.Z + T * (End.Z - Start.Z),
+			Start.W + T * (End.W - Start.W)
+		);
+	}
+
+	float HalfTheta = acosf(Clamp(CosHalfTheta, -1.0f, 1.0f));
+	float SinHalfTheta = sqrtf(1.0f - CosHalfTheta * CosHalfTheta);
+
+	if (fabsf(SinHalfTheta) < 0.001f)
+	{
+		return FQuaternion(
+			Start.X * 0.5f + End.X * 0.5f,
+			Start.Y * 0.5f + End.Y * 0.5f,
+			Start.Z * 0.5f + End.Z * 0.5f,
+			Start.W * 0.5f + End.W * 0.5f
+		);
+	}
+
+	float RatioA = sinf((1.0f - T) * HalfTheta) / SinHalfTheta;
+	float RatioB = sinf(T * HalfTheta) / SinHalfTheta;
+
+	FQuaternion Result(
+		Start.X * RatioA + End.X * RatioB,
+		Start.Y * RatioA + End.Y * RatioB,
+		Start.Z * RatioA + End.Z * RatioB,
+		Start.W * RatioA + End.W * RatioB
+	);
+
+	Result.Normalize();
+	return Result;
+}

@@ -619,6 +619,7 @@
     <ClCompile Include="Source\Render\RenderPass\Private\LetterboxPass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\VignettePass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Public\PostProcessPass.cpp" />
+    <ClCompile Include="Source\Render\UI\Widget\Private\SpringArmComponentWidget.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Global\BVH.h">
@@ -1258,6 +1259,7 @@
     <ClInclude Include="Source\Render\RenderPass\Public\LetterboxPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\PostProcessPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\VignettePass.h" />
+    <ClInclude Include="Source\Render\UI\Widget\Public\SpringArmComponentWidget.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Asset\Shader\ClusteredRenderingCS.hlsli">
