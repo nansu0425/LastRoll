@@ -131,7 +131,7 @@ void UDeviceResources::CreateFrameBuffer()
 
 	// 렌더 타겟 뷰 생성
 	D3D11_RENDER_TARGET_VIEW_DESC framebufferRTVdesc = {};
-	framebufferRTVdesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB; // 색상 포맷
+	framebufferRTVdesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // 색상 포맷
 	framebufferRTVdesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D; // 2D 텍스처
 
 	Device->CreateRenderTargetView(FrameBuffer, &framebufferRTVdesc, &FrameBufferRTV);
@@ -214,7 +214,7 @@ void UDeviceResources::CreatePingPongBuffer()
 	SceneDesc.Height = Height;
 	SceneDesc.MipLevels = 1;
 	SceneDesc.ArraySize = 1;
-	SceneDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	SceneDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 	SceneDesc.SampleDesc.Count = 1;
 	SceneDesc.SampleDesc.Quality = 0;
 	SceneDesc.Usage = D3D11_USAGE_DEFAULT;
