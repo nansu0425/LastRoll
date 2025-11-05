@@ -4,15 +4,6 @@
     <FxCompile Include="Asset\Shader\ClusteredLightCullingCS.hlsl">
       <Filter>Asset\Shader</Filter>
     </FxCompile>
-    <FxCompile Include="Asset\Shader\ClusteredRenderingGrid.hlsl">
-      <Filter>Asset\Shader</Filter>
-    </FxCompile>
-    <FxCompile Include="Asset\Shader\ClusterGizmoSetCS.hlsl">
-      <Filter>Asset\Shader</Filter>
-    </FxCompile>
-    <FxCompile Include="Asset\Shader\GizmoLine.hlsl">
-      <Filter>Asset\Shader</Filter>
-    </FxCompile>
     <FxCompile Include="Asset\Shader\HeightFogShader.hlsl">
       <Filter>Asset\Shader</Filter>
     </FxCompile>
@@ -55,6 +46,7 @@
     <FxCompile Include="Asset\Shader\TextureVS.hlsl">
       <Filter>Asset\Shader</Filter>
     </FxCompile>
+    <FxCompile Include="Asset\Shader\ColorCopy.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Utility\Private\ScopeCycleCounter.cpp">
@@ -611,6 +603,20 @@
     <ClCompile Include="Source\Optimization\Private\ViewVolumeCuller.cpp">
       <Filter>Source\Optimization\Private</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Actor\Private\HomingProjectile.cpp" />
+    <ClCompile Include="Source\Actor\Private\OrbitProjectile.cpp" />
+    <ClCompile Include="Source\Component\Camera\Private\CameraModifier_CameraShake.cpp" />
+    <ClCompile Include="Source\Component\Private\SpringArmComponent.cpp" />
+    <ClCompile Include="Source\Game\Actor\Private\CameraTestActor.cpp" />
+    <ClCompile Include="Source\Game\Actor\Private\EightBallEnemy.cpp" />
+    <ClCompile Include="Source\Game\Actor\Private\Player.cpp" />
+    <ClCompile Include="Source\Global\CoreTypes.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Private\ColorCopyPass.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Private\FadePass.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Private\LetterboxPass.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Private\VignettePass.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Public\PostProcessPass.cpp" />
+    <ClCompile Include="Source\Render\UI\Widget\Private\SpringArmComponentWidget.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Global\BVH.h">
@@ -1235,6 +1241,19 @@
     <ClInclude Include="Source\Actor\Public\ActorPool.h">
       <Filter>Source\Actor\Public</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Actor\Public\HomingProjectile.h" />
+    <ClInclude Include="Source\Actor\Public\OrbitProjectile.h" />
+    <ClInclude Include="Source\Component\Camera\Public\CameraModifier_CameraShake.h" />
+    <ClInclude Include="Source\Component\Public\SpringArmComponent.h" />
+    <ClInclude Include="Source\Game\Actor\Public\CameraTestActor.h" />
+    <ClInclude Include="Source\Game\Actor\Public\EightBallEnemy.h" />
+    <ClInclude Include="Source\Game\Actor\Public\Player.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\ColorCopyPass.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\FadePass.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\LetterboxPass.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\PostProcessPass.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\VignettePass.h" />
+    <ClInclude Include="Source\Render\UI\Widget\Public\SpringArmComponentWidget.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Asset\Shader\ClusteredRenderingCS.hlsli">
@@ -1243,6 +1262,7 @@
     <None Include="Asset\Shader\LightStructures.hlsli">
       <Filter>Asset\Shader</Filter>
     </None>
+    <None Include="Asset\Shader\PostProcessing.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source">
