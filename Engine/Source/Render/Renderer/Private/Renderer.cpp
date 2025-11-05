@@ -68,7 +68,6 @@ void URenderer::Init(HWND InWindowHandle)
 	CreateDecalShader();
 	CreateFogShader();
 	CreateConstantBuffers();
-	CreateFXAAShader();
 	CreateStaticMeshShader();
 	CreateClusteredRenderingGrid();
 	CreateDepthOnlyShader();
@@ -120,16 +119,16 @@ void URenderer::Init(HWND InWindowHandle)
 	FSceneDepthPass* SceneDepthPass = new FSceneDepthPass(Pipeline, ConstantBufferViewProj, DisabledDepthStencilState);
 	RenderPasses.push_back(SceneDepthPass);
 
+	HitProxyPass = new FHitProxyPass(Pipeline, ConstantBufferViewProj, ConstantBufferModels,
+		HitProxyVS, HitProxyPS, HitProxyInputLayout, DefaultDepthStencilState);
+
+	//포스트 프로세싱 넣는 순서대로 작동
 	FVignettePass* VignettePass = new FVignettePass(Pipeline, DeviceResources);
 	PostProcessingPasses.push_back(VignettePass);
 
-	// UPipeline* InPipeline, UDeviceResources* InDeviceResources, ID3D11VertexShader* InVS,
-	// ID3D11PixelShader* InPS, ID3D11InputLayout* InLayout, ID3D11SamplerState* InSampler
-	FXAAPass = new FFXAAPass(Pipeline, DeviceResources, FXAAVertexShader, FXAAPixelShader, FXAAInputLayout, FXAASamplerState);
-	//RenderPasses.push_back(FXAAPass);
+	FFXAAPass* FXAAPass = new FFXAAPass(Pipeline, DeviceResources);
+	PostProcessingPasses.push_back(FXAAPass);
 
-	HitProxyPass = new FHitProxyPass(Pipeline, ConstantBufferViewProj, ConstantBufferModels,
-		HitProxyVS, HitProxyPS, HitProxyInputLayout, DefaultDepthStencilState);
 
 	ColorCopyPass = new FColorCopyPass(Pipeline, DeviceResources);
 }
@@ -155,8 +154,6 @@ void URenderer::Release()
 		PPPass->Release();
 		SafeDelete(PPPass);
 	}
-	FXAAPass->Release();
-	SafeDelete(FXAAPass);
 
 	if (HitProxyPass)
 	{
@@ -378,24 +375,6 @@ void URenderer::CreateFogShader()
 	FRenderResourceFactory::CreatePixelShader(ShaderFilePathString, &FogPixelShader);
 
 	RegisterShaderReloadCache(ShaderPath, ShaderUsage::FOG);
-}
-
-void URenderer::CreateFXAAShader()
-{
-	const std::wstring ShaderFilePathString = L"Asset/Shader/FXAAShader.hlsl";
-	const std::filesystem::path ShaderPath(ShaderFilePathString);
-
-	TArray<D3D11_INPUT_ELEMENT_DESC> FXAALayout =
-	{
-		{"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	    {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-    };
-	FRenderResourceFactory::CreateVertexShaderAndInputLayout(ShaderFilePathString, FXAALayout, &FXAAVertexShader, &FXAAInputLayout);
-	FRenderResourceFactory::CreatePixelShader(ShaderFilePathString, &FXAAPixelShader);
-	
-	FXAASamplerState = FRenderResourceFactory::CreateFXAASamplerState();
-
-	RegisterShaderReloadCache(ShaderPath, ShaderUsage::FXAA);
 }
 
 void URenderer::CreateStaticMeshShader()
@@ -670,20 +649,6 @@ void URenderer::HotReloadShaders()
 				}
 			}
 			break;
-		case ShaderUsage::FXAA:
-			SafeRelease(FXAAInputLayout);
-			SafeRelease(FXAAVertexShader);
-			SafeRelease(FXAAPixelShader);
-			SafeRelease(FXAASamplerState);
-			CreateFXAAShader();
-			if (FXAAPass)
-			{
-				FXAAPass->SetInputLayout(FXAAInputLayout);
-				FXAAPass->SetVertexShader(FXAAVertexShader);
-				FXAAPass->SetPixelShader(FXAAPixelShader);
-				FXAAPass->SetSamplerState(FXAASamplerState);
-			}
-			break;
 		case ShaderUsage::STATICMESH:
 			SafeRelease(UberLitInputLayout);
 			SafeRelease(UberLitVertexShader);
@@ -755,10 +720,6 @@ void URenderer::ReleaseDefaultShader()
 	SafeRelease(FogVertexShader);
 	SafeRelease(FogPixelShader);
 	SafeRelease(FogInputLayout);
-	
-	SafeRelease(FXAAVertexShader);
-	SafeRelease(FXAAPixelShader);
-	SafeRelease(FXAAInputLayout);
 
 	SafeRelease(ClusteredRenderingGridInputLayout);
 	SafeRelease(ClusteredRenderingGridVS);
@@ -796,7 +757,6 @@ void URenderer::ReleaseBlendState()
 
 void URenderer::ReleaseSamplerState()
 {
-	SafeRelease(FXAASamplerState);
 	SafeRelease(DefaultSampler);
 	SafeRelease(ShadowComparisonSampler);
 	SafeRelease(VarianceShadowSampler);
@@ -875,16 +835,6 @@ void URenderer::Update()
 			GEditor->GetEditorModule()->RenderEditorGeometry();
 			GEditor->GetEditorModule()->RenderGizmo(CurrentCamera, LocalViewport);
 		}
-    }
-
-    // FXAA는 SceneColor → 백버퍼로 복사
-    if (bFXAAEnabled)
-    {
-        ID3D11RenderTargetView* nullRTV[] = { nullptr };
-        GetDeviceContext()->OMSetRenderTargets(1, nullRTV, nullptr);
-
-        FRenderingContext RenderingContext;
-        FXAAPass->Execute(RenderingContext);
     }
 
     // D2D 오버레이는 FXAA 후 각 뷰포트마다 독립적으로 렌더링
