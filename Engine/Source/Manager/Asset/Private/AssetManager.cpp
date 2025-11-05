@@ -7,6 +7,7 @@
 #include "Manager/Asset/Public/ObjManager.h"
 #include "Manager/Path/Public/PathManager.h"
 #include "Render/Renderer/Public/RenderResourceFactory.h"
+#include "Audio/Public/SoundWave.h"
 
 IMPLEMENT_SINGLETON_CLASS(UAssetManager, UObject)
 UAssetManager::UAssetManager()
@@ -19,6 +20,7 @@ UAssetManager::~UAssetManager() = default;
 void UAssetManager::Initialize()
 {
 	TextureManager->LoadAllTexturesFromDirectory(UPathManager::GetInstance().GetDataPath());
+	LoadAllSoundsFromDirectory(UPathManager::GetInstance().GetDataPath());
 	// Data 폴더 속 모든 .obj 파일 로드 및 캐싱
 	LoadAllObjStaticMesh();
 
@@ -103,6 +105,13 @@ void UAssetManager::Release()
 	{
 		SafeRelease(Pair.second);
 	}
+
+	for (auto& Pair : SoundWaves)
+	{
+		SafeDelete(Pair.second);
+	}
+
+	SoundWaves.clear();
 
 	StaticMeshCache.clear();	// unique ptr 이라서 자동으로 해제됨
 	StaticMeshVertexBuffers.clear();
@@ -296,4 +305,57 @@ UTexture* UAssetManager::LoadTexture(const FName& InFilePath)
 const TMap<FName, UTexture*>& UAssetManager::GetTextureCache() const
 {
 	return TextureManager->GetTextureCache();
+}
+
+void UAssetManager::LoadAllSoundsFromDirectory(const path& InDirectoryPath)
+{
+    if (!std::filesystem::exists(InDirectoryPath) || !std::filesystem::is_directory(InDirectoryPath))
+    {
+        UE_LOG_ERROR("[SoundManager] 디렉토리를 찾을 수 없습니다: %ls", InDirectoryPath.c_str());
+        return;
+    }
+
+    UE_LOG("[SoundManager] %ls 디렉토리에서 사운드 로드를 시작합니다...", InDirectoryPath.c_str());
+
+    const TSet<FString> SupportedExtensions = { ".wav" };
+
+    for (const auto& Entry : std::filesystem::recursive_directory_iterator(InDirectoryPath))
+    {
+        if (!Entry.is_regular_file()) { continue; }
+
+        const path& FilePath = Entry.path();
+        FString Extension = FilePath.extension().string();
+        std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::tolower);
+
+        if (SupportedExtensions.count(Extension))
+        {
+            FName SoundName(FilePath.string());
+            LoadSound(SoundName);
+        }
+    }
+
+    UE_LOG("[SoundManager] 사운드 로드를 완료했습니다.");
+}
+
+USoundWave* UAssetManager::LoadSound(const FName& InFilePath)
+{
+    // Check Cached
+    const auto& It = SoundWaves.find(InFilePath);
+    if (It != SoundWaves.end())
+    {
+        return It->second;
+    }
+
+	USoundWave* SoundWave = NewObject<USoundWave>();
+	if (SoundWave->LoadFromFile(InFilePath.ToString()))
+	{
+		SoundWaves[InFilePath] = SoundWave;	
+		return SoundWave;
+	}
+	return nullptr;
+}
+
+const TMap<FName, USoundWave*>& UAssetManager::GetSoundCache() const
+{
+	return SoundWaves;
 }

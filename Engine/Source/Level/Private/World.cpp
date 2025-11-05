@@ -33,6 +33,16 @@ UWorld::~UWorld()
 		SafeDelete(CurrentLevel); // 내부 Clean up은 Level의 소멸자에서 수행
 		Level = nullptr;
 	}
+	
+	if (CameraManager)
+	{
+		SafeDelete(CameraManager);
+	}
+	
+	if (AudioDevice)
+	{
+		SafeDelete(AudioDevice);
+	}
 }
 
 void UWorld::BeginPlay()
@@ -46,6 +56,15 @@ void UWorld::BeginPlay()
 	{
 		UE_LOG_ERROR("World: BeginPlay 호출 전에 로드된 Level이 없습니다.");
 		return;
+	}
+
+	if (!AudioDevice)
+	{
+		AudioDevice = new FAudioDevice();
+		if (!AudioDevice->Initialize())
+		{
+			UE_LOG_ERROR("World: 오디오 디바이스 초기화에 실패했습니다.");
+		}
 	}
 
 	Level->Init();
