@@ -8,8 +8,8 @@ end
 
 _G.PlayerData.PlayerPos = Vector(0,0,0)
 
--- Camera 제어 플래그
-local bFollowPlayer = true  -- true: Player 따라다님, false: Free Camera (Transition 활성화)
+-- Camera 제어 플래그 (외부에서 접근 가능하도록 전역으로 선언)
+bFollowPlayer = true  -- true: Player 따라다님, false: Free Camera (Transition 활성화)
 
 -- Projectile 활성화/비활성화 플래그
 local bLinearProjectileEnabled = true   -- Linear Projectile 활성화 여부

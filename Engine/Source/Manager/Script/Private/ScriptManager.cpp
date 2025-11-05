@@ -392,13 +392,18 @@ void UScriptManager::RegisterCoreTypes()
 		[](float x, float y, float z, float w) { return FQuaternion(x, y, z, w); }
 	));
 
+	// Quaternion 정적 팩토리 함수들 등록
+	lua.set_function("QuaternionFromEuler", &FQuaternion::FromEuler);
+	lua.set_function("QuaternionIdentity", &FQuaternion::Identity);
+
 	// FQuaternion usertype 등록 (메서드와 프로퍼티)
 	lua.new_usertype<FQuaternion>("FQuaternion",
 		sol::no_constructor,  // 생성자는 위에서 Quaternion 함수로 등록했음
 		"x", &FQuaternion::X,
 		"y", &FQuaternion::Y,
 		"z", &FQuaternion::Z,
-		"w", &FQuaternion::W
+		"w", &FQuaternion::W,
+		"ToEuler", &FQuaternion::ToEuler
 	);
 
 	// ====================================================================
@@ -1226,15 +1231,28 @@ void UScriptManager::RegisterCoreTypes()
 		return CameraManager->StartTransition(TargetPOV, Duration, TimingCurve);
 	};
 
-	LuaState["PlayTransitionPreset"] = [](const FMinimalViewInfo& TargetPOV, const std::string& PresetName) -> UCameraModifier_Transition* {
-		APlayerCameraManager* CameraManager = GWorld->GetCameraManager();
-		if (!CameraManager)
-		{
-			UE_LOG_ERROR("PlayTransitionPreset: 카메라 매니저를 찾을 수 없습니다.");
-			return nullptr;
+	LuaState["PlayTransitionPreset"] = sol::overload(
+		// Overload 1: 현재 POV -> 목표 POV
+		[](const FMinimalViewInfo& TargetPOV, const std::string& PresetName) -> UCameraModifier_Transition* {
+			APlayerCameraManager* CameraManager = GWorld->GetCameraManager();
+			if (!CameraManager)
+			{
+				UE_LOG_ERROR("PlayTransitionPreset: 카메라 매니저를 찾을 수 없습니다.");
+				return nullptr;
+			}
+			return CameraManager->PlayTransitionPreset(TargetPOV, FName(PresetName));
+		},
+		// Overload 2: 시작 POV -> 목표 POV (명시적)
+		[](const FMinimalViewInfo& StartPOV, const FMinimalViewInfo& TargetPOV, const std::string& PresetName) -> UCameraModifier_Transition* {
+			APlayerCameraManager* CameraManager = GWorld->GetCameraManager();
+			if (!CameraManager)
+			{
+				UE_LOG_ERROR("PlayTransitionPreset: 카메라 매니저를 찾을 수 없습니다.");
+				return nullptr;
+			}
+			return CameraManager->PlayTransitionPreset(StartPOV, TargetPOV, FName(PresetName));
 		}
-		return CameraManager->PlayTransitionPreset(TargetPOV, FName(PresetName));
-	};
+	);
 
 	LuaState["StopAllCameraTransitions"] = []() {
 		APlayerCameraManager* CameraManager = GWorld->GetCameraManager();

@@ -207,6 +207,20 @@ public:
 	);
 
 	/**
+	 * @brief Preset 이름으로 카메라 트랜지션 재생 (명시적인 시작 POV)
+	 *
+	 * @param StartPOV 시작 카메라 상태
+	 * @param TargetPOV 목표 카메라 상태
+	 * @param PresetName 재생할 Preset 이름
+	 * @return 생성된 트랜지션 모디파이어, Preset이 없으면 nullptr
+	 */
+	class UCameraModifier_Transition* PlayTransitionPreset(
+		const FMinimalViewInfo& StartPOV,
+		const FMinimalViewInfo& TargetPOV,
+		FName PresetName
+	);
+
+	/**
 	 * @brief 모든 활성 트랜지션 중지
 	 */
 	void StopAllTransitions();

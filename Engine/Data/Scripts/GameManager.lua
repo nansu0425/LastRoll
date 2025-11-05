@@ -1,6 +1,8 @@
 
 local ActorPool = require("Data/Scripts/ActorPool")
 local Util = require("Data\\Scripts\\Util")
+local CameraTest = require("Data/Scripts/CameraTransitionTest")
+
 if _G.GameData == nil then
 _G.GameData = {}
 end
@@ -48,15 +50,57 @@ SetLightPos()
 
 SpawnedActor = ActorPool:Get("APlayer")
 print("캐릭터 생성")
-SpawnedActor:GetScriptComponentByName("Player.lua"):GetEnv().Init()
 
+-- ===== 게임 시작 카메라 연출 설정 =====
+-- Player Init 전에 Follow Player 모드 비활성화
+local PlayerEnv = SpawnedActor:GetScriptComponentByName("Player.lua"):GetEnv()
+PlayerEnv.bFollowPlayer = false  -- Follow Player 모드 비활성화
+
+-- Player 초기화 (TopCamera() 호출하여 기본 카메라 설정)
+PlayerEnv.Init()
+
+-- ===== 게임 시작 카메라 트랜지션 준비 =====
+-- 1. 시작 카메라 위치: 플레이어 뒤쪽 먼 곳에서 높은 곳
+local playerPos = SpawnedActor.Location
+GetCamera().Location = playerPos + Vector(-100, 0, 80)  -- 뒤쪽 멀리, 높은 곳
+GetCamera().Rotation = Vector(0, 60, 0)  -- 아래를 내려다보는 각도
+
+-- 2. 시작 POV 저장
+local startPOV = ViewInfo()
+startPOV.Location = GetCamera().Location
+startPOV.Rotation = QuaternionFromEuler(GetCamera().Rotation)
+startPOV.FOV = 90.0
+print("[GameManager] Start Location: ", startPOV.Location.x, startPOV.Location.y, startPOV.Location.z)
+
+-- 3. TopCamera()를 호출해서 목표 위치/회전을 얻음
+PlayerEnv.TopCamera()  -- 카메라를 최종 TopCamera 위치로 설정
+print("[GameManager] TopCamera() 호출 완료")
+
+-- 4. 목표 POV 저장
+local targetPOV = ViewInfo()
+targetPOV.Location = GetCamera().Location
+targetPOV.Rotation = QuaternionFromEuler(GetCamera().Rotation)
+targetPOV.FOV = 90.0
+print("[GameManager] Target Location: ", targetPOV.Location.x, targetPOV.Location.y, targetPOV.Location.z)
+
+-- ===== 카메라 트랜지션 시작 (동시에 카운트다운 진행) =====
+print("[GameManager] 카메라 트랜지션 & 카운트다운 시작")
+local result = PlayTransitionPreset(startPOV, targetPOV, "Cinematic")
+print("[GameManager] PlayTransitionPreset 반환값: ", result)
+
+-- 트랜지션 진행 중 카운트다운 표시 (총 3초)
 LoadingText = "3"
 coroutine.yield(WaitForSeconds(1.0))
 LoadingText = "2"
 coroutine.yield(WaitForSeconds(1.0))
 LoadingText = "1"
 coroutine.yield(WaitForSeconds(1.0))
-LoadingText = "0"
+LoadingText = ""  -- 카운트다운 종료
+
+-- 트랜지션 완료 & Follow Player 모드 활성화
+PlayerEnv.bFollowPlayer = true
+print("[GameManager] 트랜지션 완료 - Follow Player 모드 활성화")
+
 EnemyASpawner:GetEnv().InitSpawner()
 EnemyBSpawner:GetEnv().InitSpawner()
 ChangeGameState(EGameState.Playing)

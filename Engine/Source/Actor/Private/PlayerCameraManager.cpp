@@ -477,6 +477,40 @@ UCameraModifier_Transition* APlayerCameraManager::PlayTransitionPreset(
 	return StartTransition(TargetPOV, Preset->Duration, Preset->TimingCurve);
 }
 
+UCameraModifier_Transition* APlayerCameraManager::PlayTransitionPreset(
+	const FMinimalViewInfo& StartPOV,
+	const FMinimalViewInfo& TargetPOV,
+	FName PresetName)
+{
+	UTransitionPresetManager& PresetManager = UTransitionPresetManager::GetInstance();
+	FTransitionPresetData* Preset = PresetManager.FindPreset(PresetName);
+
+	if (!Preset)
+	{
+		UE_LOG_ERROR("APlayerCameraManager::PlayTransitionPreset - Preset '%s' not found",
+			PresetName.ToString().c_str());
+		return nullptr;
+	}
+
+	// Find or create Transition modifier
+	UCameraModifier_Transition* Transition = Cast<UCameraModifier_Transition>(
+		FindCameraModifierByClass(UCameraModifier_Transition::StaticClass())
+	);
+	if (!Transition)
+	{
+		Transition = Cast<UCameraModifier_Transition>(
+			AddCameraModifier(UCameraModifier_Transition::StaticClass())
+		);
+	}
+
+	if (Transition)
+	{
+		Transition->StartTransition(StartPOV, TargetPOV, Preset->Duration, Preset->TimingCurve);
+	}
+
+	return Transition;
+}
+
 void APlayerCameraManager::StopAllTransitions()
 {
 	for (UCameraModifier* Modifier : ModifierList)
