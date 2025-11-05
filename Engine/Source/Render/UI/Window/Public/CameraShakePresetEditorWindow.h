@@ -64,12 +64,12 @@ private:
 	 */
 	void DrawRemovePresetDialog();
 
-	/**
-	 * @brief PlayerCameraManager 찾기 또는 생성
-	 * @param World 대상 월드
-	 * @return PlayerCameraManager 인스턴스 (nullptr 가능)
-	 */
-	APlayerCameraManager* FindOrCreateCameraManager(UWorld* World);
+	///**
+	// * @brief PlayerCameraManager 찾기 (Player가 자동 생성)
+	// * @param World 대상 월드
+	// * @return PlayerCameraManager 인스턴스 (nullptr 가능 - Player가 없으면 nullptr)
+	// */
+	//APlayerCameraManager* FindCameraManager(UWorld* World);
 
 private:
 	// Detail Panel 인스턴스

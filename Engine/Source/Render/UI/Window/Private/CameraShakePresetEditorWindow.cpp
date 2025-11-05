@@ -207,10 +207,10 @@ void UCameraShakePresetEditorWindow::DrawBottomPanel()
 
 	if (ImGui::Button("Test Preset (PIE)", ImVec2(200, 0)))
 	{
-		// PlayerCameraManager 찾거나 생성
+		// PlayerCameraManager 찾기 (Player가 자동으로 생성함)
 		if (World)
 		{
-			APlayerCameraManager* CameraManager = FindOrCreateCameraManager(World);
+			APlayerCameraManager* CameraManager = World->GetCameraManager();
 			if (CameraManager)
 			{
 				// Preset 재생
@@ -221,7 +221,7 @@ void UCameraShakePresetEditorWindow::DrawBottomPanel()
 			}
 			else
 			{
-				UE_LOG_ERROR("CameraShakePresetEditorWindow: Failed to create PlayerCameraManager");
+				UE_LOG_ERROR("CameraShakePresetEditorWindow: PlayerCameraManager not found. Please spawn a Player actor in PIE mode.");
 			}
 		}
 	}
@@ -345,69 +345,48 @@ void UCameraShakePresetEditorWindow::DrawRemovePresetDialog()
 	}
 }
 
-APlayerCameraManager* UCameraShakePresetEditorWindow::FindOrCreateCameraManager(UWorld* World)
-{
-	if (!World)
-		return nullptr;
-
-	ULevel* Level = World->GetLevel();
-	if (!Level)
-		return nullptr;
-
-	// 기존 PlayerCameraManager 찾기
-	const TArray<AActor*>& Actors = Level->GetLevelActors();
-	for (AActor* Actor : Actors)
-	{
-		if (APlayerCameraManager* CameraManager = Cast<APlayerCameraManager>(Actor))
-		{
-			// ViewTarget이 없으면 임시로 생성
-			if (!CameraManager->GetViewTarget())
-			{
-				// 임시 카메라 액터 생성
-				if (!TempCameraActor)
-				{
-					TempCameraActor = World->SpawnActor(AActor::StaticClass());
-					UCameraComponent* CameraComp = NewObject<UCameraComponent>(TempCameraActor);
-					CameraComp->SetFieldOfView(90.0f);
-					TempCameraActor->SetRootComponent(CameraComp);
-				}
-
-				// ViewTarget 설정
-				CameraManager->SetViewTarget(TempCameraActor, 0.0f);
-				UE_LOG("CameraShakePresetEditorWindow: Created temp ViewTarget for PlayerCameraManager");
-			}
-			return CameraManager;
-		}
-	}
-
-	// PlayerCameraManager가 없으면 생성
-	APlayerCameraManager* NewCameraManager = Cast<APlayerCameraManager>(
-		World->SpawnActor(APlayerCameraManager::StaticClass())
-	);
-
-	if (NewCameraManager)
-	{
-		UE_LOG("CameraShakePresetEditorWindow: Created new PlayerCameraManager");
-
-		// 임시 카메라 액터 생성
-		if (!TempCameraActor)
-		{
-			TempCameraActor = World->SpawnActor(AActor::StaticClass());
-			if (TempCameraActor)
-			{
-				UCameraComponent* CameraComp = NewObject<UCameraComponent>(TempCameraActor);
-				CameraComp->SetFieldOfView(90.0f);
-				TempCameraActor->SetRootComponent(CameraComp);
-			}
-		}
-
-		// ViewTarget 설정
-		if (TempCameraActor)
-		{
-			NewCameraManager->SetViewTarget(TempCameraActor, 0.0f);
-			UE_LOG("CameraShakePresetEditorWindow: Set temp ViewTarget for new PlayerCameraManager");
-		}
-	}
-
-	return NewCameraManager;
-}
+//APlayerCameraManager* UCameraShakePresetEditorWindow::FindCameraManager(UWorld* World)
+//{
+//	if (!World)
+//		return nullptr;
+//
+//	ULevel* Level = World->GetLevel();
+//	if (!Level)
+//		return nullptr;
+//
+//	// 기존 PlayerCameraManager 찾기 (Player가 자동으로 생성함)
+//	const TArray<AActor*>& Actors = Level->GetLevelActors();
+//	for (AActor* Actor : Actors)
+//	{
+//		if (APlayerCameraManager* CameraManager = Cast<APlayerCameraManager>(Actor))
+//		{
+//			// ViewTarget이 없으면 임시로 생성
+//			if (!CameraManager->GetViewTarget())
+//			{
+//				// 임시 카메라 액터 생성
+//				if (!TempCameraActor)
+//				{
+//					TempCameraActor = World->SpawnActor(AActor::StaticClass());
+//					if (TempCameraActor)
+//					{
+//						UCameraComponent* CameraComp = NewObject<UCameraComponent>(TempCameraActor);
+//						CameraComp->SetFieldOfView(90.0f);
+//						TempCameraActor->SetRootComponent(CameraComp);
+//					}
+//				}
+//
+//				// ViewTarget 설정
+//				if (TempCameraActor)
+//				{
+//					CameraManager->SetViewTarget(TempCameraActor, 0.0f);
+//					UE_LOG("CameraShakePresetEditorWindow: Created temp ViewTarget for PlayerCameraManager");
+//				}
+//			}
+//			return CameraManager;
+//		}
+//	}
+//
+//	// PlayerCameraManager가 없으면 Player도 없는 것
+//	UE_LOG_WARNING("CameraShakePresetEditorWindow: PlayerCameraManager not found. Please spawn a Player actor in PIE mode.");
+//	return nullptr;
+//}
