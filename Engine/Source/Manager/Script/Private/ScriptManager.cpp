@@ -967,7 +967,27 @@ void UScriptManager::RegisterCoreTypes()
 		const auto& Clients = ViewportManager.GetClients();
 		FViewportClient* ViewportClient = Clients[ViewportManager.GetActiveIndex()];
 		FViewport* Viewport = ViewportClient->GetOwningViewport();
-		const FCameraConstants& CamConstant = ViewportClient->GetCamera()->GetFViewProjConstants();
+
+		// PIE/Game 모드인 경우 PlayerCameraManager의 카메라 사용
+		FCameraConstants CamConstant;
+		if (GWorld && (GWorld->GetWorldType() == EWorldType::PIE || GWorld->GetWorldType() == EWorldType::Game))
+		{
+			APlayerCameraManager* CameraManager = GWorld->GetCameraManager();
+			if (CameraManager)
+			{
+				CamConstant = CameraManager->GetCameraConstants();
+			}
+			else
+			{
+				// Fallback to EditorCamera if PlayerCameraManager doesn't exist
+				CamConstant = ViewportClient->GetCamera()->GetFViewProjConstants();
+			}
+		}
+		else
+		{
+			// Editor 모드인 경우 EditorCamera 사용
+			CamConstant = ViewportClient->GetCamera()->GetFViewProjConstants();
+		}
 
 		FVector4 ViewPos = FVector4(WorldPos, 1) * CamConstant.View;
 		FVector4 ClipPos = ViewPos * CamConstant.Projection;
