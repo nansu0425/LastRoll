@@ -39,6 +39,7 @@ end
 
 
 function StartSequence()
+SetTimeDilation(1.0)
 ResetVignette()
 _G.GameData.Score = 0
 _G.GameData.EXP = 0

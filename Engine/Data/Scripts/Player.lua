@@ -198,7 +198,9 @@ function Die()
 
     -- Orbit Projectile 제거
     ClearOrbitProjectiles()
-
+    
+    SetTimeDilation(0.1)
+    
     ActorPool:Return(Owner)
     _G.GameData.GMEnv.PlayerDead()
 end
