@@ -5,6 +5,7 @@
 #include "Actor/Public/PlayerCameraManager.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Component/Public/ActorComponent.h"
+#include "Game/Actor/Public/Player.h"
 #include "Utility/Public/JsonSerializer.h"
 #include "Manager/Config/Public/ConfigManager.h"
 #include "Manager/Path/Public/PathManager.h"
@@ -32,11 +33,6 @@ UWorld::~UWorld()
 		ULevel* CurrentLevel = Level;
 		SafeDelete(CurrentLevel); // 내부 Clean up은 Level의 소멸자에서 수행
 		Level = nullptr;
-	}
-	
-	if (CameraManager)
-	{
-		SafeDelete(CameraManager);
 	}
 	
 	if (AudioDevice)
@@ -100,14 +96,17 @@ void UWorld::Tick(float DeltaTimes)
 
 	if (WorldType == EWorldType::Editor )
 	{
-		for (AActor* Actor : Level->GetLevelActors())
+		// Use index-based loop to safely handle actors spawned/destroyed during Tick
+		auto& LevelActors = Level->GetLevelActors();
+		for (int32 i = 0; i < LevelActors.size(); ++i)
 		{
-			if(Actor->CanTickInEditor() && Actor->CanTick())
+			AActor* Actor = LevelActors[i];
+			if(Actor && Actor->CanTickInEditor() && Actor->CanTick())
 			{
 				Actor->Tick(DeltaTimes);
 			}
-			
-			if (Actor->IsPendingDestroy())
+
+			if (Actor && Actor->IsPendingDestroy())
 			{
 				DestroyActor(Actor);
 			}
@@ -130,7 +129,8 @@ void UWorld::Tick(float DeltaTimes)
 			}
 		}
 
-		// Update camera manager (Game/PIE only)
+		// Update camera manager (Game/PIE only) - Get from player
+		APlayerCameraManager* CameraManager = GetCameraManager();
 		if (CameraManager)
 		{
 			CameraManager->UpdateCamera(DeltaTimes);
@@ -404,4 +404,43 @@ void UWorld::CreateNewLevel(const FName& InLevelName)
 	}
 
 	BeginPlay();
+}
+
+/**
+ * @brief Gets the first APlayer actor found in the level
+ * @return Pointer to the first APlayer, or nullptr if not found
+ */
+APlayer* UWorld::GetFirstPlayerActor()
+{
+	if (!Level)
+	{
+		return nullptr;
+	}
+
+	// Find first player actor in level
+	for (AActor* Actor : Level->GetLevelActors())
+	{
+		if (APlayer* Player = Cast<APlayer>(Actor))
+		{
+			return Player;
+		}
+	}
+
+	return nullptr;
+}
+
+/**
+ * @brief Gets the PlayerCameraManager from the first player actor
+ * @return Pointer to the PlayerCameraManager, or nullptr if no player found
+ * @note This replaces the old UWorld-owned CameraManager with player-owned pattern
+ */
+APlayerCameraManager* UWorld::GetCameraManager()
+{
+	APlayer* Player = GetFirstPlayerActor();
+	if (Player)
+	{
+		return Player->GetPlayerCameraManager();
+	}
+
+	return nullptr;
 }
