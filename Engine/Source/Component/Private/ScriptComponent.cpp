@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Component/Public/AudioComponent.h"
 #include "Component/Public/ScriptComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Manager/Script/Public/ScriptManager.h"
@@ -308,6 +309,21 @@ void UScriptComponent::SetInstanceTable(const sol::table GlobalTable)
 					if (PrimitiveComponent->GetName().ToString() == ComponentName)
 					{
 						return PrimitiveComponent;
+					}
+				}
+			}
+			return nullptr;
+		};
+		InstanceEnv["GetAudioComponentByName"] = [this](const FString& ComponentName) -> UAudioComponent*
+		{
+			AActor* Owner = GetOwner();
+			for (UActorComponent* ActorComponent : Owner->GetOwnedComponents())
+			{
+				if (UAudioComponent* AudioComponent = Cast<UAudioComponent>(ActorComponent))
+				{
+					if (AudioComponent->Sound->FileName == ComponentName)
+					{
+						return AudioComponent;
 					}
 				}
 			}

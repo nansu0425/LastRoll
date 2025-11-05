@@ -510,6 +510,23 @@ void UMainBarWidget::RenderShowFlagsMenu()
 			CurrentLevel->SetShowFlags(ShowFlags);
 		}
 
+		// 감마 보정 표시 옵션
+		bool bEnableGamma = (ShowFlags & EEngineShowFlags::SF_Gamma) != 0;
+		if (ImGui::MenuItem("감마 보정 적용", nullptr, bEnableGamma))
+		{
+			if (bEnableGamma)
+			{
+				ShowFlags &= ~static_cast<uint64>(EEngineShowFlags::SF_Gamma);
+				UE_LOG("MainBarWidget: 감마 보정 비활성화");
+			}
+			else
+			{
+				ShowFlags |= static_cast<uint64>(EEngineShowFlags::SF_Gamma);
+				UE_LOG("MainBarWidget: 감마 보정 활성화");
+			}
+			CurrentLevel->SetShowFlags(ShowFlags);
+		}
+
 		ImGui::EndMenu();
 	}
 }

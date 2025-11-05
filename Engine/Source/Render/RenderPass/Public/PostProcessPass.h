@@ -25,6 +25,8 @@ public:
     virtual void Release();
 
 protected:
+    virtual bool IsEnabled(FRenderingContext& Context) const { return true; }
+    
     /**
      * @brief 상수 버퍼를 업데이트하고 GPU에 바인딩한다.
      * @param Context 렌더링 컨텍스트 (카메라 정보, PostProcessSettings 등 포함)

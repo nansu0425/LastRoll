@@ -41,6 +41,7 @@
 #include "Render/Renderer/Public/Renderer.h"
 
 #include "Render/RenderPass/Public/FadePass.h"
+#include "Render/RenderPass/Public/GammaPass.h"
 #include "Render/RenderPass/Public/LetterboxPass.h"
 #include "Render/RenderPass/Public/VignettePass.h"
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
@@ -132,7 +133,10 @@ void URenderer::Init(HWND InWindowHandle)
 	PostProcessingPasses.push_back(FadePass);
 
 	FLetterboxPass* LetterboxPass = new FLetterboxPass(Pipeline, DeviceResources);
-	PostProcessingPasses.push_back(LetterboxPass);	
+	PostProcessingPasses.push_back(LetterboxPass);
+
+	FGammaPass* GammaPass = new FGammaPass(Pipeline, DeviceResources);
+	PostProcessingPasses.push_back(GammaPass);
 
 	FFXAAPass* FXAAPass = new FFXAAPass(Pipeline, DeviceResources);
 	PostProcessingPasses.push_back(FXAAPass);
@@ -814,6 +818,14 @@ void URenderer::Update()
 			continue;
 		}
 
+#ifdef GAME_BUILD
+    	const D3D11_VIEWPORT& LocalViewport = DeviceResources->GetViewportInfo();
+    	GetDeviceContext()->RSSetViewports(1, &LocalViewport);
+    	Viewport->SetRenderRect(LocalViewport);
+    	UCamera* CurrentCamera = Viewport->GetViewportClient()->GetCamera();
+
+    	CurrentCamera->Update(LocalViewport);
+#else
     	FRect SingleWindowRect = Viewport->GetRect();
     	const int32 ViewportToolBarHeight = 32;
     	D3D11_VIEWPORT LocalViewport = { (float)SingleWindowRect.Left,(float)SingleWindowRect.Top + ViewportToolBarHeight, (float)SingleWindowRect.Width, (float)SingleWindowRect.Height - ViewportToolBarHeight, 0.0f, 1.0f };
@@ -822,6 +834,7 @@ void URenderer::Update()
         UCamera* CurrentCamera = Viewport->GetViewportClient()->GetCamera();
 
         CurrentCamera->Update(LocalViewport);
+#endif
 
         // Camera constant buffer update moved to RenderLevel()
         // (Allows PIE mode to use PlayerCameraManager instead of EditorCamera)
@@ -873,10 +886,13 @@ void URenderer::Update()
             FD2DOverlayManager::GetInstance().FlushAndRender();
         }
     }
+	
+#ifndef GAME_BUILD
     {
         TIME_PROFILE(UUIManager)
         UUIManager::GetInstance().Render();
     }
+#endif
 
     RenderEnd();
 }

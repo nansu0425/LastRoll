@@ -43,7 +43,7 @@ public:
     void Tick(float DeltaSeconds);
 
     // PIE Management
-    void StartPIE();
+    void StartPIE(int32 InViewportIndex = -1);
     void EndPIE();
     void PausePIE();
     void ResumePIE();

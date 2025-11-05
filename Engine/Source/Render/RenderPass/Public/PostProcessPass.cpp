@@ -17,6 +17,11 @@ FPostProcessPass::~FPostProcessPass()
 
 void FPostProcessPass::ExecutePP(FRenderingContext& Context, const uint32 PPIdx)
 {
+    if (!IsEnabled(Context))
+    {
+        return;
+    }
+    
     SetRenderTargets(PPIdx);
 
     UpdateConstants(Context);

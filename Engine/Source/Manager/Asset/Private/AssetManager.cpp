@@ -20,7 +20,7 @@ UAssetManager::~UAssetManager() = default;
 void UAssetManager::Initialize()
 {
 	TextureManager->LoadAllTexturesFromDirectory(UPathManager::GetInstance().GetDataPath());
-	LoadAllSoundsFromDirectory(UPathManager::GetInstance().GetDataPath());
+	LoadAllSoundsFromDirectory(UPathManager::GetInstance().GetAudioPath());
 	// Data 폴더 속 모든 .obj 파일 로드 및 캐싱
 	LoadAllObjStaticMesh();
 
@@ -339,19 +339,40 @@ void UAssetManager::LoadAllSoundsFromDirectory(const path& InDirectoryPath)
 
 USoundWave* UAssetManager::LoadSound(const FName& InFilePath)
 {
-    // Check Cached
-    const auto& It = SoundWaves.find(InFilePath);
-    if (It != SoundWaves.end())
-    {
-        return It->second;
-    }
+	path InputPath(InFilePath.ToString());
+	path AbsolutePath;
+	path RelativeKeyPath;
+
+	path AudioPath = UPathManager::GetInstance().GetAudioPath();
+    
+	InputPath.is_relative() ? AbsolutePath = AudioPath / InputPath : AbsolutePath = InputPath;
+
+	try
+	{
+		path CanonicalPath = std::filesystem::canonical(AbsolutePath);
+		RelativeKeyPath = std::filesystem::relative(CanonicalPath, AudioPath);
+	}
+	catch (const std::filesystem::filesystem_error&)
+	{
+		RelativeKeyPath = InputPath;
+	}
+
+	FName CacheKey(RelativeKeyPath.string());
+
+	const auto& It = SoundWaves.find(CacheKey);
+	if (It != SoundWaves.end())
+	{
+		return It->second;
+	}
 
 	USoundWave* SoundWave = NewObject<USoundWave>();
-	if (SoundWave->LoadFromFile(InFilePath.ToString()))
+
+	if (SoundWave->LoadFromFile(AbsolutePath.string()))
 	{
-		SoundWaves[InFilePath] = SoundWave;	
+		SoundWaves[CacheKey] = SoundWave;    
 		return SoundWave;
 	}
+    
 	return nullptr;
 }
 

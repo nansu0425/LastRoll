@@ -12,7 +12,27 @@ UEditorEngine* GEditor = nullptr;
 UWorld* GWorld = nullptr;
 UEditorEngine::UEditorEngine()
 {
+    // UWorld* GameWorld = NewObject<UWorld>(this);
+    // /** 일단, 월드 타입으로 GAME 대신에 PIE를 사용함 */
+    // GameWorld->SetWorldType(EWorldType::PIE);
+    //
+    // if (GameWorld)
+    // {
+    //     FWorldContext GameContext;
+    //     GameContext.SetWorld(GameWorld);
+    //     WorldContexts.push_back(GameContext);
+    //
+    //     GWorld = GameWorld;
+    // }
+    // EditorModule = NewObject<UEditor>();
+    //
+    // GameWorld->LoadLevel("Data/Scene/MyScene.Scene");
+    // GameWorld->BeginPlay();
+    //
+    // StartPIE();
+    
     GEditor = this;
+    
     UWorld* EditorWorld = NewObject<UWorld>(this);
     EditorWorld->SetWorldType(EWorldType::Editor);
 
@@ -25,9 +45,15 @@ UEditorEngine::UEditorEngine()
         GWorld = EditorWorld;
     }
     EditorModule = NewObject<UEditor>();
-
+    
     CreateNewLevel();
     EditorWorld->BeginPlay();
+
+#ifdef GAME_BUILD
+    EditorWorld->LoadLevel("Data/Scene/MyScene.Scene");
+    /** @note 뷰포트 2번에서 시작하도록 하드코딩된 값 */
+    StartPIE(2);
+#endif
 }
 
 UEditorEngine::~UEditorEngine()
@@ -101,7 +127,7 @@ bool UEditorEngine::IsPIESessionActive() const
 /**
  * brief 에디터 월드를 복제해 PIE 시작
  */
-void UEditorEngine::StartPIE()
+void UEditorEngine::StartPIE(int32 InViewportIndex)
 {
     if (PIEState != EPIEState::Stopped)
     {
@@ -115,10 +141,17 @@ void UEditorEngine::StartPIE()
         return;
     }
 
-    // PIE 시작 시 마지막으로 클릭한 뷰포트를 PIE 전용 뷰포트로 저장
-    UViewportManager& ViewportMgr = UViewportManager::GetInstance();
-    int32 LastClickedViewport = ViewportMgr.GetLastClickedViewportIndex();
-    ViewportMgr.SetPIEActiveViewportIndex(LastClickedViewport);
+    UViewportManager& ViewportManager = UViewportManager::GetInstance();
+    if (InViewportIndex == -1)
+    {
+        // PIE 시작 시 마지막으로 클릭한 뷰포트를 PIE 전용 뷰포트로 저장
+        int32 LastClickedViewport = ViewportManager.GetLastClickedViewportIndex();
+        ViewportManager.SetPIEActiveViewportIndex(LastClickedViewport);
+    }
+    else
+    {
+        ViewportManager.SetPIEActiveViewportIndex(InViewportIndex);
+    }
 
     UWorld* PIEWorld = Cast<UWorld>(EditorWorld->Duplicate());
 
@@ -136,13 +169,18 @@ void UEditorEngine::StartPIE()
 
         GWorld = PIEWorld;
 
-        // PIE 시작 시 Editor World의 Selection 초기화
-        // (Editor World의 Actor/Component가 선택된 상태로 남아있으면 PIE에서 잘못 삭제될 수 있음)
-        GEditor->GetEditorModule()->SelectActor(nullptr);
-        GEditor->GetEditorModule()->SelectComponent(nullptr);
+        if (GEditor)
+        {
+            // PIE 시작 시 Editor World의 Selection 초기화
+            // (Editor World의 Actor/Component가 선택된 상태로 남아있으면 PIE에서 잘못 삭제될 수 있음)
+            GEditor->GetEditorModule()->SelectActor(nullptr);
+            GEditor->GetEditorModule()->SelectComponent(nullptr);
+            
+            // PIE World 선택 상태도 초기화
+            GEditor->GetEditorModule()->ClearPIESelection();
+        }
 
-        // PIE World 선택 상태도 초기화
-        GEditor->GetEditorModule()->ClearPIESelection();
+        PIEWorld->BeginPlay();
     }
 }
 

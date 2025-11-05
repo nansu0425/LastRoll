@@ -3,6 +3,7 @@
 #include "Game/Actor/Public/Enemy.h"
 
 #include "Component/Mesh/Public/StaticMeshComponent.h"
+#include "Component/Public/AudioComponent.h"
 #include "Component/Public/ScriptComponent.h"
 #include "Component/Shape/Public/SphereComponent.h"
 
@@ -10,6 +11,10 @@ IMPLEMENT_CLASS(AEnemy, AActor)
 
 AEnemy::AEnemy()
 {
+    HitAudioComponent = CreateDefaultSubobject<UAudioComponent>();
+
+    DeathAudioComponent = CreateDefaultSubobject<UAudioComponent>();
+    
     // ScriptComponent 생성
     EnemyScriptComponent = CreateDefaultSubobject<UScriptComponent>();
 
@@ -27,6 +32,9 @@ UClass* AEnemy::GetDefaultRootComponent()
 void AEnemy::InitializeComponents()
 {
     AActor::InitializeComponents();
+
+    HitAudioComponent->LoadSound("knight.wav");
+    DeathAudioComponent->LoadSound("knight_death.wav");
 
     auto StaticMeshComponent = Cast<UStaticMeshComponent>(GetRootComponent());
 

@@ -18,6 +18,7 @@ local BlueLightOffset
 local PinkLightOffset
 local YellowLightOffset
 local CurLightPos = Vector(0,0,0)
+local AudioComponent
 
 function LightMove(dt)
 LightToPlayer = _G.PlayerData.PlayerPos - CurLightPos
@@ -60,6 +61,10 @@ EnemyASpawner:GetEnv().InitSpawner()
 EnemyBSpawner:GetEnv().InitSpawner()
 ChangeGameState(EGameState.Playing)
 --캐릭터 생성 필요
+
+--배경음악 재생
+AudioComponent = GetAudioComponentByName("valiant.wav")
+AudioComponent:Play()
 end
 
 function LevelUp()
@@ -106,6 +111,7 @@ CurLightPos = Vector(10000,10000,10000)
 SetLightPos()
 coroutine.yield(WaitForSeconds(1.5))
 ChangeGameState(EGameState.End)
+AudioComponent:Stop()
 end
 
 function ChangeGameState(InGameState)

@@ -176,6 +176,9 @@ struct FVector
 	static FVector XAxisVector() { return {1.0f, 0.0f, 0.0f}; }
 	static FVector YAxisVector() { return {0.0f, 1.0f, 0.0f}; }
 	static FVector ZAxisVector() { return {0.0f, 0.0f, 1.0f}; }
+	static FVector LinearLerpVt3(const FVector& Start, const FVector End, const float Interpolation);
+	static FVector EXPLerpVt3(const FVector& Start, const FVector End, const float Interpolation);
+	static FVector LinearEXPLerpVt3(const FVector& Start, const FVector End, const float LinearFactor, const float Interpolation);
 
 	[[nodiscard]] static FVector Zero() { return ZeroVector(); }
 	[[nodiscard]] static FVector One() { return OneVector(); }
@@ -183,6 +186,20 @@ struct FVector
 	[[nodiscard]] static FVector UnitY() { return YAxisVector(); }
 	[[nodiscard]] static FVector UnitZ() { return ZAxisVector(); }
 };
+inline float LinearLerp(const float Start, const float End, const float Interpolation)
+{
+	return Start * (1 - Interpolation) + End * Interpolation;
+}
+inline float EXPLerp(const float Start, const float End, const float Interpolation)
+{
+	return End - (End - Start) * exp(-Interpolation);
+}
+inline float LinearEXPLerp(const float Start, const float End, const float LinearFactor, const float Interpolation)
+{
+	float Linear = LinearLerp(Start, End, Interpolation);
+	float Exp = EXPLerp(Start, End, Interpolation);
+	return LinearFactor * Linear + (1 - LinearFactor) * Exp;
+}
 inline float Dot(const FVector& A, const FVector& B)
 {
 	return A.Dot(B);
