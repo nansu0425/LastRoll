@@ -1145,6 +1145,7 @@ class APostProcessVolume : public AActor
 | 2025-11-05 | Claude | Phase 2A 완료: 카메라 시스템 기본 통합 |
 | 2025-11-05 | Claude | Phase 2B 완료: VignettePass 통합 및 기본 테스트 |
 | 2025-11-05 | Claude | Phase 3 완료: PlayerCameraManager UpdateBlending()에 PostProcessSettings 보간 추가 |
+| 2025-11-05 | Claude | Phase 4 완료: VignettePass 디버깅 로그 추가 및 테스트 가이드 작성 (PostProcessSettings_Testing_Guide.md) |
 
 ---
 
