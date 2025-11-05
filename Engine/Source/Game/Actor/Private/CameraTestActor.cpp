@@ -100,15 +100,15 @@ void ACameraTestActor::BeginPlay()
 		UE_LOG_ERROR("✗ GWorld가 null입니다!");
 		return;
 	}
-	
+
 	APlayerCameraManager* CameraManager = GWorld->GetCameraManager();
 	if (!CameraManager)
 	{
-		UE_LOG_WARNING("World에 CameraManager가 설정되지 않음 - 새로 생성");
-		CameraManager = NewObject<APlayerCameraManager>(GWorld);
-		GWorld->SetCameraManager(CameraManager);
+		UE_LOG_WARNING("CameraManager를 찾을 수 없음 - APlayer가 레벨에 없거나 아직 생성되지 않았습니다");
+		UE_LOG_WARNING("카메라 기능을 테스트하려면 레벨에 APlayer를 추가하세요");
+		return;
 	}
-	
+
 	if (CameraManager)
 	{
 		UE_LOG_SUCCESS("✓ CameraManager 찾음생성됨");

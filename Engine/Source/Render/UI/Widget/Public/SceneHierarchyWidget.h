@@ -26,6 +26,9 @@ private:
 	// UI 상태
 	bool bShowDetails = true;
 
+	// 레벨 추적 (레벨 변경 감지용)
+	ULevel* CachedLevel = nullptr;
+
 	// 검색 기능
 	char SearchBuffer[256] = "";
 	FString SearchFilter;
