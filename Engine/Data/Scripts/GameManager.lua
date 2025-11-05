@@ -41,6 +41,8 @@ end
 
 
 function StartSequence()
+SetTimeDilation(1.0)
+ResetVignette()
 _G.GameData.Score = 0
 _G.GameData.EXP = 0
 _G.GameData.Level = 1
@@ -87,6 +89,8 @@ print("[GameManager] Target Location: ", targetPOV.Location.x, targetPOV.Locatio
 print("[GameManager] 카메라 트랜지션 & 카운트다운 시작")
 local result = PlayTransitionPreset(startPOV, targetPOV, "Cinematic")
 print("[GameManager] PlayTransitionPreset 반환값: ", result)
+
+StartCameraFade(1.0, 0.0, 3.0, Vector(0, 0, 0))
 
 -- 트랜지션 진행 중 카운트다운 표시 (총 3초)
 LoadingText = "3"
@@ -150,10 +154,10 @@ end
 
 function EndingSequence()
 EndSeuenceText = "죽었습니다.\n Score" .._G.GameData.Score
-coroutine.yield(WaitForSeconds(1.5))
+coroutine.yield(WaitForSeconds(0.15))
 CurLightPos = Vector(10000,10000,10000)
 SetLightPos()
-coroutine.yield(WaitForSeconds(1.5))
+coroutine.yield(WaitForSeconds(0.15))
 ChangeGameState(EGameState.End)
 AudioComponent:Stop()
 end

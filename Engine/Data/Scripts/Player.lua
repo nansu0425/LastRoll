@@ -238,6 +238,11 @@ end
 function TakeDamagePlayer(InDamage)
     obj.HP = obj.HP - InDamage
     Util.MakeDamageText(InDamage, obj.Location, Vector4(1,0,0,1))
+
+    HPPer = obj.HP / obj.MaxHP
+    if HPPer < 0.8 then
+        SetVignette(Vector(1, 0, 0), 1 - HPPer)
+    end
     -- 사망 처리
     if obj.HP <= 0 then
         Die()
@@ -253,7 +258,9 @@ function Die()
 
     -- Orbit Projectile 제거
     ClearOrbitProjectiles()
-
+    
+    SetTimeDilation(0.1)
+    
     ActorPool:Return(Owner)
     _G.GameData.GMEnv.PlayerDead()
 end

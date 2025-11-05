@@ -28,6 +28,7 @@ private:
 	bool bUsePerspectiveProjection;     // true: 원근 투영, false: 직교 투영
 	float OrthoWidth;                   // 직교 투영 너비, 기본값: 1000.0f
 
+public:
 	// ===== 후처리 설정 =====
 	FPostProcessSettings PostProcessSettings;
 
