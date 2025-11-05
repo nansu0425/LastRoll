@@ -8,6 +8,7 @@
 #include "Global/Vector.h"
 #include "Global/Quaternion.h"
 #include "Actor/Public/Actor.h"
+#include "Actor/Public/PlayerCameraManager.h"
 #include "Actor/Public/StaticMeshActor.h"
 #include "Component/Public/ActorComponent.h"
 #include "Component/Public/SceneComponent.h"
@@ -976,6 +977,17 @@ void UScriptManager::RegisterCoreTypes()
 	// ====================================================================
 	// Helper Functions
 	// ====================================================================
+
+	LuaState["StartCameraFade"] = [](float FromAlpha, float ToAlpha, float Duration, FVector Color)
+	{
+		APlayerCameraManager* CameraManager = GWorld->GetCameraManager();
+		if (!CameraManager)
+		{
+			UE_LOG_ERROR("StartCameraFade: 카메라 매니저를 찾을 수 없습니다.");
+			return;
+		}
+		CameraManager->StartCameraFade(FromAlpha, ToAlpha, Duration, Color);
+	};
 	
 	LuaState["Random"] = [](float MinValue, float MaxValue) -> float
 	{

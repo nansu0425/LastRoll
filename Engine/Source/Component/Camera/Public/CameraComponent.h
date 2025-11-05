@@ -53,11 +53,7 @@ public:
 	void SetFarClipPlane(float InFar) { FarClipPlane = InFar; }
 	void SetProjectionType(bool bInUsePerspective) { bUsePerspectiveProjection = bInUsePerspective; }
 	void SetOrthoWidth(float InWidth) { OrthoWidth = InWidth; }
-	void SetTargetAspectRatio(float InTargetAspect)
-	{
-		UE_LOG("Target: %f", InTargetAspect);
-		TargetAspectRatio = InTargetAspect;
-	}
+	void SetTargetAspectRatio(float InTargetAspect){ TargetAspectRatio = InTargetAspect; }
 
 	// Getter
 	float GetFieldOfView() const { return FieldOfView; }

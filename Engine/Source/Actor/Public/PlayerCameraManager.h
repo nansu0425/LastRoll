@@ -140,7 +140,7 @@ public:
 	 * @brief 카메라 페이드 효과 시작
 	 *
 	 * 시간에 걸쳐 화면을 지정된 색상으로 페이드합니다. 일반적인 사용 예:
-	 * - 사망 시 검an색으로 페이드: StartCameraFade(0.0, 1.0, 1.0, FVector4(0,0,0,1))
+	 * - 사망 시 검은색으로 페이드: StartCameraFade(0.0, 1.0, 1.0, FVector4(0,0,0,1))
 	 * - 스폰 시 검은색에서 페이드: StartCameraFade(1.0, 0.0, 1.0, FVector4(0,0,0,1))
 	 *
 	 * @param FromAlpha 시작 페이드 알파 [0.0, 1.0]. 0 = 페이드 없음, 1 = 전체 페이드
@@ -148,7 +148,7 @@ public:
 	 * @param Duration 페이드 지속 시간 (초)
 	 * @param Color 페이드 오버레이 색상
 	 */
-	void StartCameraFade(float FromAlpha, float ToAlpha, float Duration, FVector4 Color);
+	void StartCameraFade(float FromAlpha, float ToAlpha, float Duration, FVector Color);
 
 	/**
 	 * @brief 카메라 페이드 즉시 중지
