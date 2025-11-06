@@ -25,6 +25,8 @@
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
 #include "Render/ui/Viewport/Public/ViewportClient.h"
 #include "Render/UI/Viewport/Public/Viewport.h"
+#include "Editor/Public/EditorEngine.h"
+#include "Level/Public/World.h"
 
 IMPLEMENT_CLASS(UEditor, UObject)
 
@@ -205,8 +207,11 @@ void UEditor::Collect2DRender(UCamera* InCamera, const D3D11_VIEWPORT& InViewpor
 	FD2DOverlayManager& OverlayManager = FD2DOverlayManager::GetInstance();
 	OverlayManager.BeginCollect(InCamera, InViewport);
 
-	// FAxis 렌더링 명령 수집
-	FAxis::CollectDrawCommands(OverlayManager, InCamera, InViewport);
+	// FAxis 렌더링 명령 수집 (Game 모드가 아닐 때만)
+	if (GWorld && GWorld->GetWorldType() != EWorldType::Game)
+	{
+		FAxis::CollectDrawCommands(OverlayManager, InCamera, InViewport);
+	}
 
 	// Gizmo 회전 각도 오버레이 수집
 	Gizmo.CollectRotationAngleOverlay(OverlayManager, InCamera, InViewport);
