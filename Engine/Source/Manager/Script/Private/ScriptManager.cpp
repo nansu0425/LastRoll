@@ -1005,6 +1005,15 @@ void UScriptManager::RegisterCoreTypes()
 	);
 
 	// ====================================================================
+	// UCameraComponent - Camera component for accessing world location
+	// ====================================================================
+	lua.new_usertype<UCameraComponent>("UCameraComponent",
+		sol::base_classes, sol::bases<USceneComponent>(),
+		"GetWorldLocation", &UCameraComponent::GetWorldLocation,
+		"GetWorldRotation", &UCameraComponent::GetWorldRotationAsQuaternion
+	);
+
+	// ====================================================================
 	// ATopDownCameraActor - Top-down camera actor for PIE/Game mode
 	// ====================================================================
 	lua.new_usertype<ATopDownCameraActor>("TopDownCameraActor",
@@ -1012,7 +1021,8 @@ void UScriptManager::RegisterCoreTypes()
 		"Location", sol::property(&ATopDownCameraActor::GetActorLocation, &ATopDownCameraActor::SetActorLocation),
 		"Rotation", sol::property(&ATopDownCameraActor::GetRotation, &ATopDownCameraActor::SetRotation),
 		"SetCameraOffset", &ATopDownCameraActor::SetCameraOffset,
-		"SetFollowTarget", &ATopDownCameraActor::SetFollowTarget
+		"SetFollowTarget", &ATopDownCameraActor::SetFollowTarget,
+		"GetCameraComponent", &ATopDownCameraActor::GetCameraComponent
 	);
 	LuaState["GetCamera"] = [](sol::this_state s)->sol::object
 	{
