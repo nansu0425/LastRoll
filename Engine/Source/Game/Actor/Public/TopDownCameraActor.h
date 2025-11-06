@@ -27,8 +27,6 @@ public:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
 
-    void ActiveNameCard(const bool bActive);
-
     /**
      * @brief 추적할 타겟 액터 설정
      * @param InTarget 추적할 액터 (일반적으로 Player)
@@ -59,7 +57,6 @@ public:
     FVector GetRotation() const;
 
 private:
-    UBillBoardComponent* BillboardComponent = nullptr;
     USpringArmComponent* SpringArmComponent = nullptr;
     UCameraComponent* CameraComponent = nullptr;
     AActor* FollowTarget = nullptr;  // 추적할 타겟 (Player)

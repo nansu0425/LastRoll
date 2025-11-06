@@ -640,6 +640,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClInclude Include="Source\Render\RenderPass\Public\FogPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\FXAAPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\PostProcessPass.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\PPTexturePass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\RenderingContext.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\RenderPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\SceneDepthPass.h" />
@@ -817,7 +818,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClCompile Include="Source\Actor\Private\TriangleActor.cpp" />
     <ClCompile Include="Source\Actor\Private\PlayerCameraManager.cpp" />
     <ClCompile Include="Source\Audio\Private\AudioDevice.cpp" />
-      <ClCompile Include="Source\Audio\Private\SoundWave.cpp" />
+    <ClCompile Include="Source\Audio\Private\SoundWave.cpp" />
     <ClCompile Include="Source\Component\Camera\Private\CameraModifier_CameraShake.cpp" />
     <ClCompile Include="Source\Component\Camera\Private\CameraModifier_Transition.cpp" />
     <ClCompile Include="Source\Component\Mesh\Private\MeshComponent.cpp">
@@ -952,6 +953,7 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
     <ClCompile Include="Source\Render\RenderPass\Private\PointLightPass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\FXAAPass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\FogPass.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Private\PPTexturePass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\RenderPass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\SceneDepthPass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\ShadowData.cpp" />
@@ -1034,6 +1036,26 @@ xcopy "$(SolutionDir)External\Library\Lua\lua54.dll" "$(OutDir)" /D /Y</Command>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewerDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Asset\Shader\PPTexture.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='GameDebug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='GameDebug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='ObjViewerDebug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='ObjViewerDebug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Game|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Game|x64'">Pixel</ShaderType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewerDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameDebug|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Asset\Shader\UberLit.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

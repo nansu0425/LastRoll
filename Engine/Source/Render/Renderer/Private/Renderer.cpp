@@ -141,6 +141,9 @@ void URenderer::Init(HWND InWindowHandle)
 	FFXAAPass* FXAAPass = new FFXAAPass(Pipeline, DeviceResources);
 	PostProcessingPasses.push_back(FXAAPass);
 
+	PPTexturePass = new FPPTexturePass(Pipeline, DeviceResources);
+	PostProcessingPasses.push_back(PPTexturePass);
+
 	ColorCopyPass = new FColorCopyPass(Pipeline, DeviceResources);
 }
 

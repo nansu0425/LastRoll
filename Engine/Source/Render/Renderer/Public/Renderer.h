@@ -8,6 +8,7 @@
 #include "Render/Renderer/Public/Pipeline.h"
 #include "Render/RenderPass/Public/ColorCopyPass.h"
 #include "Render/RenderPass/Public/PostProcessPass.h"
+#include "Render/RenderPass/Public/PPTexturePass.h"
 
 class FClusteredRenderingGridPass;
 class FHitProxyPass;
@@ -214,6 +215,7 @@ private:
 	FClusteredRenderingGridPass* ClusteredRenderingGridPass = nullptr;
 	FShadowMapPass* ShadowMapPass = nullptr;
 	FShadowMapFilterPass* ShadowMapFilterPass = nullptr;
+	FPPTexturePass* PPTexturePass = nullptr;
 
 	// For Hot Reloading Shaders
 	TMap<std::wstring, TSet<ShaderUsage>> ShaderFileUsageMap;

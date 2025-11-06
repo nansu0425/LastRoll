@@ -93,12 +93,12 @@ print("[GameManager] PlayTransitionPreset 반환값: ", result)
 StartCameraFade(1.0, 0.0, 3.0, Vector(0, 0, 0))
 
 -- 트랜지션 진행 중 카운트다운 표시 (총 3초)
-SetNameCardActive(true)
+SetActiveNameCard(true)
 LoadingText = "3"
 coroutine.yield(WaitForSeconds(1.0))
 LoadingText = "2"
 coroutine.yield(WaitForSeconds(1.0))
-SetNameCardActive(false)
+SetActiveNameCard(false)
 LoadingText = "1"
 coroutine.yield(WaitForSeconds(1.0))
 LoadingText = ""  -- 카운트다운 종료

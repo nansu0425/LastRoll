@@ -39,6 +39,7 @@
 #include "Game/Actor/Public/TopDownCameraActor.h"
 #include "Component/Camera/Public/CameraModifier_Transition.h"
 #include "Manager/Camera/Public/TransitionPresetManager.h"
+#include "Render/RenderPass/Public/PPTexturePass.h"
 IMPLEMENT_SINGLETON_CLASS(UScriptManager, UObject)
 
 UScriptManager::UScriptManager()
@@ -1100,22 +1101,14 @@ void UScriptManager::RegisterCoreTypes()
 			}
 			return nullptr;
 		};
-	LuaState["SetNameCardActive"] = [](const bool bActive)
-	{
-		const TArray<AActor*>& Actors = GWorld->GetLevel()->GetLevelActors();
-		for (AActor* Actor : Actors)
+	LuaState["SetActiveNameCard"] = [](const bool bActive)
 		{
-			if (ATopDownCameraActor* TopdownCam = Cast<ATopDownCameraActor>(Actor))
-			{
-				TopdownCam->ActiveNameCard(bActive);
-				return;
-			}
-		}
-	};
+			FPPTexturePass::SetFadeAlpha(bActive ? 1 : 0);
+		};
 
 
 	UE_LOG_INFO("Lua core types registered (Vector, Quaternion, Actor, OverlapInfo, PrimitiveComponent)");
-	
+
 	// ====================================================================
 	// Helper Functions
 	// ====================================================================
