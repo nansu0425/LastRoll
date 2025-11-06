@@ -74,16 +74,28 @@ startPOV.Rotation = QuaternionFromEuler(GetCamera().Rotation)
 startPOV.FOV = 90.0
 print("[GameManager] Start Location: ", startPOV.Location.x, startPOV.Location.y, startPOV.Location.z)
 
--- 3. TopCamera()를 호출해서 목표 위치/회전을 얻음
-PlayerEnv.TopCamera()  -- 카메라를 최종 TopCamera 위치로 설정
+-- 3. TopCamera()를 호출해서 Actor 위치 설정
+PlayerEnv.TopCamera()  -- TopDownCameraActor의 Location 설정
 print("[GameManager] TopCamera() 호출 완료")
 
--- 4. 목표 POV 저장
+-- 4. 목표 POV: CameraComponent의 World Location 사용 (SpringArm offset 고려!)
+local camera = GetCamera()
+local cameraComp = camera:GetCameraComponent()
 local targetPOV = ViewInfo()
-targetPOV.Location = GetCamera().Location
-targetPOV.Rotation = QuaternionFromEuler(GetCamera().Rotation)
-targetPOV.FOV = 90.0
-print("[GameManager] Target Location: ", targetPOV.Location.x, targetPOV.Location.y, targetPOV.Location.z)
+
+if cameraComp then
+    -- CameraComponent의 World Location 사용 (SpringArm이 적용된 실제 카메라 위치!)
+    targetPOV.Location = cameraComp:GetWorldLocation()
+    targetPOV.Rotation = cameraComp:GetWorldRotation()
+    targetPOV.FOV = 90.0
+    print("[GameManager] Target Location (CameraComponent World): ", targetPOV.Location.x, targetPOV.Location.y, targetPOV.Location.z)
+else
+    print("[GameManager] WARNING: CameraComponent를 찾을 수 없습니다. Actor Location 사용")
+    -- Fallback: Actor Location 사용
+    targetPOV.Location = camera.Location
+    targetPOV.Rotation = QuaternionFromEuler(camera.Rotation)
+    targetPOV.FOV = 90.0
+end
 
 -- ===== 카메라 트랜지션 시작 (동시에 카운트다운 진행) =====
 print("[GameManager] 카메라 트랜지션 & 카운트다운 시작")
