@@ -142,7 +142,7 @@ void URenderer::Init(HWND InWindowHandle)
 	PostProcessingPasses.push_back(FXAAPass);
 
 	PPTexturePass = new FPPTexturePass(Pipeline, DeviceResources);
-	PostProcessingPasses.push_back(PPTexturePass);
+	//PostProcessingPasses.push_back(PPTexturePass);
 
 	ColorCopyPass = new FColorCopyPass(Pipeline, DeviceResources);
 }
@@ -884,7 +884,7 @@ void URenderer::Update()
             D3D11_VIEWPORT LocalViewport = { static_cast<float>(SingleWindowRect.Left),static_cast<float>(SingleWindowRect.Top) + ViewportToolBarHeight, static_cast<float>(SingleWindowRect.Width), static_cast<float>(SingleWindowRect.Height) - ViewportToolBarHeight, 0.0f, 1.0f };
             UCamera* CurrentCamera = Viewport->GetViewportClient()->GetCamera();
 
-            GEditor->GetEditorModule()->Collect2DRender(CurrentCamera, LocalViewport);
+            //GEditor->GetEditorModule()->Collect2DRender(CurrentCamera, LocalViewport);
             TIME_PROFILE(FlushAndRender)
             FD2DOverlayManager::GetInstance().FlushAndRender();
         }
