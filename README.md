@@ -1,533 +1,150 @@
-# FutureEngine - Recent Features & Improvements
+# Last Roll
 
-## 📅 업데이트 히스토리 (2024.10.23 ~ 2024.10.30)
+**FutureEngine**(팀 자체 제작 DirectX 11 엔진) 위에서 만든 **탑다운 슈팅 서바이벌 게임**입니다.
 
-본 문서는 2024년 10월 23일 ~ 10월 30일 주간 (WEEK08) 동안 FutureEngine에 추가된 주요 기능 및 개선사항을 기술합니다.
+플레이어는 굴러다니는 주사위를 조작하고, 몰려오는 당구공·체스말 적을 3종 투사체로 상대하며 최대한 오래 생존합니다. 생존 시간과 처치 수로 점수가 매겨집니다.
 
-**주간 주제**: Shadow Mapping & Multiple Light Sources
+<!-- TODO: 플레이 영상 / GIF -->
+<!-- TODO: 스크린샷 -->
 
----
+- **기간** — 2025-10-31 ~ 11-06 (7일)
+- **과정** — KRAFTON 정글 게임테크랩 2기 WEEK09 게임잼
+- **팀** — 3명 (본인 포함)
+- **본인 커밋** — 118건 (팀 전체 250건 중)
 
-## 🎯 주요 기능
-
-### 1. Shadow Mapping System (PSM - Perspective Shadow Mapping)
-
-**구현 날짜**: 2024.10.23 ~ 10.30
-**핵심 기술**: Light Perspective Rendering, Depth Map, Bias Handling
-
-#### 개요
-Light 관점에서 scene을 렌더링하여 depth map을 생성하고, 이를 활용해 실시간 그림자를 렌더링하는 시스템입니다. Directional Light, Point Light, Spot Light 총 3가지 광원 타입을 지원하며, 각 광원이 동시에 존재하는 multi-light 환경에 대응합니다.
-
-#### Light Types & Shadow Map Architecture
-
-**1. Directional Light (Orthographic Projection)**
-```cpp
-// 직교 투영 행렬 생성 (태양광 등 평행광)
-FMatrix LightViewMatrix = FMatrix::LookAtLH(LightPosition, LightPosition + LightDirection, FVector(0, 0, 1));
-FMatrix LightProjMatrix = FMatrix::OrthographicLH(OrthoWidth, OrthoHeight, NearZ, FarZ);
-
-// Shadow Map: Single 2D Texture (1024×1024 ~ 4096×4096)
-ID3D11Texture2D* DirectionalLightShadowMap;
-```
-
-**2. Point Light (Cube Map)**
-```cpp
-// 6방향 투영 (±X, ±Y, ±Z)
-FMatrix CubeFaceViewMatrices[6];
-CubeFaceViewMatrices[0] = FMatrix::LookAtLH(LightPos, LightPos + FVector(1, 0, 0), FVector(0, 1, 0));  // +X
-CubeFaceViewMatrices[1] = FMatrix::LookAtLH(LightPos, LightPos + FVector(-1, 0, 0), FVector(0, 1, 0)); // -X
-// ... (±Y, ±Z)
-
-// Shadow Map: Cube Texture (TextureCube)
-ID3D11Texture2D* PointLightShadowCubeMap;
-```
-
-**3. Spot Light (Perspective Projection)**
-```cpp
-// 원뿔형 투영 행렬
-FMatrix LightViewMatrix = FMatrix::LookAtLH(LightPosition, LightPosition + LightDirection, FVector(0, 0, 1));
-FMatrix LightProjMatrix = FMatrix::PerspectiveFovLH(OuterConeAngle, 1.0f, NearZ, FarZ);
-
-// Shadow Map: Single 2D Texture
-ID3D11Texture2D* SpotLightShadowMap;
-```
-
-#### Shadow Map Pass Pipeline
-
-**Pass 1: Depth Map Generation (Light Perspective)**
-```cpp
-void URenderer::RenderShadowMapPass(ULightComponent* Light)
-{
-    // Render Target: Shadow Map (Depth만 기록)
-    ID3D11DepthStencilView* ShadowDSV = Light->GetShadowDepthStencilView();
-    DeviceContext->ClearDepthStencilView(ShadowDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
-    DeviceContext->OMSetRenderTargets(0, nullptr, ShadowDSV);  // Color 출력 없음
-
-    // Viewport: Shadow Map 해상도
-    D3D11_VIEWPORT ShadowViewport = {};
-    ShadowViewport.Width = static_cast<float>(ShadowResolution);
-    ShadowViewport.Height = static_cast<float>(ShadowResolution);
-    ShadowViewport.MinDepth = 0.0f;
-    ShadowViewport.MaxDepth = 1.0f;
-    DeviceContext->RSSetViewports(1, &ShadowViewport);
-
-    // Light View/Proj Matrix
-    FMatrix LightViewMatrix = Light->GetLightViewMatrix();
-    FMatrix LightProjMatrix = Light->GetLightProjectionMatrix();
-
-    // 모든 CastShadow Actor 렌더링
-    for (AActor* Actor : World->GetAllActors())
-    {
-        if (!Actor->bCastShadows) continue;
-
-        for (UStaticMeshComponent* MeshComp : Actor->GetComponents<UStaticMeshComponent>())
-        {
-            // Simple Depth-Only Shader (VertexShader만 사용)
-            FMatrix WorldMatrix = MeshComp->GetWorldMatrix();
-            FMatrix WVP = WorldMatrix * LightViewMatrix * LightProjMatrix;
-
-            // Constant Buffer 업데이트
-            DepthPassCB.WVP = WVP;
-            UpdateConstantBuffer(DepthPassConstantBuffer, &DepthPassCB);
-
-            // Draw Call
-            DrawIndexed(MeshComp->GetIndexCount());
-        }
-    }
-}
-```
-
-**Pass 2: Scene Rendering with Shadow Sampling**
-```hlsl
-// UberLit.hlsl - Pixel Shader
-float4 mainPS(PSInput input) : SV_Target
-{
-    // Light-Space Position 계산
-    float4 LightSpacePos = mul(float4(input.WorldPos, 1.0f), LightViewProj);
-    LightSpacePos.xyz /= LightSpacePos.w;  // Perspective Division (NDC)
-
-    // NDC → UV 변환 ([-1, 1] → [0, 1])
-    float2 ShadowUV = float2(LightSpacePos.x, -LightSpacePos.y) * 0.5f + 0.5f;
-    float PixelDepth = LightSpacePos.z;
-
-    // Shadow Map 샘플링
-    float ShadowMapDepth = ShadowMapTexture.Sample(ShadowSampler, ShadowUV).r;
-
-    // Shadow Test (Bias 적용)
-    float ShadowBias = ShadowBiasConstant + ShadowBiasSlopeScale * max(abs(ddx(PixelDepth)), abs(ddy(PixelDepth)));
-    float ShadowFactor = (PixelDepth - ShadowBias > ShadowMapDepth) ? 0.0f : 1.0f;
-
-    // Lighting 계산
-    float3 Lighting = DiffuseLighting + SpecularLighting;
-    Lighting *= ShadowFactor;  // 그림자 영역은 조명 차단
-
-    return float4(Lighting, 1.0f);
-}
-```
-
-#### Shadow Artifacts & Solutions
-
-**1. Shadow Acne (Self-Shadowing)**
-- **원인**: Depth precision 부족으로 인한 false-positive shadow
-- **해결**: Constant Bias + Slope-Scaled Bias
-```cpp
-class ULightComponent
-{
-    float ShadowBias = 0.001f;         // Constant Bias (깊이 오프셋)
-    float ShadowSlopeBias = 2.0f;      // Slope-Scaled Bias (경사 보정)
-};
-
-// Shader
-float ShadowBias = ShadowBiasConstant + ShadowBiasSlopeScale * max(abs(ddx(PixelDepth)), abs(ddy(PixelDepth)));
-```
-
-**2. Peter Panning (Light Leaking)**
-- **원인**: Bias가 너무 커서 그림자가 물체에서 분리됨
-- **해결**: Bias 값 최소화, Back-face culling 사용
-```cpp
-// Shadow Map Pass에서 Front-face만 렌더링
-RasterizerState.CullMode = D3D11_CULL_BACK;  // Back-face cull
-```
-
-**3. Shadow Map Resolution 부족**
-- **원인**: Shadow Map 해상도가 낮아 계단 현상 발생
-- **해결**: 해상도 증가, PCF 필터링
-```cpp
-float ShadowResolutionScale = 1.0f;  // UI에서 조절 가능 (0.5 ~ 2.0)
-int ShadowMapSize = static_cast<int>(BaseShadowMapSize * ShadowResolutionScale);
-```
-
-#### Multiple Light Shadows Handling
-
-**문제점**: n개의 광원이 동시에 존재할 때 그림자 중첩 이슈
-```cpp
-// 잘못된 접근 - 마지막 광원의 그림자만 적용됨
-for (Light in Lights)
-{
-    ShadowFactor = CalculateShadow(Light);
-    FinalColor *= ShadowFactor;  // ❌ 덮어쓰기
-}
-```
-
-**올바른 접근**: Per-Light Shadow 누적
-```hlsl
-// Pixel Shader - Multiple Lights
-float3 FinalLighting = AmbientLighting;
-
-for (int i = 0; i < NumLights; ++i)
-{
-    // Light 개별 조명 계산
-    float3 LightContribution = CalculateLighting(Lights[i], WorldPos, Normal);
-
-    // Light 개별 그림자 계산
-    if (Lights[i].bCastShadows)
-    {
-        float ShadowFactor = CalculateShadow(Lights[i], WorldPos);
-        LightContribution *= ShadowFactor;
-    }
-
-    FinalLighting += LightContribution;
-}
-
-return float4(FinalLighting, 1.0f);
-```
+> **커밋 이력에 대해** — 이 저장소의 이력은 게임잼 이전 주차까지 이어지지만, 엔진 개발 시작(2025-09-02)부터의 전체 이력은 **아닙니다**. 2025-10-10에 당시 팀이 저장소를 새로 만들면서 그때까지의 코드베이스 322개 파일을 한 커밋으로 임포트했고, 그 이전 이력은 여기에 없습니다.
+>
+> 따라서 이력 구간은 **WEEK06 직전(2025-10-10) ~ WEEK09+**이며, 매 주차 팀이 새로 짜였으므로 **기여자 14명은 게임잼 팀이 아니라 이 구간 여러 주차 팀의 누적**입니다.
 
 ---
 
-### 2. PCF (Percentage Closer Filtering)
+## ⚠️ 이 저장소에 대해
 
-**구현 날짜**: 2024.10.25
-**목적**: Shadow edge의 계단 현상(aliasing) 완화
+**소스 코드 공개용 저장소입니다. 빌드되지 않습니다.**
 
-#### 원리
-Shadow Map의 단일 샘플 대신 주변 픽셀들을 샘플링하여 평균을 계산함으로써 부드러운 그림자 경계 생성
+원본 팀 저장소에서 **코드만 추출**했습니다. 아래는 라이선스상 재배포할 수 없어 전부 제외했습니다.
 
-#### 구현
-```hlsl
-// PCF 3×3 Kernel
-float PCF_ShadowFactor(Texture2D ShadowMap, SamplerState Sampler, float2 UV, float PixelDepth, float Bias)
-{
-    float ShadowSum = 0.0f;
-    float TexelSize = 1.0f / ShadowMapResolution;
+| 제외 | 이유 |
+|---|---|
+| 모델 · 텍스처 · 폰트 · 오디오 | Quixel Megascans, Sketchfab, PUBG 공식 키비주얼, Unreal Engine 에디터 아이콘 등 재배포 불가 |
+| 서드파티 라이브러리 (DirectXTK, Lua, Sol2, nlohmann, Dear ImGui) | 각 upstream에서 받는 것이 원칙 |
 
-    // 3×3 샘플링 (9개 샘플)
-    for (int y = -1; y <= 1; ++y)
-    {
-        for (int x = -1; x <= 1; ++x)
-        {
-            float2 Offset = float2(x, y) * TexelSize;
-            float SampleDepth = ShadowMap.Sample(Sampler, UV + Offset).r;
-            ShadowSum += (PixelDepth - Bias > SampleDepth) ? 0.0f : 1.0f;
-        }
-    }
-
-    return ShadowSum / 9.0f;  // 평균
-}
-```
-
-**비용 분석:**
-- 1×1 샘플링: 1회 texture fetch
-- 3×3 PCF: 9회 texture fetch (9배 비용)
-- 5×5 PCF: 25회 texture fetch (고품질, 높은 비용)
-
-**최적화 기법:**
-```hlsl
-// Hardware PCF (SamplerComparisonState 사용)
-SamplerComparisonState ShadowSampler
-{
-    Filter = COMPARISON_MIN_MAG_MIP_LINEAR;  // HW-accelerated PCF
-    ComparisonFunc = LESS;
-};
-
-float ShadowFactor = ShadowMap.SampleCmp(ShadowSampler, UV, PixelDepth - Bias);  // 1회 호출로 자동 PCF
-```
+**원본 저장소의 커밋 히스토리와 기여자 정보는 그대로 보존했습니다** — 830 커밋, 14명 전원. 필터링으로 내용이 비게 된 커밋도 메시지·작성자·날짜를 남겨두었습니다.
 
 ---
 
-### 3. VSM (Variance Shadow Map)
+## 내가 만든 것
 
-**구현 날짜**: 2024.10.26
-**목적**: PCF보다 빠른 필터링, 부드러운 그림자
+두 갈래입니다. 이 게임을 만들며 작업한 것과, **게임잼 이전 주차에 만들어 이 게임에 그대로 쓰인 엔진 기능**입니다.
 
-#### 원리
-Shadow Map에 Depth와 Depth² 값을 저장하고, Chebyshev's Inequality를 활용해 확률 기반 그림자 계산
+수치는 모두 `git blame -w` 기준 **현재 코드에 남아 있는 줄 수 / 파일 전체 줄 수**입니다. 커밋만 세는 것과 달리, 이후 팀원이 고쳐 쓴 부분은 빠집니다.
 
-**Shadow Map Pass:**
-```hlsl
-// Depth + Depth² 출력
-float2 DepthPS(PSInput input) : SV_Target
-{
-    float Depth = input.Position.z;
-    return float2(Depth, Depth * Depth);  // (μ, μ²)
-}
-```
+### 1. 게임 개발 (10-31 ~ 11-06, 본인 118 커밋 / 팀 3명 · 250 커밋)
 
-**Shadow Sampling:**
-```hlsl
-float VSM_ShadowFactor(Texture2D VSMTexture, float2 UV, float PixelDepth)
-{
-    float2 Moments = VSMTexture.Sample(LinearSampler, UV).rg;
-    float Mean = Moments.x;       // E[X]
-    float MeanSq = Moments.y;     // E[X²]
+**Lua(Sol2) 스크립팅 시스템** — 게임 로직 전체를 Lua로 작성할 수 있게 한 런타임
 
-    // Variance: σ² = E[X²] - E[X]²
-    float Variance = MeanSq - Mean * Mean;
-    Variance = max(Variance, 0.00001f);  // Numerical stability
+| 파일 | 남은 줄 |
+|---|---:|
+| `Source/Manager/Script/Private/ScriptManager.cpp` | 1,143 / 1,615 (70%) |
+| `Source/Component/Private/ScriptComponent.cpp` | 355 / 572 (62%) |
+| `Source/Component/Public/ScriptComponent.h` | 186 / 215 (86%) |
+| `Source/Manager/Script/Public/ScriptManager.h` | 114 / 156 (73%) |
 
-    // Chebyshev's Inequality: P(X >= t) <= σ² / (σ² + (t - μ)²)
-    float Delta = PixelDepth - Mean;
-    float PMax = Variance / (Variance + Delta * Delta);
+메타테이블 프록시로 C++ 객체를 Lua에 노출하고, 파일 변경을 감지해 **스크립트 핫 리로드**를 지원합니다. 리로드 실패 시 이전 상태로 롤백합니다.
 
-    // Sharpen (Light Bleeding 완화)
-    float ShadowSharpen = 0.5f;  // UI 파라미터
-    PMax = smoothstep(ShadowSharpen, 1.0f, PMax);
+**충돌 / Shape 컴포넌트** — 1,496 / 1,976줄 (75%)
 
-    return (PixelDepth <= Mean) ? 1.0f : PMax;
-}
-```
+`BoxComponent` 167/167, `CapsuleComponent` 144/144, `Capsule` 163/163, `BoundingCapsule` 163/163 — 전부 100%. Overlap 이벤트를 Lua 콜백으로 전달합니다.
 
-**장점:**
-- Linear filtering 가능 (Mipmap, Anisotropic filtering 사용 가능)
-- 큰 필터 커널에서도 일정한 비용 (texture fetch 1회)
+**투사체 3종** — 272 / 272줄 (100%)
 
-**단점:**
-- Light Bleeding: 두꺼운 occluder 뒤에서 밝은 영역 발생
-- Depth² 오버플로우 위험 (float precision 이슈)
+`LinearProjectile`(직선), `HomingProjectile`(유도), `OrbitProjectile`(공전) C++ 액터와 대응 Lua 스크립트.
 
----
+**게임 로직 Lua**
 
-### 4. Shadow Atlas
+| 파일 | 남은 줄 |
+|---|---:|
+| `Data/Scripts/HomingProjectile.lua` | 555 / 593 (93%) |
+| `Data/Scripts/Player.lua` | 536 / 700 (76%) |
+| `Data/Scripts/OrbitProjectile.lua` | 189 / 189 (100%) |
+| `Data/Scripts/LinearProjectile.lua` | 142 / 163 (87%) |
 
-**구현 날짜**: 2024.10.27
-**목적**: 여러 광원의 Shadow Map을 단일 Texture에 효율적으로 배치하여 리소스 사용량 감소
+**카메라 시스템** — 6,316 / 6,357줄 (99%), 사실상 단독 작업
 
-#### 아키텍처
-```
-Shadow Atlas Texture (4096×4096)
-┌─────────────┬─────────────┬─────────────┬─────────────┐
-│ DirLight 0  │ SpotLight 0 │ SpotLight 1 │ SpotLight 2 │
-│ (2048×2048) │ (1024×1024) │ (1024×1024) │ (1024×1024) │
-├─────────────┼─────────────┼─────────────┼─────────────┤
-│ SpotLight 3 │ SpotLight 4 │ (Empty)     │ (Empty)     │
-│ (1024×1024) │ (1024×1024) │             │             │
-└─────────────┴─────────────┴─────────────┴─────────────┘
-```
+| 파일 | 남은 줄 |
+|---|---:|
+| `Source/Actor/Private/PlayerCameraManager.cpp` | 515 / 523 (98%) |
+| `Source/Actor/Public/PlayerCameraManager.h` | 277 / 290 (95%) |
+| `Source/Render/UI/Window/Private/CameraShakePresetEditorWindow.cpp` | 392 / 392 (100%) |
+| `Source/Component/Camera/Private/CameraModifier_CameraShake.cpp` | 299 / 299 (100%) |
+| `Source/Editor/Private/CameraShakePresetDetailPanel.cpp` | 295 / 295 (100%) |
+| `Source/ImGui/ImGuiBezierEditor.cpp` | 255 / 255 (100%) |
+| `Source/Manager/Camera/Private/CameraShakePresetManager.cpp` | 253 / 253 (100%) |
+| `Source/Component/Camera/Private/CameraModifier_Transition.cpp` | 186 / 186 (100%) |
+| `Source/Component/Camera/Private/CameraModifier.cpp` | 119 / 119 (100%) |
 
-#### 구현
-```cpp
-struct FShadowAtlasSlot
-{
-    FIntRect Region;        // Atlas 내 영역 (x, y, width, height)
-    ULightComponent* Owner; // 슬롯 소유 Light
-};
+UE의 `APlayerCameraManager` 패턴을 따라 **CameraModifier 스택**으로 설계했습니다. 카메라 쉐이크와 트랜지션이 각각 모디파이어로 붙고, 쉐이크 커브는 직접 만든 **ImGui 베지어 에디터**로 편집한 뒤 프리셋으로 저장합니다.
 
-class FShadowAtlas
-{
-public:
-    void AllocateSlot(ULightComponent* Light, int32 RequestedSize);
-    void RenderShadowToSlot(ULightComponent* Light);
+### 2. 이 게임에 쓰인 엔진 기능 — WEEK08 섀도우 매핑 (10-24 ~ 10-30, 본인 29 커밋 / 팀 4명)
 
-    ID3D11Texture2D* GetAtlasTexture() { return AtlasTexture; }
+게임잼 이전 주차에 만든 것이 그대로 이 게임의 그림자를 그립니다. **2,880 / 3,706줄 (77%)**
 
-private:
-    ID3D11Texture2D* AtlasTexture;           // 4096×4096 Depth Texture
-    TArray<FShadowAtlasSlot> AllocatedSlots; // 할당된 슬롯 목록
-    TArray<FIntRect> FreeRegions;            // 남은 공간
-};
-```
+| 파일 | 남은 줄 |
+|---|---:|
+| `Source/Render/Shadow/Private/PSMCalculator.cpp` | 718 / 718 (100%) |
+| `Source/Render/Shadow/Private/PSMBounding.cpp` | 429 / 429 (100%) |
+| `Source/Render/Shadow/Public/PSMBounding.h` | 226 / 226 (100%) |
+| `Source/Render/Shadow/Public/PSMCalculator.h` | 145 / 145 (100%) |
+| `Source/Render/RenderPass/Private/ShadowMapPass.cpp` | 843 / 1,390 (60%) |
+| `Source/Render/RenderPass/Public/ShadowMapPass.h` | 160 / 283 (56%) |
+| `Source/Texture/Public/ShadowMapResources.h` | 99 / 105 (94%) |
+| `Source/Texture/Private/ShadowMapResources.cpp` | 158 / 224 (70%) |
 
-**UV 변환:**
-```hlsl
-// Light-Space NDC [-1, 1] → Atlas UV [0, 1]
-float2 LocalUV = LightSpacePos.xy * 0.5f + 0.5f;
-LocalUV.y = 1.0f - LocalUV.y;
+Directional / Spot / Point 3종 광원의 섀도우 매핑을 구현하고, Directional에 **PSM(Perspective Shadow Mapping)** 과 LiSPSM을 적용했습니다. Point Light는 Cube Shadow Map을 씁니다.
 
-// Atlas Slot으로 변환
-float2 AtlasUV = AtlasOffset + LocalUV * AtlasScale;
-// AtlasOffset: Slot 시작 위치 (예: (0.5, 0.0) for slot [2048, 0])
-// AtlasScale: Slot 크기 비율 (예: (0.25, 0.25) for 1024×1024 in 4096×4096)
-```
+### 설계 문서 (13,217 / 13,750줄, 96%)
 
-**장점:**
-- Shader Resource View 개수 감소 (n개 Light → 1개 Atlas)
-- GPU 메모리 효율 증가 (fragmentation 감소)
-- Draw Call batching 가능
+구현과 함께 쓴 문서입니다.
 
-**단점:**
-- Atlas 공간 부족 시 동적 재할당 필요
-- 큰 Shadow Map(4096×4096)은 Atlas에 배치 불가
+- [`Document/DirectionalLight_ShadowMap.md`](Document/DirectionalLight_ShadowMap.md) — 1,135줄
+- [`Document/PointLight_ShadowMap.md`](Document/PointLight_ShadowMap.md) — 1,309줄
+- [`Document/SpotLight_ShadowMap.md`](Document/SpotLight_ShadowMap.md) — 1,234줄
+- [`Document/PlayerCameraManager_Implementation_Plan.md`](Document/PlayerCameraManager_Implementation_Plan.md) — 1,537줄
+- [`Document/CameraTransition_Implementation_Plan.md`](Document/CameraTransition_Implementation_Plan.md) — 1,522줄
+- [`Document/CameraSystem_FrameFlow.md`](Document/CameraSystem_FrameFlow.md) — 989줄
+- [`Document/BezierCurveEditor_CameraShake_Implementation_Plan.md`](Document/BezierCurveEditor_CameraShake_Implementation_Plan.md) — 926줄
+- [`Document/CameraShakePresetSystem_Implementation_Plan.md`](Document/CameraShakePresetSystem_Implementation_Plan.md) — 897줄
+- [`Document/LastRoll_Technical_Documentation.md`](Document/LastRoll_Technical_Documentation.md) — 1,528줄
 
 ---
 
-### 5. Editor UI & Debugging Tools
+## 팀원이 만든 것
 
-**구현 날짜**: 2024.10.28 ~ 10.30
+이 저장소의 대부분은 제 코드가 아닙니다. 혼동을 막기 위해 **제가 만들지 않은 주요 기능**을 밝힙니다.
 
-#### Light Property Panel Enhancements
-```cpp
-// Light Component Inspector
-ImGui::Text("Shadow Settings");
-ImGui::Checkbox("Cast Shadows", &Light->bCastShadows);
-ImGui::SliderFloat("Resolution Scale", &Light->ShadowResolutionScale, 0.5f, 2.0f);
-ImGui::SliderFloat("Shadow Bias", &Light->ShadowBias, 0.0f, 0.01f);
-ImGui::SliderFloat("Slope Bias", &Light->ShadowSlopeBias, 0.0f, 5.0f);
-ImGui::SliderFloat("Shadow Sharpen (VSM)", &Light->ShadowSharpen, 0.0f, 1.0f);
+| 기능 | 제 지분 |
+|---|---:|
+| PCF 소프트 섀도우 (`ShadowMapFilterPass`) | 0 / 267 (0%) |
+| BVH 가속 구조 (`Global/BVH.cpp`) | 0 / 481 (0%) |
+| 라이트 컴포넌트 전반 | 282 / 1,676 (16%) |
+| 에디터 UI 전반 | 1,377 / 10,364 (13%) |
 
-// Shadow Map Visualization
-if (Light->bCastShadows && Light->ShadowMapSRV)
-{
-    ImGui::Text("Shadow Depth Map:");
-    ImGui::Image(Light->ShadowMapSRV, ImVec2(256, 256));
-}
-```
+섀도우 매핑은 제가 만들었지만 **PCF 필터는 이후 팀원이 새로 작성**했습니다. BVH는 처음부터 다른 팀원 작업입니다.
 
-#### Override Camera with Light Perspective
-```cpp
-// 'O' 키 또는 UI 버튼으로 토글
-if (ImGui::Button("View from Light"))
-{
-    Editor->OverrideCameraWithLight(SelectedLight);
-}
+## 전체 지분
 
-void UEditor::OverrideCameraWithLight(ULightComponent* Light)
-{
-    if (!Light) return;
-
-    UCamera* EditorCamera = GetEditorCamera();
-    EditorCamera->SetViewMatrix(Light->GetLightViewMatrix());
-    EditorCamera->SetProjectionMatrix(Light->GetLightProjectionMatrix());
-
-    bIsLightViewOverride = true;
-    OverriddenLight = Light;
-}
-```
-
-#### ShowFlag & Stat System
-```cpp
-// ShowFlags (콘솔 명령어)
-show shadows          // 그림자 렌더링 ON/OFF
-show shadowmaps       // Shadow Map 오버레이 표시
-viewmode unlit        // Unlit 모드 (그림자 없음)
-
-// Stat (통계 정보)
-stat shadow
-  - Directional Lights: 1
-  - Spot Lights: 3
-  - Point Lights: 2
-  - Shadow Map Memory: 48 MB
-  - Shadow Pass Draw Calls: 156
-  - PCF Samples: 9 (3×3 kernel)
-
-stat gpu
-  - ShadowMapPass: 2.3 ms
-  - PCF Filtering: 1.1 ms
-  - VSM Generation: 0.8 ms
-```
+| 구분 | 남은 줄 | 비율 |
+|---|---:|---:|
+| 코드 (cpp/h/hlsl/lua) | 17,650 / 81,705 | 21.6% |
+| 설계 문서 (md) | 13,217 / 13,750 | 96.1% |
 
 ---
 
-### 6. Pilot Mode & UI Enhancements
+## 원본 · 기여자
 
-**구현 날짜**: 2024.10.30
-**PR**: #13 (feature/viewport-actor_view_override)
-
-에디터 카메라가 선택된 Actor의 Transform을 실시간으로 따라가는 Pilot Mode 기능과 관련 UI 개선사항이 추가되었습니다. `Alt + G` 단축키 또는 UI 버튼으로 토글 가능하며, ViewType 드롭다운에 조종 중인 Actor 이름 표시 및 Eject 버튼(△ 아이콘)이 추가되었습니다.
-
-**주요 기능:**
-- Actor Transform 실시간 동기화
-- Pilot Mode 전용 UI (Dynamic button width, Text truncation)
-- Dangling pointer 버그 수정 (static FString 캐싱)
-
----
-
-### 7. Selection Outline System
-
-**구현 날짜**: 2024.10.30
-
-Stencil Buffer 기반 Two-Pass 렌더링으로 선택된 Actor 주변에 Unreal Engine 스타일 주황색 외곽선을 렌더링하는 시스템입니다.
-
-**Pass 1**: Stencil Write (Color 출력 없음, PixelShader = nullptr)
-**Pass 2**: Full-screen Quad로 8방향 edge detection 후 외곽선 렌더링
-
----
-
-### 8. Camera & Utility Improvements
-
-**구현 날짜**: 2024.10.30
-
-- **Camera Movement**: Q/E 키를 camera-local space → world-space Z-axis 이동으로 변경 (Unreal Engine과 동일)
-- **Utility Functions**: `Lerp`, `Clamp` 템플릿 함수를 `Global/Function.h`로 이동 (프로젝트 전역 사용)
-
----
-
-## 🔧 버그 수정 및 개선사항
-
-### Shadow System Improvements
-
-**1. VSM (Variance Shadow Map) 버그 수정**
-- Directional Light VSM 계산 오류 수정 (커밋: 351d47c)
-- Shadow Sharpen 파라미터 VSM 연동 (커밋: 2250eed)
-- SAVSM (Summed Area Variance Shadow Map) 샤프닝 수정 (커밋: 3c23dd3)
-
-**2. Point Light Shadow Cube Map Seam 해결**
-- Cube Shadow Map 6면 경계선(seam) 아티팩트 완화 (커밋: 4461944)
-- 인접 face 간 depth 샘플링 블렌딩 개선
-
-**3. Shadow Stat Overlay**
-- Shadow Map 품질 실시간 모니터링 UI (커밋: 366faaa)
-- Cascade별 해상도 표시, GPU 메모리 사용량 추적
-
-### Light System Enhancements
-
-**1. Light Component Icon (6535dba)**
-- Directional/Point/Spot Light 고유 아이콘 추가
-- 에디터에서 Light 타입 구분 용이
-
-**2. Directional Light Look At (d9be0aa)**
-- Directional Light Forward Vector 계산 정확도 향상
-- Shadow Map 렌더링 시 올바른 방향 보장
-
-### Editor Improvements
-
-**1. Gizmo System Refactoring**
-- Center Gizmo 추가 (3축 동시 이동) (커밋: 7213a52)
-- Translation/Rotation/Scale 로직 분리 (커밋: c752e4f)
-- Orthographic 뷰 Rotation Gizmo 수정 (커밋: 5a6ab0e)
-
-**2. Picking & Focus**
-- HitProxy 기반 선택 정확도 향상 (커밋: 1bc9bcf)
-- Orthographic 뷰 Focus(F 키) 동작 개선 (커밋: d0c258a)
-
----
-
-## 👥 Contributors
-
-**개발 기간 (WEEK08)**: 2024.10.23 ~ 2024.10.30
-**주제**: Shadow Mapping & Multiple Light Sources
-
----
-
-## 📜 핵심 키워드 (Week 08)
-
-**Shadow Techniques**
-- PSM (Perspective Shadow Mapping)
-- PCF (Percentage Closer Filtering)
-- VSM (Variance Shadow Map)
-- Shadow Atlas
-- Cascade Shadow Map (미구현, 향후 계획)
-
-**Light Types**
-- Directional Light (Orthographic Projection)
-- Point Light (Cube Map, 6-face rendering)
-- Spot Light (Perspective Projection)
-
-**Artifacts & Solutions**
-- Shadow Acne → Constant Bias + Slope-Scaled Bias
-- Peter Panning → Bias 최소화 + Back-face culling
-- Light Bleeding (VSM) → Shadow Sharpen parameter
-- Cube Map Seam → Inter-face blending
-
-**Editor Tools**
-- Light Perspective Override (카메라를 Light 시점으로 전환)
-- Shadow Map Visualization (Depth Map 미리보기)
-- ShowFlag & Stat System (성능 모니터링)
+- 팀이 작성한 기존 최상위 README(WEEK08 기능 요약)는 [`Document/FutureEngine_WEEK08_Features.md`](Document/FutureEngine_WEEK08_Features.md) 로 옮겼습니다.
+- 원본 저장소 — `nansu0425/GameTechLab-WEEK09-plus` (비공개 전환)
+- 여러 주차 팀 기여자 14명의 커밋이 그대로 보존되어 있습니다: `git shortlog -sne`
+- 주차별 팀·담당 영역은 [`nansu0425/KRAFTON-GameTechLab-Engine`](https://github.com/nansu0425/KRAFTON-GameTechLab-Engine)의 주차별 작업 문서를 참고하세요.
+- KRAFTON 정글 게임테크랩 2기 교육과정 산출물이며, **포트폴리오 목적으로 코드만 공개**합니다.
+- 별도 라이선스를 두지 않았습니다. 공동 저작물이므로 코드 재사용을 원하시면 문의해 주세요.
