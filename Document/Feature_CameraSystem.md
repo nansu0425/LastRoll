@@ -1,0 +1,98 @@
+# 카메라 시스템 — CameraModifier 스택, 쉐이크 프리셋, 트랜지션
+
+> 게임잼 주차(2025-10-31 ~ 11-06) 작업. 이 문서가 다루는 코드는 사실상 전부 본인 단독 작업입니다 (파일별 지분은 [Contribution.md](Contribution.md) 참고).
+
+## 문제
+
+게임에 필요한 카메라 요구사항이 세 가지였습니다.
+
+1. 플레이어 피격·폭발 시 **카메라 쉐이크** — 디자이너(팀원)가 코드 수정 없이 강도·패턴·감쇠를 튜닝할 수 있어야 함
+2. 게임 시작 시 **연출 카메라 → 게임플레이 카메라 트랜지션**
+3. 두 효과가 **동시에** 걸려도 서로 간섭하지 않을 것
+
+엔진(FutureEngine)에는 당시 "CameraComponent가 View 행렬을 만든다" 수준의 기능만 있었고, 카메라 효과를 얹을 구조가 없었습니다.
+
+## 설계 — Unreal Engine의 APlayerCameraManager 패턴
+
+효과마다 카메라 코드를 직접 고치는 대신, UE의 `APlayerCameraManager` + `UCameraModifier` 구조를 축소 구현했습니다. 핵심 아이디어는 **"카메라의 최종 상태(POV)는 매 프레임 파이프라인이 새로 만든다"** 입니다.
+
+```
+UWorld::Tick (모든 Actor Tick 이후)
+  └─ APlayerCameraManager::UpdateCamera
+       1. UpdateViewTarget      ─ ViewTarget(CameraComponent)에서 POV를 새로 읽음
+       2. UpdateBlending        ─ ViewTarget 교체 시 이전/현재 POV 보간
+       3. ApplyCameraModifiers  ─ modifier들을 priority 순으로 POV에 적용
+       4. UpdateFading          ─ 화면 페이드 알파 갱신
+       5. UpdateCameraConstants ─ 최종 POV → View/Projection 행렬
+```
+
+- POV(`FMinimalViewInfo`)는 Location / Rotation / FOV / Near·Far 등 카메라 상태의 값 객체이고, **매 프레임 ViewTarget에서 다시 만들어집니다**. 따라서 modifier가 어떤 값을 더하든 다음 프레임에 자동으로 초기화되고, 효과 간 상태 오염이 구조적으로 불가능합니다.
+- 각 modifier는 `ModifyCamera(float DeltaTime, FMinimalViewInfo& InOutPOV)` 하나만 구현합니다. 자신의 blend alpha(`AlphaInTime`/`AlphaOutTime`)를 갖고 있어 켜고 끌 때 부드럽게 페이드됩니다.
+- 적용 순서는 priority 오름차순 정렬입니다. Transition(128)이 먼저 POV를 보간 값으로 만들고, CameraShake(200)가 그 위에 오프셋을 얹습니다. 요구사항 3(동시 적용)이 이 정렬 하나로 해결됩니다.
+
+관련 소스:
+
+- [`Engine/Source/Actor/Private/PlayerCameraManager.cpp`](../Engine/Source/Actor/Private/PlayerCameraManager.cpp) — 파이프라인 본체
+- [`Engine/Source/Component/Camera/Private/CameraModifier.cpp`](../Engine/Source/Component/Camera/Private/CameraModifier.cpp) — modifier 베이스 (alpha 상태 기계)
+- [`Engine/Source/Component/Camera/Private/CameraModifier_CameraShake.cpp`](../Engine/Source/Component/Camera/Private/CameraModifier_CameraShake.cpp)
+- [`Engine/Source/Component/Camera/Private/CameraModifier_Transition.cpp`](../Engine/Source/Component/Camera/Private/CameraModifier_Transition.cpp)
+
+## 카메라 쉐이크 — 패턴 × 베지어 감쇠 커브 × 프리셋
+
+쉐이크는 keyframe이 아니라 **절차적 oscillation**입니다. 위치·회전 진폭에 패턴 함수를 곱해 프레임마다 오프셋을 만듭니다.
+
+- **패턴 3종**: `Sine`(축별 위상 오프셋), `Perlin`(자체 구현 1D Perlin noise — 정수 해시 + smoothstep 보간, 프레임 간 스무딩), `Random`(uniform 지터)
+- **감쇠(decay)**: 쉐이크가 시간에 따라 잦아드는 곡선을 **cubic bezier curve**로 정의합니다. 커브를 안 쓰면 smoothstep 폴백. 최종 오프셋은 `패턴 × 감쇠 × modifier alpha`.
+- **프리셋**: `{이름, 지속시간, 진폭, 패턴, 주파수, 감쇠 커브(P0~P3)}`를 JSON 파일(`CameraShakePresets.json`)로 저장·로드합니다. 게임 코드는 `PlayCameraShakePreset("Explosion")` 한 줄만 호출합니다.
+
+### ImGui 베지어 에디터
+
+감쇠 커브를 수치로 튜닝하는 건 비효율적이라, **제어점 4개를 마우스로 드래그하는 커브 에디터**를 ImGui 위젯으로 직접 만들었습니다.
+
+- 편집: P0.x=0, P3.x=1로 고정하고 나머지는 자유. **Y는 의도적으로 클램프하지 않아** 1.0을 넘는 오버슈트 커브(Bounce)도 만들 수 있습니다.
+- 평가: 화면에는 t를 64분할한 폴리라인으로 그리고, 런타임 샘플링은 `SampleY(x)` — cubic bezier는 x→y 함수가 아니므로 **Newton-Raphson으로 x에서 t를 역산**한 뒤 y를 계산합니다.
+- 에디터 윈도우([`CameraShakePresetEditorWindow.cpp`](../Engine/Source/Render/UI/Window/Private/CameraShakePresetEditorWindow.cpp))에서 프리셋 목록·커브 편집·저장을 한 화면에서 하고, PIE 실행 중 버튼 한 번으로 실제 게임 카메라에 즉시 재생해 확인할 수 있습니다.
+
+관련 소스: [`ImGuiBezierEditor.cpp`](../Engine/Source/ImGui/ImGuiBezierEditor.cpp), [`BezierCurve.cpp`](../Engine/Source/Global/BezierCurve.cpp), [`CameraShakePresetManager.cpp`](../Engine/Source/Manager/Camera/Private/CameraShakePresetManager.cpp)
+
+## 카메라 트랜지션
+
+시작 POV와 목표 POV 사이를 지정 시간 동안 보간하는 modifier입니다.
+
+- Location은 Lerp, **Rotation은 quaternion Slerp**, FOV/Near/Far도 보간
+- 진행률→보간 비율 매핑에 쉐이크와 같은 cubic bezier timing curve를 재사용 (EaseInOut 등)
+- 트랜지션도 프리셋(JSON)으로 관리 — 게임 시작 연출은 `"Cinematic"`(3초, EaseInOut)을 씁니다
+
+## 사례: 시작 연출이 끝나는 순간 카메라가 튀는 버그
+
+게임 시작 연출은 "플레이어 근접 뷰 → 탑다운 게임플레이 뷰"로 3초 트랜지션합니다. 그런데 **트랜지션이 끝나는 프레임에 카메라가 순간적으로 다른 위치로 튀는(snap)** 문제가 있었습니다.
+
+**원인** — 트랜지션의 목표 POV를 `TopDownCameraActor`의 **actor location**으로 잡고 있었습니다. 하지만 실제 렌더링 카메라는 actor가 아니라 그 밑에 붙은 `SpringArm → CameraComponent` 계층의 **CameraComponent world location**입니다. SpringArm이 `-Forward × ArmLength` 등의 오프셋을 더하므로 두 좌표는 다릅니다. 트랜지션 동안은 modifier가 POV를 직접 덮어쓰니 목표 지점(actor 위치)으로 잘 이동하지만, 트랜지션이 끝나 modifier가 꺼지는 순간 POV가 ViewTarget(CameraComponent) 기준으로 되돌아가면서 오프셋만큼 튀는 것입니다.
+
+**해결** ([PR #36](https://github.com/nansu0425/LastRoll/pull/36), 커밋 `89d1053`) — 목표 POV를 CameraComponent의 world transform에서 취하도록 고쳤습니다. 연출 스크립트가 Lua라서, `UCameraComponent`의 `GetWorldLocation`/`GetWorldRotation`을 Lua에 바인딩하는 작업이 함께 들어갔습니다.
+
+```lua
+-- GameManager.lua — 수정 후
+local cameraComp = camera:GetCameraComponent()
+targetPOV.Location = cameraComp:GetWorldLocation()   -- SpringArm offset이 반영된 실제 카메라 위치
+targetPOV.Rotation = cameraComp:GetWorldRotation()
+```
+
+트랜지션 종료 지점과 게임플레이 카메라 시작 지점이 같은 좌표가 되면서 snap이 사라졌습니다.
+
+## 한계
+
+- ViewTarget 교체 blending의 회전 보간이 Slerp가 아니라 성분별 Lerp입니다 (Transition modifier는 Slerp를 씀 — 회전 각이 작아 체감 문제는 없었지만 일관성이 없음)
+- modifier 리스트를 매 프레임 정렬합니다. modifier가 2~3개라 실측 문제는 없지만, 리스트 변경 시에만 정렬하는 게 맞는 구조입니다
+- 같은 클래스의 modifier를 1개만 운용하므로 서로 다른 쉐이크 2개를 동시에 재생할 수 없습니다
+- SpringArm에 location lag가 있어, lag가 수렴하기 전에 트랜지션이 끝나면 이론상 미세한 오차가 남습니다 (연출 타이밍상 실제로는 수렴 후 종료)
+
+## 당시 작업 문서
+
+구현 전에 쓴 설계 문서와 정리 문서입니다.
+
+- [PlayerCameraManager_Implementation_Plan.md](PlayerCameraManager_Implementation_Plan.md)
+- [CameraTransition_Implementation_Plan.md](CameraTransition_Implementation_Plan.md)
+- [BezierCurveEditor_CameraShake_Implementation_Plan.md](BezierCurveEditor_CameraShake_Implementation_Plan.md)
+- [CameraShakePresetSystem_Implementation_Plan.md](CameraShakePresetSystem_Implementation_Plan.md)
+- [CameraSystem_FrameFlow.md](CameraSystem_FrameFlow.md)
