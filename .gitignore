@@ -1,0 +1,69 @@
+# 이 저장소는 소스 코드 공개용입니다.
+# 빌드에 필요한 서드파티 라이브러리와 에셋은 로컬 작업 트리에만 두고 추적하지 않습니다.
+# 따라서 clone 만으로는 빌드되지 않습니다.
+
+
+# ── 서드파티 라이브러리 ────────────────────────────────
+# DirectXTK / Lua / Sol2 / nlohmann-json 헤더 및 라이브러리
+External/
+
+# Dear ImGui (vendored). 같은 디렉터리의 ImGuiBezierEditor.* 는 자체 코드라 추적한다.
+Engine/Source/ImGui/imconfig.h
+Engine/Source/ImGui/imgui.cpp
+Engine/Source/ImGui/imgui.h
+Engine/Source/ImGui/imgui_demo.cpp
+Engine/Source/ImGui/imgui_draw.cpp
+Engine/Source/ImGui/imgui_impl_dx11.cpp
+Engine/Source/ImGui/imgui_impl_dx11.h
+Engine/Source/ImGui/imgui_impl_win32.cpp
+Engine/Source/ImGui/imgui_impl_win32.h
+Engine/Source/ImGui/imgui_internal.h
+Engine/Source/ImGui/imgui_tables.cpp
+Engine/Source/ImGui/imgui_widgets.cpp
+Engine/Source/ImGui/imstb_rectpack.h
+Engine/Source/ImGui/imstb_textedit.h
+Engine/Source/ImGui/imstb_truetype.h
+
+
+# ── 에셋 ──────────────────────────────────────────────
+# Asset 은 Shader(hlsl) 만, Data 는 Script(lua) 만 추적한다.
+Engine/Asset/*
+!Engine/Asset/Shader/
+
+Engine/Data/*
+!Engine/Data/Script/
+!Engine/Data/Scripts/
+
+# 리소스 스크립트 (Asset/Icon/EngineCH.ico 참조)
+Engine/Engine.rc
+
+
+# ── 빌드 산출물 · 로컬 설정 ───────────────────────────
+Build/*
+!Build/설명문서.md
+
+Engine/Log/
+Engine/editor.ini
+*.objbin
+
+
+# ── Visual Studio ─────────────────────────────────────
+.vs/
+*.user
+*.suo
+*.aps
+*.ilk
+*.idb
+*.iobj
+*.ipdb
+*.pch
+*.pdb
+*.tlog
+*.log
+
+
+# ── AI agent ──────────────────────────────────────────
+CLAUDE.md
+AGENTS.md
+WARP.md
+.claude/
