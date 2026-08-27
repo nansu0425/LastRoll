@@ -10,103 +10,37 @@
 - **기간** — 2025-10-31 ~ 11-06 (7일)
 - **과정** — KRAFTON 정글 게임테크랩 2기 WEEK09 게임잼
 - **팀** — 3명 (본인 포함)
-- **본인 커밋** — 118건 (팀 전체 250건 중)
 
-> **커밋 이력에 대해** — 이 저장소의 commit history는 게임잼 이전 주차까지 이어지지만, 엔진 개발 시작(2025-09-02)부터의 전체 history는 **아닙니다**. 2025-10-10에 당시 팀이 저장소를 새로 만들면서 그때까지의 코드베이스 322개 파일을 한 커밋으로 임포트했고, 그 이전 이력은 여기에 없습니다. contributors는 게임잼 팀 뿐만 아니라 **게임 엔진 개발에 참여했던 모든 사람**을 포함합니다.
+## 핵심 작업
 
+각 작업의 문제·설계·구현·한계는 링크된 기술 문서에 정리했습니다.
 
-## ⚠️ 이 저장소에 대해
+### [Lua(Sol2) 스크립팅 시스템](Document/Feature_LuaScripting.md)
 
-- **소스 코드 공개용 저장소입니다. 빌드되지 않습니다.**
-- 원본 팀 저장소에서 **코드만 추출**했습니다. 재배포 시 문제 소지가 있는 에셋과 서드파티 라이브러리는 전부 제외했습니다.
-- 원본 저장소의 커밋 히스토리와 기여자 정보는 그대로 보존했습니다
+게임 로직 전체(플레이어·적·투사체·게임 매니저)를 Lua로 작성할 수 있게 한 런타임입니다. 스크립트 인스턴스마다 environment를 분리해 같은 스크립트를 쓰는 액터들이 독립 상태를 갖고, 메타테이블 프록시로 액터 속성과 스크립트 동적 속성을 하나의 `obj` 이름 공간으로 노출합니다. 모든 호출이 protected call을 경유해 스크립트 에러가 엔진을 죽이지 않으며, 에디터에서 파일 저장 시 0.5초 내에 핫 리로드됩니다.
 
----
+### [카메라 시스템](Document/Feature_CameraSystem.md)
 
-## 제가 했던 작업
+UE의 `APlayerCameraManager` 패턴을 따라 **CameraModifier 스택**으로 설계했습니다. 카메라 쉐이크와 트랜지션이 각각 modifier로 붙어 priority 순으로 합성되므로 두 효과가 동시에 걸려도 간섭하지 않습니다. 쉐이크 감쇠 곡선은 직접 만든 **ImGui 베지어 에디터**로 편집해 JSON 프리셋으로 저장하고, PIE 실행 중 즉시 재생해 튜닝합니다. 시작 연출이 끝날 때 카메라가 튀던 버그를 SpringArm offset 좌표계 불일치로 진단하고 해결한 사례([PR #36](https://github.com/nansu0425/LastRoll/pull/36))도 문서에 포함했습니다.
 
-수치는 모두 `git blame -w` 기준 **현재 코드에 남아 있는 줄 수 / 파일 전체 줄 수**입니다. 커밋만 세는 것과 달리, 이후 팀원이 고쳐 쓴 부분은 빠집니다.
+### [Emissive 미지원 엔진에서 빛나는 투사체](Document/Feature_EmissiveProjectile.md)
 
-### 1. 게임잼 주차 (10-31 ~ 11-06, 본인 118 커밋 / 팀 3명 · 250 커밋)
+엔진에 emissive도 bloom/HDR도 없는 상태에서 "빛나는 태양" 투사체를 만들기 위해, material→constant buffer→셰이더로 emissive 항을 새로 관통시키고, 공유 material을 오염시키지 않도록 per-instance material 복제로 적용한 뒤, 같은 색 PointLight를 부착해 주변 지오메트리가 실제로 빛을 받게 했습니다.
 
-**Lua(Sol2) 스크립팅 시스템** — 게임 로직 전체를 Lua로 작성할 수 있게 한 런타임
+### [섀도우 매핑 — 3종 광원](Document/Feature_ShadowMapping.md) (엔진 개발 주차 WEEK08)
 
-| 파일 | 남은 줄 |
-|---|---:|
-| `Source/Manager/Script/Private/ScriptManager.cpp` | 1,143 / 1,615 (70%) |
-| `Source/Component/Private/ScriptComponent.cpp` | 355 / 572 (62%) |
-| `Source/Component/Public/ScriptComponent.h` | 186 / 215 (86%) |
-| `Source/Manager/Script/Public/ScriptManager.h` | 114 / 156 (73%) |
+게임잼 이전 엔진 개발 주차에 구현한 feature 중 이번 게임에 쓰인 작업입니다. Directional(씬 AABB 기반 orthographic) / Spot(cone frustum perspective) / Point(cube map 6면 + linear distance) 광원별 shadow map 생성 경로와, shadow acne 대응을 위한 bias별 rasterizer state 캐싱을 구현했습니다.
 
-메타테이블 프록시로 C++ 객체를 Lua에 노출하고, 파일 변경을 감지해 **스크립트 핫 리로드**를 지원합니다. 리로드 실패 시 이전 상태로 롤백합니다.
+### 그 외
 
-**충돌 / Shape 컴포넌트** — 1,496 / 1,976줄 (75%)
+- **충돌 / Shape 컴포넌트** — `BoxComponent` · `CapsuleComponent` · `SphereComponent`와 capsule 충돌 판정. Overlap 이벤트를 Lua 콜백으로 전달합니다 (전달 구조는 [Lua 문서](Document/Feature_LuaScripting.md) 참고)
+- **투사체 3종** — `LinearProjectile`(직선) · `HomingProjectile`(유도) · `OrbitProjectile`(공전) C++ 액터와 대응 Lua 스크립트
 
-`BoxComponent` 167/167, `CapsuleComponent` 144/144, `Capsule` 163/163, `BoundingCapsule` 163/163 — 전부 100%. Overlap 이벤트를 Lua 콜백으로 전달합니다.
+## 기여 통계
 
-**투사체 3종** — 272 / 272줄 (100%)
+파일별 `git blame` 기준 지분과 산정 방법은 [Document/Contribution.md](Document/Contribution.md)에 있습니다.
 
-`LinearProjectile`(직선), `HomingProjectile`(유도), `OrbitProjectile`(공전) C++ 액터와 대응 Lua 스크립트.
+## 이 저장소에 대해
 
-**게임 로직 Lua**
-
-| 파일 | 남은 줄 |
-|---|---:|
-| `Data/Scripts/HomingProjectile.lua` | 555 / 593 (93%) |
-| `Data/Scripts/Player.lua` | 536 / 700 (76%) |
-| `Data/Scripts/OrbitProjectile.lua` | 189 / 189 (100%) |
-| `Data/Scripts/LinearProjectile.lua` | 142 / 163 (87%) |
-
-**카메라 시스템** — 6,316 / 6,357줄 (99%), 사실상 단독 작업
-
-| 파일 | 남은 줄 |
-|---|---:|
-| `Source/Actor/Private/PlayerCameraManager.cpp` | 515 / 523 (98%) |
-| `Source/Actor/Public/PlayerCameraManager.h` | 277 / 290 (95%) |
-| `Source/Render/UI/Window/Private/CameraShakePresetEditorWindow.cpp` | 392 / 392 (100%) |
-| `Source/Component/Camera/Private/CameraModifier_CameraShake.cpp` | 299 / 299 (100%) |
-| `Source/Editor/Private/CameraShakePresetDetailPanel.cpp` | 295 / 295 (100%) |
-| `Source/ImGui/ImGuiBezierEditor.cpp` | 255 / 255 (100%) |
-| `Source/Manager/Camera/Private/CameraShakePresetManager.cpp` | 253 / 253 (100%) |
-| `Source/Component/Camera/Private/CameraModifier_Transition.cpp` | 186 / 186 (100%) |
-| `Source/Component/Camera/Private/CameraModifier.cpp` | 119 / 119 (100%) |
-
-UE의 `APlayerCameraManager` 패턴을 따라 **CameraModifier 스택**으로 설계했습니다. 카메라 쉐이크와 트랜지션이 각각 모디파이어로 붙고, 쉐이크 커브는 직접 만든 **ImGui 베지어 에디터**로 편집한 뒤 프리셋으로 저장합니다.
-
-### 2. 엔진 개발 주차 — WEEK08 섀도우 매핑 (10-24 ~ 10-30, 본인 29 커밋 / 팀 4명)
-
-게임잼 이전에 제가 개발한 엔진 feature 중 shadow mapping이 이번 게임에 사용됐습니다. **2,880 / 3,706줄 (77%)**
-
-| 파일 | 남은 줄 |
-|---|---:|
-| `Source/Render/Shadow/Private/PSMCalculator.cpp` | 718 / 718 (100%) |
-| `Source/Render/Shadow/Private/PSMBounding.cpp` | 429 / 429 (100%) |
-| `Source/Render/Shadow/Public/PSMBounding.h` | 226 / 226 (100%) |
-| `Source/Render/Shadow/Public/PSMCalculator.h` | 145 / 145 (100%) |
-| `Source/Render/RenderPass/Private/ShadowMapPass.cpp` | 843 / 1,390 (60%) |
-| `Source/Render/RenderPass/Public/ShadowMapPass.h` | 160 / 283 (56%) |
-| `Source/Texture/Public/ShadowMapResources.h` | 99 / 105 (94%) |
-| `Source/Texture/Private/ShadowMapResources.cpp` | 158 / 224 (70%) |
-
-Directional / Spot / Point 3종 광원의 섀도우 매핑을 구현하고, Directional에 **PSM(Perspective Shadow Mapping)** 과 LiSPSM을 적용했습니다. Point Light는 Cube Shadow Map을 씁니다.
-
-### 설계 문서 (13,217 / 13,750줄, 96%)
-
-구현과 함께 쓴 문서입니다.
-
-- [`Document/DirectionalLight_ShadowMap.md`](Document/DirectionalLight_ShadowMap.md) — 1,135줄
-- [`Document/PointLight_ShadowMap.md`](Document/PointLight_ShadowMap.md) — 1,309줄
-- [`Document/SpotLight_ShadowMap.md`](Document/SpotLight_ShadowMap.md) — 1,234줄
-- [`Document/PlayerCameraManager_Implementation_Plan.md`](Document/PlayerCameraManager_Implementation_Plan.md) — 1,537줄
-- [`Document/CameraTransition_Implementation_Plan.md`](Document/CameraTransition_Implementation_Plan.md) — 1,522줄
-- [`Document/CameraSystem_FrameFlow.md`](Document/CameraSystem_FrameFlow.md) — 989줄
-- [`Document/BezierCurveEditor_CameraShake_Implementation_Plan.md`](Document/BezierCurveEditor_CameraShake_Implementation_Plan.md) — 926줄
-- [`Document/CameraShakePresetSystem_Implementation_Plan.md`](Document/CameraShakePresetSystem_Implementation_Plan.md) — 897줄
-- [`Document/LastRoll_Technical_Documentation.md`](Document/LastRoll_Technical_Documentation.md) — 1,528줄
-
-## 전체 지분
-
-| 구분 | 남은 줄 | 비율 |
-|---|---:|---:|
-| 코드 (cpp/h/hlsl/lua) | 17,650 / 81,705 | 21.6% |
-| 설계 문서 (md) | 13,217 / 13,750 | 96.1% |
+- **소스 코드 공개용 저장소입니다. 빌드되지 않습니다** — 원본 팀 저장소에서 코드만 추출했고, 재배포 시 문제 소지가 있는 에셋과 서드파티 라이브러리는 제외했습니다.
+- 원본 저장소의 커밋 히스토리와 기여자 정보는 그대로 보존했습니다. 게임잼 종료 후에는 포트폴리오 정리 목적의 커밋(README·문서 재구성, 미완성 섀도우 시도 코드 제거)이 있습니다. 이력 관련 상세한 주의사항은 [Contribution.md](Document/Contribution.md#커밋-이력에-대한-주의사항)에 있습니다.
