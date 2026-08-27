@@ -9,6 +9,15 @@ struct FEditorPrimitive;
 class UCamera;
 class UBillBoardComponent;
 
+/**
+ * @brief Directional light의 그림자 투영 방식
+ */
+enum class EShadowProjectionMode : uint8
+{
+    Uniform = 0,    // 단일 직교 그림자 맵
+    CSM = 4,        // Cascaded Shadow Maps (값 4는 기존 scene 직렬화 값과의 호환을 위해 유지)
+};
+
 UCLASS()
 class UDirectionalLightComponent : public ULightComponent
 {
@@ -54,18 +63,8 @@ public:
     void SetShadowViewProjection(const FMatrix& ViewProj) { CachedShadowViewProjection = ViewProj; }
     const FMatrix& GetShadowViewProjection() const { return CachedShadowViewProjection; }
 
-    // PSM (Perspective Shadow Map) Settings
-    uint8 GetShadowProjectionMode() const { return ShadowProjectionMode; }
-    void SetShadowProjectionMode(uint8 Mode) { ShadowProjectionMode = Mode; }
-
-    float GetPSMMinInfinityZ() const { return PSMMinInfinityZ; }
-    void SetPSMMinInfinityZ(float Value) { PSMMinInfinityZ = Value; }
-
-    bool GetPSMUnitCubeClip() const { return bPSMUnitCubeClip; }
-    void SetPSMUnitCubeClip(bool Value) { bPSMUnitCubeClip = Value; }
-
-    bool GetPSMSlideBackEnabled() const { return bPSMSlideBackEnabled; }
-    void SetPSMSlideBackEnabled(bool Value) { bPSMSlideBackEnabled = Value; }
+    EShadowProjectionMode GetShadowProjectionMode() const { return ShadowProjectionMode; }
+    void SetShadowProjectionMode(EShadowProjectionMode Mode) { ShadowProjectionMode = Mode; }
 
 private:
     void EnsureVisualizationIcon()override;
@@ -74,10 +73,6 @@ private:
     FEditorPrimitive LightDirectionArrow;
     FMatrix CachedShadowViewProjection = FMatrix::Identity();
 
-    // PSM Settings
-    uint8 ShadowProjectionMode = 0;  // 0=Uniform, 1=PSM, 2=LSPSM, 3=TSM
-    float PSMMinInfinityZ = 1.5f;
-    bool bPSMUnitCubeClip = true;
-    bool bPSMSlideBackEnabled = true;
+    EShadowProjectionMode ShadowProjectionMode = EShadowProjectionMode::Uniform;
 };
 

@@ -82,28 +82,19 @@ void UDirectionalLightComponent::Serialize(const bool bInIsLoading, JSON& InOutH
 {
     Super::Serialize(bInIsLoading, InOutHandle);
 
-    // PSM Settings
     if (bInIsLoading)
     {
-        int32 LoadedMode = ShadowProjectionMode;
+        int32 LoadedMode = static_cast<int32>(ShadowProjectionMode);
         FJsonSerializer::ReadInt32(InOutHandle, "ShadowProjectionMode", LoadedMode);
-        ShadowProjectionMode = (uint8)LoadedMode;
 
-        FJsonSerializer::ReadFloat(InOutHandle, "PSMMinInfinityZ", PSMMinInfinityZ);
-
-        // Bool values - read directly from JSON since FJsonSerializer doesn't have ReadBool
-        if (InOutHandle.hasKey("PSMUnitCubeClip"))
-            bPSMUnitCubeClip = InOutHandle["PSMUnitCubeClip"].ToBool();
-
-        if (InOutHandle.hasKey("PSMSlideBackEnabled"))
-            bPSMSlideBackEnabled = InOutHandle["PSMSlideBackEnabled"].ToBool();
+        // 제거된 이전 모드(PSM=1, LSPSM=2, TSM=3)가 저장된 scene은 Uniform으로 폴백
+        ShadowProjectionMode = (LoadedMode == static_cast<int32>(EShadowProjectionMode::CSM))
+            ? EShadowProjectionMode::CSM
+            : EShadowProjectionMode::Uniform;
     }
     else
     {
-        InOutHandle["ShadowProjectionMode"] = (int)ShadowProjectionMode;
-        InOutHandle["PSMMinInfinityZ"] = PSMMinInfinityZ;
-        InOutHandle["PSMUnitCubeClip"] = bPSMUnitCubeClip;
-        InOutHandle["PSMSlideBackEnabled"] = bPSMSlideBackEnabled;
+        InOutHandle["ShadowProjectionMode"] = static_cast<int>(ShadowProjectionMode);
     }
 }
 
