@@ -25,7 +25,7 @@ KRAFTON 정글 게임테크랩 2기 9주차 게임잼에서 만든 **탑다운 �
 
 ### [카메라 시스템](Document/Feature_CameraSystem.md) (WEEK09)
 
-UE의 `APlayerCameraManager` 패턴을 따라 **CameraModifier 스택**으로 설계했습니다. 카메라 쉐이크와 트랜지션이 각각 modifier로 붙어 priority 순으로 합성되므로 두 효과가 동시에 걸려도 간섭하지 않습니다. 쉐이크 감쇠 곡선은 직접 만든 **ImGui 베지어 에디터**로 편집해 JSON 프리셋으로 저장하고, PIE 실행 중 즉시 재생해 튜닝합니다. 시작 연출이 끝날 때 카메라가 튀던 버그를 SpringArm offset 좌표계 불일치로 진단하고 해결한 사례([PR #36](https://github.com/nansu0425/LastRoll/pull/36))도 문서에 포함했습니다.
+UE의 `APlayerCameraManager` 패턴을 따라 **CameraModifier 스택**으로 설계했습니다. 카메라 쉐이크와 트랜지션이 각각 modifier로 붙어 priority 순으로 합성되므로 두 효과가 동시에 걸려도 간섭하지 않습니다. 쉐이크 감쇠 곡선은 직접 만든 **ImGui 베지어 에디터**로 편집해 JSON 프리셋으로 저장하고, PIE 실행 중 즉시 재생해 튜닝합니다. 시작 연출이 끝날 때 카메라가 튀던 버그를 SpringArm offset 좌표계 불일치로 진단하고 해결한 사례도 문서에 포함했습니다.
 
 ### [Emissive 미지원 엔진에서 빛나는 투사체](Document/Feature_EmissiveProjectile.md) (WEEK09)
 
@@ -33,7 +33,7 @@ UE의 `APlayerCameraManager` 패턴을 따라 **CameraModifier 스택**으로 �
 
 ### [섀도우 매핑 — 3종 광원](Document/Feature_ShadowMapping.md) (WEEK08)
 
-게임잼 이전 주차에 제가 개발한 엔진 feature가 게임에 사용됐습니다. Directional(씬 AABB 기반 orthographic) / Spot(cone frustum perspective) / Point(cube map 6면 + linear distance) 광원별 shadow map 생성 경로와, shadow acne 대응을 위한 bias별 rasterizer state 캐싱을 구현했습니다.
+게임잼 이전 주차에 개발한 feature 입니다. Directional(씬 AABB 기반 orthographic) / Spot(cone frustum perspective) / Point(cube map 6면 + linear distance) 광원별 shadow map 생성 경로와, shadow acne 대응을 위한 DepthBias 기반 rasterizer state 캐싱을 구현했습니다. 이 중 게임에 실제로 사용된 것은 **Spot 경로**입니다 — 플레이어를 따라오는 SpotLight 3개가 이 경로로 그림자를 드리우며, Directional·Point shadow는 게임 씬에서 쓰이지 않았습니다.
 
 ### 그 외 (WEEK09)
 
