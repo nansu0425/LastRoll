@@ -124,12 +124,10 @@ struct FMatrix
 	FVector GetScale() const;
 	FVector TransformPosition(const FVector& V) const;
 
-	// PSM helper functions
-	FVector4 TransformVector4(const FVector4& V) const;
+	// Transform direction vector (translation 제외)
 	FVector TransformVector(const FVector& V) const;
 
 	// Additional projection matrix creation functions
-	static FMatrix CreatePerspectiveLH(float Width, float Height, float Near, float Far);
 	static FMatrix CreatePerspectiveFovLH(float FovY, float AspectRatio, float Near, float Far);
 	static FMatrix CreateOrthoOffCenterLH(float Left, float Right, float Bottom, float Top, float Near, float Far);
 	static FMatrix CreateTranslation(const FVector& Translation);

@@ -456,12 +456,6 @@
     <ClCompile Include="Source\Render\Renderer\Private\RenderResourceFactory.cpp">
       <Filter>Source\Render\Renderer\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Render\Shadow\Private\PSMBounding.cpp">
-      <Filter>Source\Render\Shadow\Private</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Render\Shadow\Private\PSMCalculator.cpp">
-      <Filter>Source\Render\Shadow\Private</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Texture\Private\ShadowMapResources.cpp">
       <Filter>Source\Texture\Private</Filter>
     </ClCompile>
@@ -1058,12 +1052,6 @@
     <ClInclude Include="Source\Render\Renderer\Public\RenderResourceFactory.h">
       <Filter>Source\Render\Renderer\Public</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Render\Shadow\Public\PSMBounding.h">
-      <Filter>Source\Render\Shadow\Public</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Render\Shadow\Public\PSMCalculator.h">
-      <Filter>Source\Render\Shadow\Public</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Texture\Public\ShadowMapResources.h">
       <Filter>Source\Texture\Public</Filter>
     </ClInclude>
@@ -1540,15 +1528,6 @@
     </Filter>
     <Filter Include="Source\Render\Renderer\Public">
       <UniqueIdentifier>{34b15ea9-5050-49ef-b20d-e059b33f7cb4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Render\Shadow">
-      <UniqueIdentifier>{cc33ca03-6c47-4c13-b969-c6263ec0e044}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Render\Shadow\Public">
-      <UniqueIdentifier>{cfe53b12-d2ff-47ae-92d4-ab0c5ae62258}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\Render\Shadow\Private">
-      <UniqueIdentifier>{791088d1-3c2a-4bbd-97ac-1dc20d12ee09}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Texture">
       <UniqueIdentifier>{ab5aee6c-0425-47b5-84cf-8b0e9a70bc62}</UniqueIdentifier>
