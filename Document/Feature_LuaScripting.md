@@ -27,7 +27,42 @@ InstanceEnv            ─ ScriptComponent 인스턴스마다 하나 — obj 프
 
 스크립트 최상위에서 정의한 함수·변수는 전역이 아니라 자신의 env에 갇히므로 스크립트 간 이름 충돌이 없고, 인스턴스 데이터는 `InstanceEnv`에만 존재하므로 액터끼리 상태가 섞이지 않습니다.
 
-여기서 Sol2의 함정을 하나 넘어야 했습니다. 캐싱한 함수에 `InstanceEnv.set_on(func)`으로 환경을 지정하는데, `set_on`은 함수 객체의 `_ENV` upvalue를 **파괴적으로 교체**합니다. 두 컴포넌트가 같은 함수 객체를 공유하면 마지막 `set_on`이 이겨서 첫 번째 액터가 두 번째 액터의 `obj`를 보게 됩니다. 그래서 컴포넌트마다 스크립트를 **별도 env에서 다시 실행해 독립된 함수 객체**를 만듭니다 ([`ScriptManager.cpp`](../Engine/Source/Manager/Script/Private/ScriptManager.cpp)의 `GetTable` 주석에 이 결정을 기록해 뒀습니다).
+여기서 Sol2의 함정을 하나 넘어야 했습니다. 캐싱한 함수에 `InstanceEnv.set_on(func)`으로 환경을 지정하는데, `set_on`은 함수 객체의 `_ENV` upvalue를 **파괴적으로 교체**합니다. 두 컴포넌트가 같은 함수 객체를 공유하면 마지막 `set_on`이 이겨서 첫 번째 액터가 두 번째 액터의 `obj`를 보게 됩니다. 그래서 컴포넌트마다 스크립트를 **별도 env에서 다시 실행해 독립된 함수 객체**를 만듭니다. 이 재실행을 담당하는 것이 [`ScriptManager.cpp`](../Engine/Source/Manager/Script/Private/ScriptManager.cpp)의 `GetTable`입니다:
+
+```cpp
+sol::table UScriptManager::GetTable(const FString& ScriptPath)
+{
+	// CRITICAL: 각 ScriptComponent가 독립적인 environment를 가지도록
+	// 매번 새로운 environment를 생성하여 스크립트를 재실행
+	// (캐싱된 GlobalTable을 공유하면 set_on()이 마지막 호출만 적용됨)
+
+	// ... (스크립트 로드 확인, Build 경로 확인·복사)
+
+	try
+	{
+		// 매번 새로운 environment 생성
+		sol::environment new_env(*LuaState, sol::create, LuaState->globals());
+
+		// 스크립트를 Build 경로에서 실행
+		LuaState->script_file(BuildScriptPath.string(), new_env);
+
+		return new_env;
+	}
+	catch (const sol::error& e)
+	{
+		UE_LOG_ERROR("Lua script execution error in GetTable: %s", e.what());
+		return LuaState->create_table();
+	}
+}
+```
+
+이렇게 받은 GlobalTable을 fallback으로 인스턴스 env를 만들면 3단 체인이 완성됩니다 ([`ScriptComponent.cpp`](../Engine/Source/Component/Private/ScriptComponent.cpp)의 `SetInstanceTable`):
+
+```cpp
+// 1. Instance Environment 생성 (GlobalTable을 fallback으로)
+//    Environment chain: InstanceEnv -> GlobalTable(ScriptEnv) -> lua.globals()
+InstanceEnv = sol::environment(lua, sol::create, GlobalTable);
+```
 
 ## 설계 2 — `obj` 메타테이블 프록시
 
@@ -44,12 +79,133 @@ obj.HP = obj.HP - damage                              -- HP는 스크립트가 �
 - `__newindex`: Location/Rotation이면 C++ setter(`SetActorLocation` 등) 호출, 그 외에는 테이블에 저장 — 이 fallthrough가 `obj.HP = 100`을 가능하게 함
 - 두 메타메서드 모두 액터 포인터를 **람다에 캡처하지 않고** 호출 시점마다 테이블에서 다시 꺼냅니다. 캡처했다면 액터 파괴 후 죽은 포인터를 잡고 있는 람다가 남습니다.
 
+```cpp
+// obj를 Proxy Table로 생성 (Actor 접근 + 동적 프로퍼티 저장 지원)
+sol::table objProxy = lua.create_table();
+
+// _actor 필드에 실제 Actor 포인터 저장 (내부용)
+objProxy["_actor"] = Owner;
+
+// Metatable 설정
+sol::table mt = lua.create_table();
+
+// __index: Actor property 또는 동적 프로퍼티 읽기
+// CRITICAL: owner를 캡처하지 않고 매번 테이블에서 가져옴 (댕글링 포인터 방지)
+mt[sol::meta_function::index] = [](sol::table self, const std::string& key) -> sol::object {
+	sol::state_view lua = self.lua_state();
+
+	// 동적 프로퍼티 먼저 확인 (raw_get으로 메타메서드 우회)
+	sol::object val = self.raw_get<sol::object>(key);
+	if (val.valid() && val.get_type() != sol::type::lua_nil)
+	{
+		return val;
+	}
+
+	// Actor 포인터를 매번 테이블에서 가져옴 (댕글링 포인터 방지)
+	AActor* owner = self.raw_get<AActor*>("_actor");
+	if (!owner)
+		return sol::lua_nil;
+
+	// Actor의 기본 프로퍼티 처리
+	if (key == "Location")
+	{
+		return sol::make_object(lua, owner->GetActorLocation());
+	}
+	// ... (Rotation / UUID / Name 동일 패턴)
+
+	return sol::lua_nil;
+};
+
+// __newindex: Actor property 또는 동적 프로퍼티 쓰기
+mt[sol::meta_function::new_index] = [](sol::table self, const std::string& key, sol::object value) {
+	// Actor 포인터를 매번 테이블에서 가져옴 (댕글링 포인터 방지)
+	AActor* owner = self.raw_get<AActor*>("_actor");
+	if (!owner)
+		return;
+
+	// Actor의 기본 프로퍼티 처리
+	if (key == "Location")
+	{
+		FVector newLoc = value.as<FVector>();
+		owner->SetActorLocation(newLoc);
+	}
+	else if (key == "Rotation")
+	{
+		FQuaternion newRot = value.as<FQuaternion>();
+		owner->SetActorRotation(newRot);
+	}
+	else
+	{
+		// 동적 프로퍼티를 테이블에 저장 (Velocity, Speed, OverlapCount 등)
+		self.raw_set(key, value);
+	}
+};
+
+objProxy[sol::metatable_key] = mt;
+
+// InstanceEnv에 obj 등록
+InstanceEnv["obj"] = objProxy;
+```
+
 결과적으로 "엔진이 관리하는 속성"과 "게임플레이가 붙이는 속성"이 스크립트 입장에서는 구분 없이 한 이름 공간으로 보입니다.
 
 ## 설계 3 — 라이프사이클 바인딩과 에러 격리
 
 - `UScriptComponent`가 `BeginPlay` / `Tick(dt)` / `EndPlay` / `OnBeginOverlap` / `OnEndOverlap` 5개 함수를 로드 시점에 찾아 **캐싱**하고 `set_on`까지 미리 적용해 둡니다. 매 프레임 Tick 호출은 이 빠른 경로만 탑니다.
 - `SOL_ALL_SAFETIES_ON`으로 `sol::function`이 전부 `protected_function`이 되어, **모든 Lua 호출이 pcall을 경유**합니다. 스크립트 런타임 에러는 엔진 콘솔에 로그로 남고 프레임은 계속 진행됩니다 — 게임잼 중 팀원의 스크립트 오타가 엔진을 죽이는 일이 없도록 한 장치입니다.
+
+캐싱은 `SetInstanceTable`의 마지막 단계에서 일어납니다:
+
+```cpp
+// 3. 스크립트 함수들을 캐싱하고 environment 설정
+//    이렇게 하면 함수 호출 시마다 environment를 설정할 필요 없음
+CachedFunctions.clear();
+
+const char* FunctionNames[] = { "BeginPlay", "Tick", "EndPlay", "OnBeginOverlap", "OnEndOverlap" };
+for (const char* FuncName : FunctionNames)
+{
+	sol::optional<sol::function> func_opt = GlobalTable[FuncName];
+	if (func_opt)
+	{
+		sol::function func = *func_opt;
+		// 함수의 environment를 InstanceEnv로 설정
+		// 이제 함수 내에서 obj, UUID 등에 직접 접근 가능
+		InstanceEnv.set_on(func);
+		CachedFunctions[FString(FuncName)] = func;
+	}
+}
+```
+
+호출부는 [`ScriptComponent.h`](../Engine/Source/Component/Public/ScriptComponent.h)의 `CallLuaFunction` 템플릿입니다. 캐시에서 찾은 `protected_function`을 그대로 호출하고, 실패하면 로그만 남깁니다:
+
+```cpp
+template<typename... Args>
+void UScriptComponent::CallLuaFunction(const char* FunctionName, Args&&... args)
+{
+	if (!InstanceEnv.valid())
+		return;
+
+	try
+	{
+		// 1. 캐싱된 함수에서 먼저 찾기 (빠른 경로)
+		auto it = CachedFunctions.find(FString(FunctionName));
+		if (it != CachedFunctions.end())
+		{
+			// 캐싱된 함수 호출 (environment가 이미 InstanceEnv로 설정되어 있음)
+			sol::protected_function_result result = it->second(std::forward<Args>(args)...);
+
+			if (!result.valid())
+			{
+				sol::error err = result;
+				UE_LOG_ERROR("Lua function '%s' error: %s", FunctionName, err.what());
+			}
+			return;
+		}
+		// ... (캐시에 없으면 InstanceEnv에서 동적으로 찾는 느린 경로)
+	}
+	// ...
+}
+```
 
 ## 설계 4 — 충돌 이벤트를 Lua로
 
@@ -68,6 +224,64 @@ C++ 쪽은 넘겨받은 `sol::function`을 캡처한 wrapper 람다를 엔진 �
 - **감지**: 에디터 모드에서 0.5초 간격으로 로드된 스크립트들의 `last_write_time`을 폴링합니다. 소스(`Engine/Data/Scripts/`)가 바뀌면 실행 폴더(`Build/.../Data/Scripts/`)로 복사한 뒤 리로드 대상으로 표시합니다.
 - **재바인딩**: 스크립트를 새 env에서 다시 실행하고, 그 스크립트를 쓰는 모든 `ScriptComponent`(registry로 추적)에 새 GlobalTable을 전달해 InstanceEnv와 함수 캐시를 재구성합니다.
 - **실패 시**: 컴파일 에러는 로그로 남고 해당 스크립트의 콜백들은 정지하지만, **registry 등록은 유지**되므로 파일을 고쳐 저장하면 다음 폴링에서 자동으로 다시 로드됩니다. 엔진을 재시작할 필요가 없습니다.
+
+리로드 본체는 `HotReloadScripts`입니다 — 변경 감지 후 스크립트를 다시 실행하고, registry에 등록된 컴포넌트들에 새 GlobalTable을 전달합니다:
+
+```cpp
+void UScriptManager::HotReloadScripts()
+{
+	// Hot Reload 체크 주기 제한 (성능 최적화)
+	float CurrentTime = UTimeManager::GetInstance().GetGameTime();
+	float TimeSinceLastCheck = CurrentTime - LastHotReloadCheckTime;
+
+	if (TimeSinceLastCheck < HotReloadCheckInterval)
+	{
+		// 아직 체크 주기가 안 됨
+		return;
+	}
+
+	// 체크 시간 업데이트
+	LastHotReloadCheckTime = CurrentTime;
+
+	TSet<FString> HotReloadTargets = GatherHotReloadTargets();
+
+	// ...
+
+	for (const FString& ScriptPath : HotReloadTargets)
+	{
+		// ...
+
+		// 스크립트 리로드
+		LoadLuaScript(ScriptPath);
+
+		// 이 스크립트를 사용하는 모든 컴포넌트에게 알림
+		auto ComponentIt = ScriptComponentRegistry.find(ScriptPath);
+		if (ComponentIt != ScriptComponentRegistry.end())
+		{
+			const TArray<UScriptComponent*>& Components = ComponentIt->second;
+			sol::table NewGlobalTable = It->second.GlobalTable;
+
+			for (UScriptComponent* Component : Components)
+			{
+				if (Component)
+				{
+					Component->OnScriptReloaded(NewGlobalTable);
+				}
+			}
+		}
+	}
+}
+```
+
+"실패해도 registry 유지"는 `LoadLuaScript`의 등록 순서가 만듭니다 — 컴파일 결과와 무관하게 등록부터 하므로, 에러 난 스크립트도 다음 저장에서 자동으로 재시도됩니다:
+
+```cpp
+// ✅ CRITICAL: 컴파일 성공 여부와 관계없이 LuaScriptMap에 등록
+// 컴파일 에러가 발생해도 등록해두면, 나중에 수정했을 때 Hot Reload로 다시 로드 시도
+LuaScriptMap[ScriptPath].Path = ScriptPath;
+LuaScriptMap[ScriptPath].LastCompileTime = LastWriteTime;
+LuaScriptMap[ScriptPath].GlobalTable = bCompileSuccess ? env : LuaState->create_table();
+```
 
 ## 한계
 
