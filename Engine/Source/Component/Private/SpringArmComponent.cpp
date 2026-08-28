@@ -19,6 +19,15 @@ void USpringArmComponent::TickComponent(float DeltaTime)
 	MarkAsDirty();
 	FVector CurWorldLocation = GetWorldLocation();
 
+	// 첫 틱에 lag 상태를 실제 pose로 스냅한다. 원점/identity에서 시작하면
+	// 수렴이 끝나기 전까지 카메라가 엉뚱한 pose에 있게 된다 (Duplicate()와 동일한 초기화)
+	if (!bLagStateInitialized)
+	{
+		LagLocation = CurWorldLocation;
+		LagRotation = GetWorldRotationAsQuaternion();
+		bLagStateInitialized = true;
+	}
+
 	if (bLocationLag)
 	{
 		//이동지연보간
