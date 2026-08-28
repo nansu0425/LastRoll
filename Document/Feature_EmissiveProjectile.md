@@ -23,15 +23,30 @@ Material 데이터부터 셰이더까지 emissive를 관통시켰습니다.
 
 ```hlsl
 // Treat Ke as additional light source for diffuse (so texture glows with Ke color)
-float3 totalDiffuseLight = DiffuseLight.rgb + Ke.rgb;
-finalPixel.rgb = AmbientLight.rgb * ambientColor.rgb
-               + totalDiffuseLight * diffuseColor.rgb
-               + SpecularLight.rgb * specularColor.rgb;
+float3 totalDiffuseLight = Illumination.Diffuse.rgb + Ke.rgb;
+finalPixel.rgb = Illumination.Ambient.rgb * ambientColor.rgb + totalDiffuseLight * diffuseColor.rgb + Illumination.Specular.rgb * specularColor.rgb;
 ```
 
 `Ke`를 최종 색에 그냥 더하는 대신 **diffuse light 항에 더했습니다**. emissive가 diffuse 텍스처 색과 곱해지므로, 단색으로 하얗게 떠버리지 않고 태양 텍스처의 무늬를 유지한 채 밝아집니다. 조명이 0인 면도 `Ke` 만큼의 diffuse 광량을 받은 것처럼 렌더링되어 "스스로 빛나는" 표면이 됩니다.
 
 부수 작업으로, material constant buffer를 공유하는 다른 셰이더(`TexturePS.hlsl`, `TextureShader.hlsl`)에도 같은 위치에 `Ke` 필드를 선언해 **cbuffer 레이아웃을 동기화**했고 (한 쪽만 필드를 추가하면 뒤따르는 필드들이 16바이트씩 밀려 깨집니다), material 상수를 매 프레임 채우지 않는 pass(`BillboardPass`, `EditorIconPass`)에는 구조체 zero-init을 넣어 초기화되지 않은 `Ke`가 GPU로 올라가는 것을 막았습니다.
+
+동기화 대상 레이아웃은 이렇습니다 — cbuffer 자체는 기존 코드이고, 이번 작업이 추가한 것은 `Ke` 줄입니다 (C++ 쪽 `FMaterialConstants`도 같은 위치에 `FVector4 Ke` 추가):
+
+```hlsl
+cbuffer MaterialConstants : register(b2)
+{
+    float4 Ka; // Ambient color
+    float4 Kd; // Diffuse color
+    float4 Ks; // Specular color
+    float4 Ke; // Emissive color
+    float Ns;  // Specular exponent
+    float Ni;  // Index of refraction
+    float D;   // Dissolve factor
+    uint MaterialFlags; // Which textures are available (bitfield)
+    float Time;
+}
+```
 
 ### 2. 공유 material을 오염시키지 않는 per-instance override
 
@@ -46,6 +61,32 @@ MeshComponent->SetMaterial(i, OverrideMaterial);      // 컴포넌트별 overrid
 ```
 
 메시가 여러 material 섹션을 가질 수 있어 전체 슬롯을 순회합니다.
+
+`Duplicate` 구현 ([`Material.cpp`](../Engine/Source/Texture/Private/Material.cpp)) — material 파라미터는 값 복사, 텍스처는 공유 리소스라 포인터만 복사합니다:
+
+```cpp
+UObject* UMaterial::Duplicate()
+{
+	// Create new Material instance
+	UMaterial* NewMaterial = NewObject<UMaterial>();
+
+	if (NewMaterial)
+	{
+		// Copy MaterialData (Ka, Kd, Ks, Ke, Ns, Ni, D, etc.)
+		NewMaterial->MaterialData = this->MaterialData;
+
+		// Copy Texture pointers (these point to shared texture resources)
+		NewMaterial->DiffuseTexture = this->DiffuseTexture;
+		NewMaterial->AmbientTexture = this->AmbientTexture;
+		NewMaterial->SpecularTexture = this->SpecularTexture;
+		NewMaterial->NormalTexture = this->NormalTexture;
+		NewMaterial->AlphaTexture = this->AlphaTexture;
+		NewMaterial->BumpTexture = this->BumpTexture;
+	}
+
+	return NewMaterial;
+}
+```
 
 ### 3. PointLight로 "주변을 비추는" 효과
 
