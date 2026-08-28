@@ -12,7 +12,7 @@ FutureEngine(DirectX 11)의 렌더 패스 중 `FShadowMapPass`가 매 프레임 
 | Spot | Perspective (cone frustum) | 단일 |
 | Point | Perspective 90° × 6 | Cube (6면) |
 
-모든 shadow map은 하나의 **shadow atlas**(8192×8192, 1024 단위 타일)에 기록되고, 각 광원이 어느 타일을 쓰는지를 structured buffer로 셰이더에 전달합니다. 메인 패스(`UberLit.hlsl`)는 픽셀을 광원의 light space로 변환해 atlas에서 깊이를 비교합니다.
+메인 패스(`UberLit.hlsl`)는 픽셀을 광원의 light space로 변환해 shadow map의 깊이와 비교합니다.
 
 관련 소스: [`ShadowMapPass.cpp`](../Engine/Source/Render/RenderPass/Private/ShadowMapPass.cpp), [`ShadowMapResources.h`](../Engine/Source/Texture/Public/ShadowMapResources.h)
 
@@ -38,12 +38,11 @@ Point light는 전방향이므로 +X/−X/+Y/−Y/+Z/−Z 6개 면을 90° FOV�
 
 ## Shadow acne와 rasterizer state 캐싱
 
-Shadow acne(자기 그림자 아티팩트)는 rasterizer의 `DepthBias` + `SlopeScaledDepthBias`로 처리하는데, 이 값들은 rasterizer state 생성 시점에 고정되고 광원마다 튜닝 값이 다릅니다. 매 프레임 state를 만들고 버리는 대신, **bias 값 쌍을 양자화한 키로 state를 캐싱**해 같은 설정의 광원들이 state를 공유하도록 했습니다.
+Shadow acne(자기 그림자 아티팩트)는 rasterizer의 `DepthBias` + `SlopeScaledDepthBias`로 처리하는데, 이 값들은 rasterizer state 생성 시점에 고정되고 광원마다 튜닝 값이 다릅니다. 매 프레임 state를 만들고 버리지 않도록, 광원별로 한 번 생성한 state를 캐싱해 재사용하는 구조를 도입했습니다.
 
 ## 한계
 
 - Uniform directional shadow map은 씬 전체 AABB를 한 장에 담으므로, 씬이 커질수록 텍셀 밀도가 떨어져 그림자 가장자리가 계단화됩니다. 거리별로 해상도를 배분하는 CSM(팀원 작업)이 이 문제의 해법이고, 에디터에서 모드를 전환해 비교할 수 있습니다.
-- 광원 수 상한이 타입별 8개로 고정된 atlas 레이아웃입니다 (게임잼 씬 규모에는 충분).
 - Point light shadow의 near plane이 1.0 고정이라, 광원에 극단적으로 가까운 캐스터는 잘릴 수 있습니다.
 
 ## 당시 작업 문서

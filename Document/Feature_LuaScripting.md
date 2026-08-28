@@ -11,7 +11,7 @@
 3. 스크립트 에러가 엔진 크래시로 이어지지 않을 것
 4. 파일을 저장하면 실행 중인 에디터에 **즉시 반영**될 것 (핫 리로드)
 
-관련 소스: [`ScriptManager.cpp`](../Engine/Source/Manager/Script/Private/ScriptManager.cpp) (바인딩·핫 리로드), [`ScriptComponent.cpp`](../Engine/Source/Component/Private/ScriptComponent.cpp) (인스턴스 환경·라이프사이클·coroutine)
+관련 소스: [`ScriptManager.cpp`](../Engine/Source/Manager/Script/Private/ScriptManager.cpp) (바인딩·핫 리로드), [`ScriptComponent.cpp`](../Engine/Source/Component/Private/ScriptComponent.cpp) (인스턴스 환경·라이프사이클)
 
 ## 설계 1 — 3단 environment 체인으로 인스턴스 상태 분리
 
@@ -22,7 +22,7 @@ lua globals            ─ 엔진 API (Vector, SpawnActor, IsKeyDown, ...)
   ▲ fallback (__index)
 GlobalTable            ─ 스크립트 파일을 실행한 env — BeginPlay/Tick 등 함수 정의가 여기 담김
   ▲ fallback (__index)
-InstanceEnv            ─ ScriptComponent 인스턴스마다 하나 — obj, Owner, self, 헬퍼 함수
+InstanceEnv            ─ ScriptComponent 인스턴스마다 하나 — obj 프록시, 인스턴스 상태
 ```
 
 스크립트 최상위에서 정의한 함수·변수는 전역이 아니라 자신의 env에 갇히므로 스크립트 간 이름 충돌이 없고, 인스턴스 데이터는 `InstanceEnv`에만 존재하므로 액터끼리 상태가 섞이지 않습니다.
@@ -50,7 +50,6 @@ obj.HP = obj.HP - damage                              -- HP는 스크립트가 �
 
 - `UScriptComponent`가 `BeginPlay` / `Tick(dt)` / `EndPlay` / `OnBeginOverlap` / `OnEndOverlap` 5개 함수를 로드 시점에 찾아 **캐싱**하고 `set_on`까지 미리 적용해 둡니다. 매 프레임 Tick 호출은 이 빠른 경로만 탑니다.
 - `SOL_ALL_SAFETIES_ON`으로 `sol::function`이 전부 `protected_function`이 되어, **모든 Lua 호출이 pcall을 경유**합니다. 스크립트 런타임 에러는 엔진 콘솔에 로그로 남고 프레임은 계속 진행됩니다 — 게임잼 중 팀원의 스크립트 오타가 엔진을 죽이는 일이 없도록 한 장치입니다.
-- Coroutine 지원: `StartCoroutine("Fn")`이 `sol::thread`를 만들고, 스크립트는 `coroutine.yield(WaitForSeconds(1.0))` 패턴으로 대기 조건을 yield합니다. C++ 쪽이 매 Tick 조건을 평가해 재개합니다. GC가 thread를 수거하지 않도록 reference 앵커를 잡아두고, Tick 순회 중 컨테이너가 변하지 않도록 신규 coroutine은 pending 큐에 넣었다가 다음 Tick에 시작합니다. 게임 시작 카운트다운("3, 2, 1")이 이 coroutine으로 구현돼 있습니다.
 
 ## 설계 4 — 충돌 이벤트를 Lua로
 
@@ -74,6 +73,6 @@ C++ 쪽은 넘겨받은 `sol::function`을 캡처한 wrapper 람다를 엔진 �
 
 - 핫 리로드가 **인스턴스 상태를 보존하지 않습니다**. InstanceEnv를 새로 만들기 때문에 `obj.HP` 같은 동적 속성이 초기화되고, `BeginPlay`에서 건 overlap 바인딩도 재실행되지 않습니다. 게임잼에서는 "리로드 후 PIE 재시작"으로 운용해 문제가 되지 않았지만, 상태 마이그레이션이 없는 것은 명확한 미완성입니다.
 - 핫 리로드는 에디터 모드 한정이며, `require`로 로드한 모듈(`Util.lua` 등)은 `package.loaded` 캐시 때문에 리로드 대상이 아닙니다.
-- 컴파일된 chunk 캐시가 없어 같은 스크립트의 인스턴스가 N개면 파일을 N번 읽고 컴파일합니다. 투사체처럼 대량 스폰되는 액터는 Lua 쪽 오브젝트 풀(`ActorPool.lua`)로 우회했습니다.
+- 컴파일된 chunk 캐시가 없어 같은 스크립트의 인스턴스가 N개면 파일을 N번 읽고 컴파일합니다.
 - Lua에 넘어가는 엔진 객체가 전부 raw pointer라 수명 추적이 없습니다. `obj` 프록시의 재조회 패턴과 `AddWeakLambda`로 주요 경로는 방어했지만, 스크립트가 액터 포인터를 테이블에 보관하면 dangling을 감지할 수 없습니다.
 - 타입 바인딩(`RegisterCoreTypes`)이 1,000줄 단일 함수로 자랐고, 컴포넌트 타입을 추가할 때마다 다운캐스트 분기를 손으로 늘려야 합니다. 게임잼 속도 우선의 대가로 남은 빚입니다.

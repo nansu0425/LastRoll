@@ -69,7 +69,7 @@ UWorld::Tick (모든 Actor Tick 이후)
 
 **원인** — 트랜지션의 목표 POV를 `TopDownCameraActor`의 **actor location**으로 잡고 있었습니다. 하지만 실제 렌더링 카메라는 actor가 아니라 그 밑에 붙은 `SpringArm → CameraComponent` 계층의 **CameraComponent world location**입니다. SpringArm이 `-Forward × ArmLength` 등의 오프셋을 더하므로 두 좌표는 다릅니다. 트랜지션 동안은 modifier가 POV를 직접 덮어쓰니 목표 지점(actor 위치)으로 잘 이동하지만, 트랜지션이 끝나 modifier가 꺼지는 순간 POV가 ViewTarget(CameraComponent) 기준으로 되돌아가면서 오프셋만큼 튀는 것입니다.
 
-**해결** ([PR #36](https://github.com/nansu0425/LastRoll/pull/36), 커밋 `89d1053`) — 목표 POV를 CameraComponent의 world transform에서 취하도록 고쳤습니다. 연출 스크립트가 Lua라서, `UCameraComponent`의 `GetWorldLocation`/`GetWorldRotation`을 Lua에 바인딩하는 작업이 함께 들어갔습니다.
+**해결** (커밋 `89d1053`) — 목표 POV를 CameraComponent의 world transform에서 취하도록 고쳤습니다. 연출 스크립트가 Lua라서, `UCameraComponent`의 `GetWorldLocation`/`GetWorldRotation`을 Lua에 바인딩하는 작업이 함께 들어갔습니다.
 
 ```lua
 -- GameManager.lua — 수정 후
