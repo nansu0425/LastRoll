@@ -66,6 +66,7 @@ private:
 	// Lag 상태 저장용 변수
 	FVector LagLocation;
 	FQuaternion LagRotation;
+	bool bLagStateInitialized = false;
 public:
 	virtual UObject* Duplicate() override;
 
