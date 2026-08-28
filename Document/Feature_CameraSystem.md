@@ -85,7 +85,7 @@ targetPOV.Rotation = cameraComp:GetWorldRotation()
 - ViewTarget 교체 blending의 회전 보간이 Slerp가 아니라 성분별 Lerp입니다 (Transition modifier는 Slerp를 씀 — 회전 각이 작아 체감 문제는 없었지만 일관성이 없음)
 - modifier 리스트를 매 프레임 정렬합니다. modifier가 2~3개라 실측 문제는 없지만, 리스트 변경 시에만 정렬하는 게 맞는 구조입니다
 - 같은 클래스의 modifier를 1개만 운용하므로 서로 다른 쉐이크 2개를 동시에 재생할 수 없습니다
-- SpringArm에 location lag가 있어, lag가 수렴하기 전에 트랜지션이 끝나면 이론상 미세한 오차가 남습니다 (연출 타이밍상 실제로는 수렴 후 종료)
+- SpringArm의 lag 상태(`LagLocation`/`LagRotation`)가 스폰 직후 원점/identity에서 시작하고 수렴이 틱당 고정 비율(framerate 의존)이라, 낮은 fps에서는 트랜지션 3초 안에 수렴하지 못한 잔차만큼 종료 순간 카메라가 튕겼다가 돌아오는 현상이 있었습니다 (60fps 기준 위치 ~0.7유닛 + pitch ~2°, 높은 fps에서는 소멸). 잼 이후 첫 틱에 lag 상태를 실제 pose로 스냅하도록 수정해 제거했습니다
 
 ## 당시 작업 문서
 
