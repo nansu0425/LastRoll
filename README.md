@@ -1,6 +1,6 @@
 # Last Roll
 
-KRAFTON 정글 게임테크랩 2기 9주차 게임잼에서 만든 **탑다운 슈팅 서바이벌 게임**입니다.
+KRAFTON 정글 게임테크랩 2기 9주차 게임잼에서 **FutureEngine**(교육과정에서 주차마다 서로 다른 팀이 이어 개발한 DirectX 11 엔진) 위에 만든 **탑다운 슈팅 서바이벌 게임**입니다.
 
 <!-- TODO: 플레이 영상 / GIF -->
 <!-- TODO: 스크린샷 -->
@@ -14,6 +14,7 @@ KRAFTON 정글 게임테크랩 2기 9주차 게임잼에서 만든 **탑다운 �
     - 기간: 2025-09-02 ~ 10-30 (59일)
     - 팀: 매 주차 3~4명 팀으로 진행, 팀원은 매 주차 랜덤 변경
     - 개발 방식: 팀원 중 한 명의 전 주차 엔진을 골라 그 위에 새로운 feature 개발
+    - **엔진은 게임잼 팀 3명이 만든 것이 아닙니다.** 게임잼 주차에 그렇게 갈라져 온 엔진 중 하나를 이어받아 게임을 만들었고, 이어받은 것은 직전 주차(WEEK08)에 본인이 참여한 팀의 코드베이스입니다 — 그래서 그 주차에 만든 섀도우 매핑이 이 게임에 들어 있습니다
 
 ## 핵심 작업
 
@@ -33,7 +34,7 @@ UE의 `APlayerCameraManager` 패턴을 따라 **CameraModifier 스택**으로 �
 
 ### [섀도우 매핑 — 3종 광원](Document/Feature_ShadowMapping.md) (WEEK08)
 
-게임잼 이전 주차에 개발한 feature 입니다. Directional(씬 AABB 기반 orthographic) / Spot(cone frustum perspective) / Point(cube map 6면 + linear distance) 광원별 shadow map 생성 경로와, shadow acne 대응을 위한 DepthBias 기반 rasterizer state 캐싱을 구현했습니다. 이 중 게임에 실제로 사용된 것은 **Spot 경로**입니다 — 플레이어를 따라오는 SpotLight 3개가 이 경로로 그림자를 드리우며, Directional·Point shadow는 게임 씬에서 쓰이지 않았습니다.
+Directional(씬 AABB 기반 orthographic) / Spot(cone frustum perspective) / Point(cube map 6면 + linear distance) 광원별 shadow map 생성 경로와, shadow acne 대응을 위한 DepthBias 기반 rasterizer state 캐싱을 구현했습니다. 이 중 게임에 실제로 사용된 것은 **Spot 경로**입니다 — 플레이어를 따라오는 SpotLight 3개가 이 경로로 그림자를 드리우며, Directional·Point shadow는 게임 씬에서 쓰이지 않았습니다.
 
 ### 그 외 (WEEK09)
 
