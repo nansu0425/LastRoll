@@ -113,7 +113,8 @@ float DecayAlpha;
 if (bUseDecayCurve)
 {
 	// Bezier 곡선 기반 감쇠
-	// X = 정규화된 경과 시간 [0,1], Y = 진폭 배율 [0,1]
+	// X = 정규화된 경과 시간 [0,1], Y = 진폭 배율. Y를 그대로 곱하므로
+	// 감쇠 곡선은 1(시작, 최대) → 0(끝) 으로 내려가는 형태여야 한다 (Create*().FlipY())
 	float NormalizedTime = 1.0f - (ShakeTimeRemaining / ShakeDuration); // 0(시작) → 1(끝)
 	DecayAlpha = DecayCurve.SampleY(NormalizedTime);
 }

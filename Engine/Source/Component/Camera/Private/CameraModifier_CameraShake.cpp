@@ -20,7 +20,7 @@ UCameraModifier_CameraShake::UCameraModifier_CameraShake()
 	, PerlinOffset(FVector::ZeroVector())
 	, LastLocationOffset(FVector::ZeroVector())
 	, LastRotationOffset(FVector::ZeroVector())
-	, DecayCurve(FCubicBezierCurve::CreateEaseOut())  // 기본값: EaseOut 곡선
+	, DecayCurve(FCubicBezierCurve::CreateEaseOut().FlipY())  // 기본값: 1→0 EaseOut 감쇠
 	, bUseDecayCurve(false)  // 기본적으로 비활성화 (기존 동작 유지)
 {
 	// 카메라 흔들림은 높은 우선순위 (모디파이어 체인에서 나중에 처리)
@@ -132,11 +132,10 @@ bool UCameraModifier_CameraShake::ModifyCamera(float DeltaTime, FMinimalViewInfo
 	if (bUseDecayCurve)
 	{
 		// Bezier 곡선 기반 감쇠
-		// X = 정규화된 경과 시간 [0,1], Y = 진폭 배율 [0,1]
+		// X = 정규화된 경과 시간 [0,1], Y = 진폭 배율. Y를 그대로 곱하므로
+		// 감쇠 곡선은 1(시작, 최대) → 0(끝) 으로 내려가는 형태여야 한다 (Create*().FlipY())
 		float NormalizedTime = 1.0f - (ShakeTimeRemaining / ShakeDuration); // 0(시작) → 1(끝)
 		DecayAlpha = DecayCurve.SampleY(NormalizedTime);
-		// Note: 일반적으로 감쇠 곡선은 1.0(최대) → 0.0(최소)로 설계됨
-		// 따라서 Y값을 그대로 사용 (곡선이 감쇠를 직접 제어)
 	}
 	else
 	{

@@ -24,7 +24,7 @@ using JSON = json::JSON;
  * ExplosionPreset.RotationAmplitude = 8.0f;
  * ExplosionPreset.Pattern = ECameraShakePattern::Perlin;
  * ExplosionPreset.bUseDecayCurve = true;
- * ExplosionPreset.DecayCurve = FCubicBezierCurve::CreateEaseOut();
+ * ExplosionPreset.DecayCurve = FCubicBezierCurve::CreateEaseOut().FlipY(); // 1→0 감쇠
  * ```
  */
 struct FCameraShakePresetData
@@ -91,7 +91,9 @@ struct FCameraShakePresetData
 	 * @brief Bezier 곡선 감쇠 패턴
 	 *
 	 * bUseDecayCurve가 true일 때만 사용됩니다.
-	 * 시간에 따른 진폭 감쇠를 제어합니다.
+	 * X = 정규화된 경과 시간 [0,1], Y = 진폭 배율. Y가 그대로 곱해지므로
+	 * 감쇠 곡선은 1(시작) → 0(끝) 으로 내려가야 합니다. Create*() 팩토리는
+	 * 0→1 easing 곡선이므로 FlipY() 로 뒤집어 씁니다.
 	 */
 	FCubicBezierCurve DecayCurve;
 

@@ -136,7 +136,7 @@ bool FCameraShakePresetDetailPanel::DrawPresetButtons(FCameraShakePresetData* Pr
 	// Linear
 	if (ImGui::Button("Linear", ImVec2(PresetButtonWidth, 0)))
 	{
-		Preset->DecayCurve = FCubicBezierCurve::CreateLinear();
+		Preset->DecayCurve = FCubicBezierCurve::CreateLinear().FlipY();
 		bChanged = true;
 	}
 	ImGui::SameLine();
@@ -144,7 +144,7 @@ bool FCameraShakePresetDetailPanel::DrawPresetButtons(FCameraShakePresetData* Pr
 	// EaseIn
 	if (ImGui::Button("EaseIn", ImVec2(PresetButtonWidth, 0)))
 	{
-		Preset->DecayCurve = FCubicBezierCurve::CreateEaseIn();
+		Preset->DecayCurve = FCubicBezierCurve::CreateEaseIn().FlipY();
 		bChanged = true;
 	}
 	ImGui::SameLine();
@@ -152,7 +152,7 @@ bool FCameraShakePresetDetailPanel::DrawPresetButtons(FCameraShakePresetData* Pr
 	// EaseOut
 	if (ImGui::Button("EaseOut", ImVec2(PresetButtonWidth, 0)))
 	{
-		Preset->DecayCurve = FCubicBezierCurve::CreateEaseOut();
+		Preset->DecayCurve = FCubicBezierCurve::CreateEaseOut().FlipY();
 		bChanged = true;
 	}
 	ImGui::SameLine();
@@ -160,7 +160,7 @@ bool FCameraShakePresetDetailPanel::DrawPresetButtons(FCameraShakePresetData* Pr
 	// EaseInOut
 	if (ImGui::Button("EaseInOut", ImVec2(PresetButtonWidth, 0)))
 	{
-		Preset->DecayCurve = FCubicBezierCurve::CreateEaseInOut();
+		Preset->DecayCurve = FCubicBezierCurve::CreateEaseInOut().FlipY();
 		bChanged = true;
 	}
 

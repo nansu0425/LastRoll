@@ -55,7 +55,7 @@ void UCameraShakePresetManager::CreateDefaultPresets()
 	Explosion.Pattern = ECameraShakePattern::Perlin;
 	Explosion.Frequency = 10.0f;
 	Explosion.bUseDecayCurve = true;
-	Explosion.DecayCurve = FCubicBezierCurve::CreateEaseOut();
+	Explosion.DecayCurve = FCubicBezierCurve::CreateEaseOut().FlipY();
 	AddPreset(Explosion);
 
 	// Collision Preset
@@ -67,7 +67,7 @@ void UCameraShakePresetManager::CreateDefaultPresets()
 	Collision.Pattern = ECameraShakePattern::Random;
 	Collision.Frequency = 10.0f;
 	Collision.bUseDecayCurve = true;
-	Collision.DecayCurve = FCubicBezierCurve::CreateLinear();
+	Collision.DecayCurve = FCubicBezierCurve::CreateLinear().FlipY();
 	AddPreset(Collision);
 
 	// Earthquake Preset
@@ -79,7 +79,7 @@ void UCameraShakePresetManager::CreateDefaultPresets()
 	Earthquake.Pattern = ECameraShakePattern::Sine;
 	Earthquake.Frequency = 5.0f;
 	Earthquake.bUseDecayCurve = true;
-	Earthquake.DecayCurve = FCubicBezierCurve::CreateEaseInOut();
+	Earthquake.DecayCurve = FCubicBezierCurve::CreateEaseInOut().FlipY();
 	AddPreset(Earthquake);
 
 	UE_LOG("CameraShakePresetManager: Created default presets (Explosion, Collision, Earthquake)");

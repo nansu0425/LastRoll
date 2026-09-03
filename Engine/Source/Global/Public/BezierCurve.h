@@ -118,6 +118,15 @@ public:
 	 */
 	static FCubicBezierCurve CreateBounce();
 
+	/**
+	 * @brief Y를 상하 반전한 곡선 (각 제어점 Y → 1 - Y)
+	 *
+	 * Create*() 팩토리는 0→1 로 올라가는 easing 곡선을 만든다.
+	 * 카메라 쉐이크 감쇠처럼 1→0 으로 내려가는 곡선이 필요할 때 사용한다.
+	 * 예: FCubicBezierCurve::CreateEaseOut().FlipY()
+	 */
+	FCubicBezierCurve FlipY() const;
+
 private:
 	/**
 	 * @brief X 좌표에서 t 파라미터를 찾기 (Newton-Raphson)

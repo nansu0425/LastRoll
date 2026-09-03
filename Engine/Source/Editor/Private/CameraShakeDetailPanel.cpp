@@ -134,35 +134,35 @@ bool FCameraShakeDetailPanel::DrawPresetButtons(UCameraModifier_CameraShake* Cam
 	// 5개의 preset 버튼 (2줄로 배치: 3개 + 2개)
 	if (ImGui::Button("Linear", ImVec2(PresetButtonWidth, 0)))
 	{
-		CameraShake->SetDecayCurve(FCubicBezierCurve::CreateLinear());
+		CameraShake->SetDecayCurve(FCubicBezierCurve::CreateLinear().FlipY());
 		bPresetSelected = true;
 	}
 	ImGui::SameLine();
 
 	if (ImGui::Button("EaseIn", ImVec2(PresetButtonWidth, 0)))
 	{
-		CameraShake->SetDecayCurve(FCubicBezierCurve::CreateEaseIn());
+		CameraShake->SetDecayCurve(FCubicBezierCurve::CreateEaseIn().FlipY());
 		bPresetSelected = true;
 	}
 	ImGui::SameLine();
 
 	if (ImGui::Button("EaseOut", ImVec2(PresetButtonWidth, 0)))
 	{
-		CameraShake->SetDecayCurve(FCubicBezierCurve::CreateEaseOut());
+		CameraShake->SetDecayCurve(FCubicBezierCurve::CreateEaseOut().FlipY());
 		bPresetSelected = true;
 	}
 
 	// 두 번째 줄
 	if (ImGui::Button("EaseInOut", ImVec2(PresetButtonWidth, 0)))
 	{
-		CameraShake->SetDecayCurve(FCubicBezierCurve::CreateEaseInOut());
+		CameraShake->SetDecayCurve(FCubicBezierCurve::CreateEaseInOut().FlipY());
 		bPresetSelected = true;
 	}
 	ImGui::SameLine();
 
 	if (ImGui::Button("Bounce", ImVec2(PresetButtonWidth, 0)))
 	{
-		CameraShake->SetDecayCurve(FCubicBezierCurve::CreateBounce());
+		CameraShake->SetDecayCurve(FCubicBezierCurve::CreateBounce().FlipY());
 		bPresetSelected = true;
 	}
 

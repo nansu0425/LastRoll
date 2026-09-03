@@ -143,6 +143,16 @@ FCubicBezierCurve FCubicBezierCurve::CreateBounce()
 	);
 }
 
+FCubicBezierCurve FCubicBezierCurve::FlipY() const
+{
+	FCubicBezierCurve Result = *this;
+	for (FVector2& Point : Result.P)
+	{
+		Point.Y = 1.0f - Point.Y;
+	}
+	return Result;
+}
+
 // ===== Private Helper Methods =====
 
 float FCubicBezierCurve::SolveForT(float x, int32 iterations) const
